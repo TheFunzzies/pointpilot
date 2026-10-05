@@ -16,7 +16,7 @@
   ],
   "preferences": {
     "defaultCpp": 1.5,
-    "maxTransfers": 2,
+    "maxTransfers": 4,
     "preferNonstop": false,
     "preserveFlexiblePoints": true
   }
