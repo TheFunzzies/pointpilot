@@ -1,0 +1,1 @@
+{"balances":[{"code":"amex","name":"Amex Membership Rewards","balance":160000,"transferable":true,"cpp":1.5,"ratio":1},{"code":"chase","name":"Chase Ultimate Rewards","balance":120000,"transferable":true,"cpp":1.5,"ratio":1},{"code":"aeroplan","name":"Aeroplan","balance":40000,"transferable":false,"cpp":1.6,"ratio":1}],"preferences":{"defaultCpp":1.5}}
