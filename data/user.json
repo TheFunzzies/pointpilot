@@ -1,1 +1,23 @@
-{"balances":[{"code":"amex","name":"Amex Membership Rewards","balance":160000,"transferable":true,"cpp":1.5,"ratio":1},{"code":"chase","name":"Chase Ultimate Rewards","balance":120000,"transferable":true,"cpp":1.5,"ratio":1},{"code":"aeroplan","name":"Aeroplan","balance":40000,"transferable":false,"cpp":1.6,"ratio":1}],"preferences":{"defaultCpp":1.5}}
+{
+  "balances": [
+    {"program":"Amex Membership Rewards","code":"amex","type":"bank","balance":160000,"cpp":1.6,"transferable":true},
+    {"program":"Chase Ultimate Rewards","code":"chase","type":"bank","balance":120000,"cpp":1.7,"transferable":true},
+    {"program":"Capital One Miles","code":"capitalone","type":"bank","balance":90000,"cpp":1.5,"transferable":true},
+    {"program":"Citi ThankYou","code":"citi","type":"bank","balance":50000,"cpp":1.5,"transferable":true},
+    {"program":"Bilt Rewards","code":"bilt","type":"bank","balance":35000,"cpp":1.7,"transferable":true},
+    {"program":"Wells Fargo Rewards","code":"wellsfargo","type":"bank","balance":20000,"cpp":1.3,"transferable":true},
+    {"program":"Air Canada Aeroplan","code":"aeroplan","type":"airline","balance":25000,"cpp":1.5,"transferable":false},
+    {"program":"United MileagePlus","code":"united","type":"airline","balance":10000,"cpp":1.3,"transferable":false},
+    {"program":"American AAdvantage","code":"american","type":"airline","balance":5000,"cpp":1.5,"transferable":false},
+    {"program":"World of Hyatt","code":"hyatt","type":"hotel","balance":30000,"cpp":1.8,"transferable":false},
+    {"program":"Hilton Honors","code":"hilton","type":"hotel","balance":0,"cpp":0.5,"transferable":false},
+    {"program":"Marriott Bonvoy","code":"marriott","type":"hotel","balance":12000,"cpp":0.7,"transferable":false},
+    {"program":"IHG One Rewards","code":"ihg","type":"hotel","balance":0,"cpp":0.5,"transferable":false}
+  ],
+  "preferences": {
+    "defaultCpp": 1.5,
+    "maxTransfers": 2,
+    "preferNonstop": false,
+    "preserveFlexiblePoints": true
+  }
+}

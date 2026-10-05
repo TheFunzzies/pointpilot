@@ -1,0 +1,148 @@
+{
+  "source": "Roame Transfer Partners Cheat Sheet",
+  "sourceUrl": "https://roame.travel/transfer-partners-cheat-sheet",
+  "lastUpdated": "2026-10-04",
+  "note": "Seeded from the current Roame snapshot. Transfer bonuses and terms can change; verify before moving points.",
+  "banks": {
+    "amex": "American Express Membership Rewards",
+    "bilt": "Bilt Rewards",
+    "capitalone": "Capital One Miles",
+    "chase": "Chase Ultimate Rewards",
+    "citi": "Citi ThankYou",
+    "wellsfargo": "Wells Fargo Rewards",
+    "marriott": "Marriott Bonvoy",
+    "hyatt": "World of Hyatt",
+    "ihg": "IHG One Rewards",
+    "accor": "Accor Live Limitless",
+    "choice": "Choice Privileges",
+    "brex": "Brex Rewards",
+    "ramp": "Ramp Rewards"
+  },
+  "programs": {
+    "american": {
+      "name": "American Airlines AAdvantage", "kind": "airline", "code": "AA",
+      "transfers": {
+        "citi": {"ratio": [1,1], "days": 0},
+        "marriott": {"ratio": [3,1], "days": 2},
+        "hyatt": {"ratio": [5,2], "days": 0},
+        "ihg": {"ratio": [5,1], "days": 17}
+      }
+    },
+    "alaska": {
+      "name": "Alaska Airlines Atmos Rewards", "kind": "airline", "code": "AS",
+      "transfers": {
+        "bilt": {"ratio": [1,1], "days": 1},
+        "marriott": {"ratio": [3,1], "days": 1},
+        "ihg": {"ratio": [5,1], "days": 17},
+        "brex": {"ratio": [5,1], "days": 5}
+      }
+    },
+    "ba": {
+      "name": "British Airways Executive Club (Avios)", "kind": "airline", "code": "BA",
+      "transfers": {
+        "amex": {"ratio": [1,1], "days": 0},
+        "bilt": {"ratio": [1,1], "days": 0},
+        "capitalone": {"ratio": [1,1], "days": 0, "bonusPct": 0.20, "bonusEnds": "2026-10-31"},
+        "chase": {"ratio": [1,1], "days": 0},
+        "wellsfargo": {"ratio": [1,1], "days": 0},
+        "marriott": {"ratio": [3,1], "days": 0},
+        "hyatt": {"ratio": [5,2], "days": 0},
+        "ihg": {"ratio": [5,1], "days": 17},
+        "choice": {"ratio": [5,1], "days": 5}
+      }
+    },
+    "cathay": {
+      "name": "Cathay Pacific Asia Miles", "kind": "airline", "code": "CX",
+      "transfers": {
+        "amex": {"ratio": [5,4], "days": 3}, "bilt": {"ratio": [1,1], "days": 0},
+        "capitalone": {"ratio": [1,1], "days": 3}, "citi": {"ratio": [1,1], "days": 0},
+        "wellsfargo": {"ratio": [1,1], "days": 0}, "marriott": {"ratio": [3,1], "days": 5}
+      }
+    },
+    "flyingblue": {
+      "name": "Air France/KLM Flying Blue", "kind": "airline", "code": "AF/KL",
+      "transfers": {
+        "amex": {"ratio": [1,1], "days": 4, "bonusPct": 0.25, "bonusEnds": "2026-10-31"},
+        "bilt": {"ratio": [1,1], "days": 0}, "capitalone": {"ratio": [1,1], "days": 0},
+        "chase": {"ratio": [1,1], "days": 0}, "citi": {"ratio": [1,1], "days": 0},
+        "wellsfargo": {"ratio": [1,1], "days": 0}, "marriott": {"ratio": [3,1], "days": 2},
+        "hyatt": {"ratio": [5,2], "days": 0}, "ihg": {"ratio": [5,1], "days": 17},
+        "accor": {"ratio": [1,1], "days": 42}
+      }
+    },
+    "aeroplan": {
+      "name": "Air Canada Aeroplan", "kind": "airline", "code": "AC",
+      "transfers": {
+        "amex": {"ratio": [1,1], "days": 0}, "bilt": {"ratio": [1,1], "days": 0},
+        "capitalone": {"ratio": [1,1], "days": 0}, "chase": {"ratio": [1,1], "days": 0},
+        "marriott": {"ratio": [3,1], "days": 0}, "ihg": {"ratio": [5,1], "days": 17},
+        "choice": {"ratio": [5,1], "days": 5}
+      }
+    },
+    "lifemiles": {
+      "name": "Avianca LifeMiles", "kind": "airline", "code": "AV",
+      "transfers": {
+        "amex": {"ratio": [1,1], "days": 0}, "bilt": {"ratio": [1,1], "days": 0},
+        "capitalone": {"ratio": [1,1], "days": 0}, "citi": {"ratio": [1,1], "days": 0, "bonusPct": 0.25, "bonusEnds": "2026-10-24"},
+        "wellsfargo": {"ratio": [1,1], "days": 0}, "marriott": {"ratio": [3,1], "days": 0},
+        "ihg": {"ratio": [5,1], "days": 17}
+      }
+    },
+    "singapore": {
+      "name": "Singapore Airlines KrisFlyer", "kind": "airline", "code": "SQ",
+      "transfers": {
+        "amex": {"ratio": [1,1], "days": 0}, "capitalone": {"ratio": [1,1], "days": 2},
+        "chase": {"ratio": [1,1], "days": 2}, "citi": {"ratio": [1,1], "days": 2},
+        "marriott": {"ratio": [3,1], "days": 0}, "hyatt": {"ratio": [5,2], "days": 0},
+        "ihg": {"ratio": [5,1], "days": 17}, "ramp": {"ratio": [1.5,1], "days": 0}
+      }
+    },
+    "qatar": {
+      "name": "Qatar Airways Privilege Club (Avios)", "kind": "airline", "code": "QR",
+      "transfers": {
+        "amex": {"ratio": [1,1], "days": 0}, "bilt": {"ratio": [1,1], "days": 0},
+        "capitalone": {"ratio": [1,1], "days": 0}, "citi": {"ratio": [1,1], "days": 1},
+        "marriott": {"ratio": [3,1], "days": 0}, "hyatt": {"ratio": [5,2], "days": 0},
+        "ihg": {"ratio": [5,1], "days": 17}
+      }
+    },
+    "emirates": {
+      "name": "Emirates Skywards", "kind": "airline", "code": "EK",
+      "transfers": {
+        "amex": {"ratio": [5,4], "days": 0}, "bilt": {"ratio": [1,1], "days": 0},
+        "capitalone": {"ratio": [1,0.75], "days": 0}, "citi": {"ratio": [1,0.8], "days": 0},
+        "marriott": {"ratio": [3,1], "days": 0}, "ramp": {"ratio": [1.5,1], "days": 1}
+      }
+    },
+    "united": {
+      "name": "United MileagePlus", "kind": "airline", "code": "UA",
+      "transfers": {
+        "bilt": {"ratio": [1,1], "days": 0}, "chase": {"ratio": [1,1], "days": 0},
+        "marriott": {"ratio": [3,1], "days": 0}, "hyatt": {"ratio": [5,2], "days": 0}, "ihg": {"ratio": [5,1], "days": 17}
+      }
+    },
+    "virginatlantic": {
+      "name": "Virgin Atlantic Flying Club", "kind": "airline", "code": "VS",
+      "transfers": {
+        "amex": {"ratio": [1,1], "days": 0}, "bilt": {"ratio": [1,1], "days": 0},
+        "capitalone": {"ratio": [1,1], "days": 0}, "chase": {"ratio": [1,1], "days": 0},
+        "citi": {"ratio": [1,1], "days": 0}, "wellsfargo": {"ratio": [1,1], "days": 0},
+        "marriott": {"ratio": [3,1], "days": 0}, "hyatt": {"ratio": [5,3], "days": 0}
+      }
+    },
+    "jetblue": {
+      "name": "JetBlue TrueBlue", "kind": "airline", "code": "B6",
+      "transfers": {
+        "amex": {"ratio": [5,4], "days": 0}, "capitalone": {"ratio": [1,0.6], "days": 0},
+        "chase": {"ratio": [1,1], "days": 0}, "citi": {"ratio": [1,1], "days": 0}, "wellsfargo": {"ratio": [1,1], "days": 0}
+      }
+    },
+    "hyatt": {"name":"World of Hyatt", "kind":"hotel", "code":"Hyatt", "transfers":{"bilt":{"ratio":[1,1],"days":0},"chase":{"ratio":[1,1],"days":0}}},
+    "hilton": {"name":"Hilton Honors", "kind":"hotel", "code":"Hilton", "transfers":{"amex":{"ratio":[1,2],"days":0,"bonusPct":0.30,"bonusEnds":"2026-10-31"},"bilt":{"ratio":[1,1],"days":0}}},
+    "ihg": {"name":"IHG One Rewards", "kind":"hotel", "code":"IHG", "transfers":{"bilt":{"ratio":[1,1],"days":0},"chase":{"ratio":[1,1],"days":0}}},
+    "marriott": {"name":"Marriott Bonvoy", "kind":"hotel", "code":"Marriott", "transfers":{"amex":{"ratio":[1,1],"days":0},"bilt":{"ratio":[1,1],"days":2},"chase":{"ratio":[1,1],"days":2,"bonusPct":0.70,"bonusEnds":"2026-10-31"},"ramp":{"ratio":[1.5,1],"days":0}}},
+    "choice": {"name":"Choice Privileges", "kind":"hotel", "code":"Choice", "transfers":{"amex":{"ratio":[1,1],"days":0},"capitalone":{"ratio":[1,1],"days":0},"citi":{"ratio":[1,1.5],"days":0},"wellsfargo":{"ratio":[1,2],"days":0}}},
+    "wyndham": {"name":"Wyndham Rewards", "kind":"hotel", "code":"Wyndham", "transfers":{"capitalone":{"ratio":[1,1],"days":0},"chase":{"ratio":[1,1],"days":0},"citi":{"ratio":[1,1],"days":0},"wellsfargo":{"ratio":[1,2],"days":0},"ramp":{"ratio":[1.5,1],"days":0}}},
+    "accor": {"name":"Accor Live Limitless", "kind":"hotel", "code":"ALL", "transfers":{"bilt":{"ratio":[3,2],"days":0},"capitalone":{"ratio":[2,1],"days":2},"citi":{"ratio":[2,1],"days":0}}}
+  }
+}

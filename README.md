@@ -12,4 +12,4 @@ PointPilot is a Windows 11 desktop travel-rewards optimizer. It combines your po
 - Local persistent user data
 - GitHub Releases + automatic application updates
 
-See README-WINDOWS.md for Windows installation, GitHub release setup, and update behavior.
+See `README-WINDOWS.md` for Windows installation, GitHub release setup, and update behavior.

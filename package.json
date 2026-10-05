@@ -16,20 +16,55 @@
     "release": "electron-builder --win nsis --publish always",
     "release:check": "node scripts/check-release.mjs"
   },
-  "engines": {"node": ">=22.12.0"},
-  "dependencies": {"electron-updater": "6.8.9"},
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.9"
+  },
   "main": "desktop/main.cjs",
-  "devDependencies": {"electron": "44.5.1", "electron-builder": "26.17.0"},
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.17.0"
+  },
   "build": {
     "appId": "com.pointpilot.desktop",
     "productName": "PointPilot",
     "asar": true,
-    "directories": {"output": "dist", "buildResources": "build"},
-    "files": ["**/*", "!dist{,/**}", "!README-DIRECT-SCRAPING.md"],
-    "win": {"target": [{"target": "nsis", "arch": ["x64"]}]},
-    "nsis": {"oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true, "createStartMenuShortcut": true, "shortcutName": "PointPilot"},
-    "publish": [{"provider": "github", "owner": "TheFunzzies", "repo": "pointpilot", "releaseType": "release", "publishAutoUpdate": true}]
-  },
-  "repository": {"type": "git", "url": "https://github.com/TheFunzzies/pointpilot.git"},
-  "homepage": "https://github.com/TheFunzzies/pointpilot"
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "**/*",
+      "!dist{,/**}",
+      "!README-DIRECT-SCRAPING.md"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "PointPilot-Setup-${version}.exe",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "PointPilot"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "releaseType": "release"
+      }
+    ]
+  }
 }

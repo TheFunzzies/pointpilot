@@ -17,13 +17,29 @@ The installer is created at `dist\PointPilot-Setup-0.5.0.exe`.
 
 The application uses `electron-updater` with GitHub Releases. Windows NSIS packages are supported by electron-updater, and electron-builder generates the `latest.yml` update metadata used by the updater.
 
-The repository is already configured for `TheFunzzies/pointpilot`. A tag such as `v0.5.0` starts `.github/workflows/release.yml`, which runs tests, builds the Windows NSIS installer, and publishes the assets to the GitHub Release using the repository's `GITHUB_TOKEN`.
+First create an empty GitHub repository named `pointpilot`, then from this folder run:
+
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass
+.\setup-github.ps1 -Owner YOUR_GITHUB_USERNAME -Repo pointpilot
+```
+
+Then push the initial commit and tag:
+
+```powershell
+git remote add origin https://github.com/YOUR_GITHUB_USERNAME/pointpilot.git
+git push -u origin main
+git tag v0.5.0
+git push origin v0.5.0
+```
+
+The tag starts `.github/workflows/release.yml`, which runs tests, builds the Windows NSIS installer, and publishes the assets to the GitHub Release using the repository's `GITHUB_TOKEN`.
 
 For later releases, bump `version` in `package.json`, commit, tag (for example `v0.6.0`), and push the tag. Installed PointPilot copies will check the GitHub release feed for a newer version.
 
 ## Update behavior
 
-PointPilot checks for updates shortly after startup. The user can also select **PointPilot → Check for Updates**.
+PointPilot checks for updates shortly after startup. The user can also select **PointPilot → Check for Updates** or use **Data & System → Software Updates**.
 
 When an update is available, PointPilot lets the user download it and then install/restart. Existing user data is stored in the Electron user-data directory and is not replaced by an application update.
 
