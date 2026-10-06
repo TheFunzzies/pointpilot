@@ -232,7 +232,7 @@ async function runSearch() {
       const q = currentHotelQuery();
       state.lastHotelQuery = q;
       const r = await api('/api/search/hotels', { method: 'POST', body: q });
-      renderHotels(r);
+      renderHotels(r); saveRecent();
       const src = { fetched: 'live rooms.aero data', 'recent-cache': 'rooms.aero data from the last hour', 'not-configured': 'manually entered hotels only', error: 'the local cache (rooms.aero failed)' }[r.dataStatus.api] || 'local data';
       msg.textContent = `${r.rows.length} hotel award(s) in ${r.query.destination} for ${r.nights} night(s), using ${src}.`;
       return;
@@ -242,7 +242,7 @@ async function runSearch() {
       const q = { ...currentQuery(), useGoogle: $('useGoogle').checked };
       state.lastCashQuery = q;
       const r = await api('/api/cash/search', { method: 'POST', body: q });
-      renderCash(r);
+      renderCash(r); saveRecent();
       msg.textContent = `${r.fares.length} fare(s) for ${r.query.origins.join(', ')} → ${r.query.destinations.join(', ')}${r.google ? ' · Google Flights checked' : ''}.`;
       return;
     }
@@ -250,7 +250,7 @@ async function runSearch() {
     const q = currentQuery();
     state.lastQuery = q;
     const r = await api('/api/search/trip', { method: 'POST', body: q });
-    renderFlightResults(r);
+    renderFlightResults(r); saveRecent();
     const src = { fetched: 'live seats.aero data', 'recent-cache': 'seats.aero data from the last hour', 'not-configured': 'manually entered awards only', error: 'the local cache (seats.aero failed)', skipped: 'local data' }[r.dataStatus.api] || 'local data';
     msg.textContent = `Searched ${r.query.origins.join(', ')} → ${r.query.destinations.join(', ')} using ${src}.`;
   } catch (e) {
@@ -413,6 +413,13 @@ const dayKey = o => o.flight?.depart?.date || o.date;
 const median = a => { const s = a.filter(Number.isFinite).sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; };
 const kpts = n => (n >= 100000 ? `${Math.round(n / 1000)}k` : `${(n / 1000).toFixed(n % 1000 ? 1 : 0)}k`);
 
+/** "Book with Flying Blue ↗": seats.aero's deep link when we have one, else the program's site. */
+function bookLink(o) {
+  const deep = (o.bookingLinks || []).find(l => l.primary) || (o.bookingLinks || [])[0];
+  const url = safeUrl(deep?.url) || safeUrl(state.programs.find(p => p.id === o.program)?.bookingUrl);
+  return url ? `<a class="btn small" href="${esc(url)}" target="_blank" rel="noreferrer" style="margin-left:auto">Book with ${esc(String(o.programName || '').replace(/^(Air Canada |United |American Airlines |Air France\/KLM )/, ''))} ↗</a>` : '';
+}
+
 const taxText = o => (o.taxesMissing ? (o.totalTaxes != null ? `+ ≈${money(o.totalTaxes)} est.` : '+ taxes ?') : o.totalTaxes != null ? `+ ${money(o.totalTaxes)}` : '+ taxes ?');
 
 // Warnings worth seeing at a glance: much longer than typical, tight/long layovers, mixed cabin, price outliers.
@@ -470,7 +477,7 @@ function renderColumns() {
     const days = [...new Set(all.map(dayKey))].sort();
     if (!award.day[leg] || !days.includes(award.day[leg])) award.day[leg] = sel ? dayKey(sel) : days[0];
     const open = award.day[leg];
-    const dayCards = days.map(d => {
+    const dayCard = d => {
       const opts = all.filter(o => dayKey(o) === d);
       const pts = opts.map(o => o.mileageCost);
       const lo = Math.min(...pts), hi = Math.max(...pts);
@@ -485,14 +492,29 @@ function renderColumns() {
         <span class="rng">${lo === hi ? fmt(lo) : `${kpts(lo)}–${kpts(hi)}`} pts</span>
         <small>${known ? `${opts.length} flight${opts.length > 1 ? 's' : ''}` : `${programs} program${programs > 1 ? 's' : ''}`}${best >= 3 ? ` · ${'★'.repeat(best - 2)}` : ''}${known && matches < opts.length ? ` · ${matches} match` : ''}</small>
         ${productHits ? `<small style="color:var(--green);font-weight:700">✓ ${productHits} ${esc(hunt.product)}</small>` : ''}</button>`;
-    }).join('');
+    };
+    // Wide date windows read better as a calendar (like seats.aero's availability calendar).
+    const win = leg === 'Outbound' ? q.out : q.back;
+    const span = win ? Math.round((Date.parse(win.end) - Date.parse(win.start)) / 86400000) + 1 : 0;
+    const fitsWindow = win && days.every(d => d >= win.start && d <= win.end);
+    let dayCards;
+    if (fitsWindow && span > 7 && span <= 42) {
+      const lead = new Date(`${win.start}T00:00:00Z`).getUTCDay();
+      const cells = [...Array(lead).fill('<div></div>')];
+      for (let i = 0; i < span; i++) {
+        const d = addDays(win.start, i);
+        cells.push(days.includes(d) ? dayCard(d) : `<div class="empty-day">${new Date(`${d}T00:00:00Z`).getUTCDate()}</div>`);
+      }
+      dayCards = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(x => `<div class="dow">${x}</div>`).join('') + cells.join('');
+    } else dayCards = days.map(dayCard).join('');
+    const calendar = Boolean(fitsWindow && span > 7 && span <= 42);
     const dayOpts = all.filter(o => dayKey(o) === open);
     const loading = dayOpts.some(o => !o.flight && o.availabilityId && award.loading?.has(o.id));
     const list = filteredOptions(leg).filter(o => dayKey(o) === open);
     const hidden = dayOpts.length - list.length;
     const pinned = sel && dayKey(sel) === open && !list.includes(sel) ? `<div class="meta" style="margin-bottom:6px">Your selection is hidden by the filters:</div>${optCard(sel, leg)}` : '';
     col.innerHTML = `<h3>${leg === 'Outbound' ? '1. Outbound' : '2. Return'} <small>${esc(route)} · ${days.length} day${days.length > 1 ? 's' : ''}</small></h3>
-      <div class="days">${dayCards}</div>
+      <div class="days${calendar ? ' calendar' : ''}">${dayCards}</div>
       <div class="daylist-head"><strong>${esc(dayLabel(open))}: choose one flight</strong><span class="muted">${list.length} shown${hidden ? ` · ${hidden} hidden by filters` : ''}</span></div>
       ${loading ? '<div class="card empty">Loading every flight for this day…</div>' : ''}
       ${pinned}<div class="opts">${list.slice(0, award.show[leg]).map(o => optCard(o, leg)).join('') || (loading ? '' : '<div class="card empty">No flights match these filters on this day.</div>')}</div>
@@ -517,7 +539,7 @@ function summaryLeg(o, label) {
   return `<div class="summary-leg"><div class="lbl">${label} · ${esc(dayLabel(f?.depart?.date || o.date))}</div>
     <div class="times">${f ? `${t12(f.depart?.time)} ${esc(f.origin)} → ${t12(f.arrive?.time)} ${esc(f.destination)}${plusDays(f.arriveDayOffset)}` : `${esc(o.origin)} → ${esc(o.destination)}`}</div>
     <div class="sub">${f ? `${dur(f.totalDurationMin)} · ${f.stops === 0 ? 'Nonstop' : `via ${f.layovers.map(l => esc(l.airport)).join(', ')}`} · ${esc(f.flightNumbers.join(' / '))}` : 'Flight times not available'}</div>
-    <div class="meta2" style="margin-top:6px">${seatChip(f?.product)}<span>${esc(o.programName)} · ${fmt(o.mileageCost)} pts ${taxText(o)} / person</span>${flagsFor(o, o.leg === 'Return' ? 'Return' : 'Outbound')}</div></div>`;
+    <div class="meta2" style="margin-top:6px">${seatChip(f?.product)}<span>${esc(o.programName)} · ${fmt(o.mileageCost)} pts ${taxText(o)} / person</span>${bookLink(o)}${flagsFor(o, o.leg === 'Return' ? 'Return' : 'Outbound')}</div></div>`;
 }
 
 async function renderAwardSummary() {
@@ -1152,19 +1174,37 @@ function cashFareTimes(f) {
 
 function positioningSlot(p, dir) {
   const need = p.needs[dir];
-  if (!need) return '';
+  if (!need) {
+    // Say why there's no connecting flight instead of silently leaving the step out.
+    const award = p.flights[dir];
+    const state_ = p.connections?.[dir];
+    if (!award || state_ === 'no-flight') return '';
+    const airport = dir === 'outbound' ? award.origin : award.destination;
+    const text = state_ === 'home'
+      ? (dir === 'outbound' ? `Your award departs from <strong>${esc(airport)}</strong>, your home airport, so no connecting flight is needed.` : `Your award lands at <strong>${esc(airport)}</strong>, your home airport, so no connecting flight is needed.`)
+      : `Set your home airport above to plan a flight ${dir === 'outbound' ? `to ${esc(airport)}` : `home from ${esc(airport)}`}.`;
+    return `<div class="tl-item"><div class="tl-dot"><svg class="icon"><use href="#i-check"/></svg></div><div class="card tl-card">
+      <h4>${dir === 'outbound' ? `Start at ${esc(airport)}` : `Arrive home at ${esc(airport)}`} ${state_ === 'home' ? '<span class="tag">✓ NO CONNECTION NEEDED</span>' : ''}</h4><p>${text}</p></div></div>`;
+  }
   const chosen = p.positioning[dir];
   const limit = dir === 'outbound'
     ? (need.latestArrivalLocal ? `Arrive ${need.to} by <strong>${t12(need.latestArrivalLocal.time)} ${esc(dayLabel(need.latestArrivalLocal.date))}</strong> (${p.buffers.outboundHours}h before your award flight).` : 'Arrive with plenty of time before your award flight.')
     : (need.earliestDepartureLocal ? `Leave ${need.from} after <strong>${t12(need.earliestDepartureLocal.time)} ${esc(dayLabel(need.earliestDepartureLocal.date))}</strong> (${p.buffers.returnHours}h after your award lands).` : 'Leave with plenty of time after your award lands.');
   const title = dir === 'outbound' ? `Get from ${need.from} to ${need.to}` : `Get home from ${need.from} to ${need.to}`;
   const s = tb.search[dir];
-  const optRow = (o, kind) => `<div class="opt" style="cursor:default"><div class="row1"><div><div class="times" style="font-size:15px">${kind === 'award' ? `${t12(o.flight.depart?.time)} → ${t12(o.flight.arrive?.time)}` : cashFareTimes(o)}</div>
-      <div class="meta">${kind === 'award' ? `${esc(o.programName)} award · ${esc(o.flight.flightNumbers.join(' / '))} · ${dur(o.flight.totalDurationMin)}` : `${esc(o.airlines || o.airline || '')} ${esc(o.flightNumbers || o.flightNumber || '')} · ${o.stops === 0 ? 'nonstop' : `${o.stops ?? '?'} stop(s)`}${o.durationMin ? ` · ${dur(o.durationMin)}` : ''}`}</div>
-      <div class="meta">${o.fits === true ? '<span class="tag">FITS YOUR CONNECTION</span>' : o.fits === false ? '<span class="tag warn">TOO TIGHT / TOO LATE</span>' : '<span class="tag muted">TIME UNKNOWN</span>'}</div></div>
-      <div class="pts">${kind === 'award' ? `${fmt(o.mileageCost)} pts` : money(o.price)}<div class="meta" style="font-weight:500">per person</div></div></div>
-      <div class="btnrow" style="margin-top:6px"><button class="btn small primary" data-tb="pick" data-dir="${dir}" data-kind="${kind}" data-i="${kind === 'award' ? s.awards.indexOf(o) : s.cash.indexOf(o)}">Use this flight</button></div></div>`;
-  const results = s ? `<div class="opts" style="margin-top:10px">${warningsBox(s.dataStatus.warnings)}${s.cash.map(o => optRow(o, 'cash')).join('')}${s.awards.map(o => optRow(o, 'award')).join('')}${!s.cash.length && !s.awards.length ? '<div class="muted">No flights found for this date.</div>' : ''}</div>` : '';
+  // Compact one-line rows: time, flight, stops, duration, fit, price, button.
+  const optRow = (o, kind) => `<div class="pos-row${o.fits === false ? ' dim' : ''}">
+      <span class="pos-time">${kind === 'award' ? `${t12(o.flight.depart?.time)} → ${t12(o.flight.arrive?.time)}` : cashFareTimes(o)}</span>
+      <span class="pos-meta">${kind === 'award' ? `${esc(o.programName)} award · ${esc(o.flight.flightNumbers.join(' / '))} · ${dur(o.flight.totalDurationMin)}` : `${esc(o.airlines || o.airline || '')} ${esc(o.flightNumbers || o.flightNumber || '')} · ${o.stops === 0 ? 'nonstop' : `${o.stops ?? '?'} stop(s)`}${o.durationMin ? ` · ${dur(o.durationMin)}` : ''}`}</span>
+      <span>${o.fits === true ? '<span class="tag">FITS</span>' : o.fits === false ? '<span class="tag warn">TOO TIGHT</span>' : '<span class="tag muted">TIME ?</span>'}</span>
+      <span class="pos-price">${kind === 'award' ? `${fmt(o.mileageCost)} pts` : money(o.price)}</span>
+      <button class="btn small primary" data-tb="pick" data-dir="${dir}" data-kind="${kind}" data-i="${kind === 'award' ? s.awards.indexOf(o) : s.cash.indexOf(o)}">Use</button></div>`;
+  const shown = tb.showAll?.[dir] ? 99 : 6;
+  const results = s ? `<div style="margin-top:10px">${warningsBox(s.dataStatus.warnings)}
+      ${s.cash.length ? `<div class="pos-head">Cash · ${s.counts?.fitting ?? s.cash.filter(f => f.fits).length} of ${s.counts?.cash ?? s.cash.length} fit your connection · per person</div>${s.cash.slice(0, shown).map(o => optRow(o, 'cash')).join('')}` : ''}
+      ${s.cash.length > shown ? `<button class="btn small ghost" data-tb="more" data-dir="${dir}">Show all ${s.cash.length}</button>` : ''}
+      ${s.awards.length ? `<div class="pos-head">Award options (economy)</div>${s.awards.slice(0, shown).map(o => optRow(o, 'award')).join('')}` : ''}
+      ${!s.cash.length && !s.awards.length ? '<div class="muted">No flights found for this date.</div>' : ''}</div>` : '';
   return `<div class="tl-item"><div class="tl-dot${chosen ? '' : ' todo'}"><svg class="icon"><use href="#i-plane"/></svg></div><div class="card tl-card">
     <h4>${esc(title)} ${chosen ? '<span class="tag">BOOKED IN PLAN</span>' : '<span class="tag warn">NEEDED</span>'}</h4>
     <p>${limit}</p>
@@ -1181,8 +1221,8 @@ function renderBuilder(p) {
   const out = p.flights.outbound, ret = p.flights.return;
   const awardItem = (o, dir) => o ? `<div class="tl-item"><div class="tl-dot"><svg class="icon"><use href="#i-plane"/></svg></div><div class="card tl-card">
       <h4>${dir === 'outbound' ? 'Outbound' : 'Return'} award · ${esc(o.programName)} ${seatChip(o.flight?.product)}</h4><p>${legDesc(o)}</p>
-      <p>${fmt(o.mileageCost)} pts${o.totalTaxes != null ? ` + ${money(o.totalTaxes)}` : ''} per person × ${p.travelers} · ${esc(o.cabin)}</p>
-      <div class="btnrow" style="margin-top:4px"><button class="btn small ghost" data-tb="remove-flight" data-dir="${dir}">Remove</button></div></div></div>`
+      <p>${fmt(o.mileageCost)} pts ${taxText(o)} per person × ${p.travelers} · ${esc(o.cabin)}${o.taxesMissing ? ' · <span class="flag">TAXES NOT REPORTED</span>' : ''}</p>
+      <div class="btnrow" style="margin-top:4px">${bookLink(o)}<button class="btn small ghost" data-tb="remove-flight" data-dir="${dir}">Remove</button></div></div></div>`
     : `<div class="tl-item"><div class="tl-dot todo"><svg class="icon"><use href="#i-plane"/></svg></div><div class="card tl-card"><h4>${dir === 'outbound' ? 'Outbound' : 'Return'} award flight</h4><p>Not chosen yet. Search in the Trip Optimizer, pick flights, then "Add to Trip Builder".</p><div class="btnrow" style="margin-top:4px"><button class="btn small" data-tb="goto" data-view="search">Open Trip Optimizer</button></div></div></div>`;
   const hotels = p.stays.length ? p.stays.map(s => `<div class="tl-item"><div class="tl-dot"><svg class="icon"><use href="#i-bed"/></svg></div><div class="card tl-card">
       <h4>${esc(s.name)} ${s.category ? `<span class="cat">${esc(s.programName.replace(/^World of /, ''))} Cat ${esc(s.category)}</span>` : ''}</h4>
@@ -1207,7 +1247,9 @@ $('view-builder').addEventListener('click', async e => {
     if (b.dataset.tb === 'goto') { showView(b.dataset.view); if (b.dataset.product) document.querySelector(`button[data-product="${b.dataset.product}"]`)?.click(); return; }
     if (b.dataset.tb === 'remove-flight') return renderBuilder(await api(`/api/trip-plan/flights/${dir}`, { method: 'DELETE', body: {} }));
     if (b.dataset.tb === 'unpick') { tb.search[dir] = null; return renderBuilder(await api(`/api/trip-plan/positioning/${dir}`, { method: 'DELETE', body: {} })); }
+    if (b.dataset.tb === 'more') { tb.showAll = { ...(tb.showAll || {}), [dir]: true }; return renderBuilder(tb.plan); }
     if (b.dataset.tb === 'search') {
+      tb.showAll = { ...(tb.showAll || {}), [dir]: false };
       busy(b, true, 'Searching…');
       tb.search[dir] = await api('/api/trip-plan/positioning/search', { method: 'POST', body: { direction: dir, date: b.dataset.date } });
       return renderBuilder(tb.plan);
@@ -1294,5 +1336,33 @@ document.querySelectorAll('button[data-product]').forEach(b => {
 });
 
 $('searchBtn').onclick = runSearch;
+
+// ---------- recent searches + Enter to search ----------
+const RECENT_KEY = 'pointpilot.recentSearches';
+const FIELDS = ['destination', 'origins', 'travelers', 'cabin', 'dateFrom', 'dateTo', 'flex', 'rank', 'productHunt'];
+function readRecents() { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; } }
+function saveRecent() {
+  const entry = { product: state.product, ...Object.fromEntries(FIELDS.map(f => [f, $(f).value])) };
+  const key = JSON.stringify(entry);
+  const list = [entry, ...readRecents().filter(e => JSON.stringify(e) !== key)].slice(0, 6);
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list)); } catch { /* storage unavailable */ }
+  renderRecents();
+}
+function renderRecents() {
+  const list = readRecents();
+  $('recents').hidden = !list.length;
+  $('recents').innerHTML = list.length ? `Recent: ${list.map((e, i) => `<button data-recent="${i}" title="${esc(e.origins)} → ${esc(e.destination)}">${e.product === 'hotels' ? '🏨' : e.product === 'cash' ? '$' : '✈'} ${esc(e.product === 'hotels' ? e.destination : `${e.origins} → ${e.destination}`)} · ${esc(dayLabel(e.dateFrom))}${e.productHunt ? ` · ${esc(e.productHunt.split('|')[2])}` : ''}</button>`).join('')}` : '';
+}
+$('recents').addEventListener('click', e => {
+  const b = e.target.closest('[data-recent]'); if (!b) return;
+  const r = readRecents()[Number(b.dataset.recent)]; if (!r) return;
+  document.querySelector(`button[data-product="${r.product || 'flights'}"]`)?.click();
+  for (const f of FIELDS) if (r[f] != null && $(f)) $(f).value = r[f];
+  runSearch();
+});
+document.querySelector('#view-search .searchbox').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); runSearch(); }
+});
+renderRecents();
 initDates();
 load();
