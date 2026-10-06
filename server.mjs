@@ -9,7 +9,7 @@ import { loadHistory, recordAwards, routeHistoryStats, getSources } from './lib/
 import { saveAwards, normalizeFlightAward, normalizeHotelAward } from './lib/awards.mjs';
 import { searchTrip, searchHotels } from './lib/search.mjs';
 import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, setNotifier } from './lib/monitor.mjs';
-import { loadUser, saveUser, publicSettings, updateSettings, getSettings, apiUsage } from './lib/settings.mjs';
+import { loadUser, saveUser, exampleUser, publicSettings, updateSettings, getSettings, apiUsage } from './lib/settings.mjs';
 import { transferData, loadCachedReference, refreshReference, referenceStatus } from './lib/reference.mjs';
 import { PlaceError } from './lib/places.mjs';
 
@@ -82,6 +82,7 @@ function makeHandler(getPort) {
         return send(res, 200, { ok: true, version: VERSION, awardObservations: h.length, dataDir: dataDir(), liveData: s.seatsAeroApiKey ? 'seats.aero' : 'manual-only', apiCallsToday: usage.calls, roomsCallsToday: usage.roomsCalls, reference: referenceStatus() });
       }
       if (m === 'GET' && p === '/api/user') return send(res, 200, await loadUser());
+      if (m === 'GET' && p === '/api/user/example') return send(res, 200, exampleUser());
       if (m === 'PUT' && p === '/api/user') return send(res, 200, await saveUser(await body(req)));
       if (m === 'GET' && p === '/api/settings') return send(res, 200, await publicSettings());
       if (m === 'PUT' && p === '/api/settings') return send(res, 200, await updateSettings(await body(req)));

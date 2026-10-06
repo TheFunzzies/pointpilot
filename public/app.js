@@ -59,10 +59,10 @@ async function load() {
 async function refreshHealth() {
   const h = await api('/api/health');
   const live = h.liveData === 'seats.aero';
-  $('statusPill').textContent = live ? '● Live data: seats.aero' : '● Manual data only';
+  $('statusPill').innerHTML = `<span class="dot" style="background:${live ? '#10b981' : '#f59e0b'}"></span>${live ? 'Live data: seats.aero' : 'Manual data only'}`;
   $('modeLabel').textContent = live ? 'Live award data' : 'Manual data only';
   $('modeHint').textContent = live ? `Flights + hotels · ${h.apiCallsToday} flight / ${h.roomsCallsToday} hotel API calls today` : 'Add a seats.aero key in Data & System for live availability.';
-  $('liveDot').style.background = live ? '#19835b' : '#e0a434';
+  $('liveDot').style.background = live ? '#10b981' : '#f59e0b';
   $('sysHistory').textContent = `${fmt(h.awardObservations)} observations`;
   $('sysTransfer').textContent = `Updated ${h.reference.lastUpdated} (${h.reference.origin})`;
   $('apiCalls').textContent = `${fmt(h.apiCallsToday)} flights · ${fmt(h.roomsCallsToday)} hotels`;
@@ -88,38 +88,100 @@ function renderKPIs() {
   $('kpiAlerts').textContent = state.alerts.filter(a => a.active !== false).length;
 }
 
+// Typical valuations (¢/pt) used as the starting value when a program is added. Users can edit them.
+const DEFAULT_CPP = {
+  amex: 1.6, chase: 1.6, citi: 1.5, capitalone: 1.5, bilt: 1.6, wellsfargo: 1.3, brex: 1.3, ramp: 1.3,
+  hyatt: 1.6, hilton: 0.5, marriott: 0.7, ihg: 0.5, choice: 0.6, wyndham: 0.8, accor: 2.0, iprefer: 0.5,
+  american: 1.5, united: 1.2, delta: 1.1, alaska: 1.4, southwest: 1.3, jetblue: 1.3, aeroplan: 1.4, flyingblue: 1.3
+};
+const WALLET_GROUPS = [
+  { kind: 'bank', title: 'Bank & card points', icon: 'i-bank', empty: 'Add Amex, Chase, Citi, Capital One, Bilt and other card points. These can be transferred to airline and hotel partners.' },
+  { kind: 'airline', title: 'Airline miles', icon: 'i-plane', empty: 'Add miles you already hold in airline programs. They are used before transferring bank points.' },
+  { kind: 'hotel', title: 'Hotel points', icon: 'i-bed', empty: 'Add hotel program balances. Marriott and others can also transfer to airlines.' }
+];
+const pointValue = b => (Number(b.balance) || 0) * (Number(b.cpp) || 0) / 100;
+
+function renderWalletSummary() {
+  const b = state.user.balances;
+  $('wTotal').textContent = fmt(b.reduce((s, x) => s + (Number(x.balance) || 0), 0));
+  $('wPrograms').textContent = `${b.length} program${b.length === 1 ? '' : 's'}`;
+  $('wValue').textContent = money(b.reduce((s, x) => s + pointValue(x), 0));
+  $('wFlex').textContent = fmt(b.filter(x => x.type === 'bank').reduce((s, x) => s + (Number(x.balance) || 0), 0));
+  for (const g of WALLET_GROUPS) {
+    const el = document.querySelector(`[data-group-total="${g.kind}"]`);
+    if (!el) continue;
+    const rows = b.filter(x => x.type === g.kind);
+    el.textContent = rows.length ? `${fmt(rows.reduce((s, x) => s + (Number(x.balance) || 0), 0))} pts · ${money(rows.reduce((s, x) => s + pointValue(x), 0))}` : '';
+  }
+  document.querySelectorAll('[data-value-for]').forEach(el => { const x = b[Number(el.dataset.valueFor)]; if (x) el.textContent = money(pointValue(x)); });
+}
+
 function renderWallet() {
-  const rows = state.user.balances;
-  $('walletTable').innerHTML = rows.map((b, i) => `<tr>
-    <td><strong>${esc(b.program)}</strong><br><span class="muted">${esc(b.code)}</span></td>
-    <td>${esc(b.type)}</td>
-    <td><input class="inputnum" data-i="${i}" data-k="balance" type="number" min="0" value="${esc(b.balance)}"></td>
-    <td><input class="inputnum" data-i="${i}" data-k="cpp" type="number" min="0" step="0.05" value="${esc(b.cpp)}"></td>
-    <td><button class="btn small" data-remove="${i}">Remove</button></td></tr>`).join('');
-  const have = new Set(rows.map(b => b.code));
-  $('addProgram').innerHTML = state.programs.filter(p => !have.has(p.id)).map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.kind)})</option>`).join('');
+  const balances = state.user.balances;
+  const have = new Set(balances.map(b => b.code));
+  $('walletGroups').innerHTML = WALLET_GROUPS.map(g => {
+    const rows = balances.map((b, i) => ({ b, i })).filter(({ b }) => b.type === g.kind);
+    const options = state.programs.filter(p => p.kind === g.kind && !have.has(p.id)).sort((a, b) => a.name.localeCompare(b.name));
+    return `<div class="card wallet-group">
+      <header><h3><span class="chip"><svg class="icon"><use href="#${g.icon}"/></svg></span>${esc(g.title)}</h3><small data-group-total="${g.kind}"></small></header>
+      ${rows.length ? `<div class="wallet-head"><span>Program</span><span style="text-align:right">Balance</span><span style="text-align:right">Value ¢/pt</span><span style="text-align:right">Worth</span><span></span></div>` : `<div class="wallet-empty">${esc(g.empty)}</div>`}
+      ${rows.map(({ b, i }) => `<div class="wallet-row">
+        <div class="name">${esc(b.program)}</div>
+        <input type="number" min="0" step="1000" inputmode="numeric" aria-label="${esc(b.program)} balance" data-i="${i}" data-k="balance" value="${esc(b.balance)}">
+        <input type="number" min="0" step="0.05" aria-label="${esc(b.program)} value in cents per point" data-i="${i}" data-k="cpp" value="${esc(b.cpp)}">
+        <span class="value" data-value-for="${i}">${money(pointValue(b))}</span>
+        <button class="btn ghost icon-only" title="Remove ${esc(b.program)}" aria-label="Remove ${esc(b.program)}" data-remove="${i}"><svg class="icon"><use href="#i-x"/></svg></button>
+      </div>`).join('')}
+      ${options.length ? `<div class="wallet-add"><select aria-label="Add ${esc(g.title)}" data-add-select="${g.kind}"><option value="">Add a program…</option>${options.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select><button class="btn small" data-add="${g.kind}"><svg class="icon"><use href="#i-plus"/></svg>Add</button></div>` : ''}
+    </div>`;
+  }).join('') + (balances.length ? '' : '<div class="note">Just exploring? <button class="btn small" data-action="example-wallet">Load example balances</button></div>');
   const prefs = { maxTransfers: 3, maxTransferDays: 3, defaultCpp: 1.5, preferNonstop: false, ...state.user.preferences };
   $('prefMaxTransfers').value = prefs.maxTransfers;
   $('prefMaxDays').value = prefs.maxTransferDays;
   $('prefDefaultCpp').value = prefs.defaultCpp;
   $('prefNonstop').value = String(Boolean(prefs.preferNonstop));
+  renderWalletSummary();
 }
 
-$('walletTable').addEventListener('input', e => {
+// Wallet changes save automatically (debounced) so balances are never lost.
+let walletTimer = null;
+function setWalletState(text, cls = '') { const el = $('walletState'); el.textContent = text; el.className = `save-state ${cls}`; }
+function queueWalletSave() {
+  setWalletState('Saving…');
+  clearTimeout(walletTimer);
+  walletTimer = setTimeout(async () => {
+    try {
+      const saved = await api('/api/user', { method: 'PUT', body: state.user });
+      state.user.balances.forEach((b, i) => { if (saved.balances[i]) b.type = saved.balances[i].type; });
+      setWalletState('✓ All changes saved', 'saved');
+    } catch (e) { setWalletState(`Not saved: ${e.message}`, 'error'); }
+  }, 600);
+}
+
+$('walletGroups').addEventListener('input', e => {
   const t = e.target; if (!t.dataset.k) return;
-  state.user.balances[Number(t.dataset.i)][t.dataset.k] = Number(t.value) || 0;
-  renderKPIs();
+  state.user.balances[Number(t.dataset.i)][t.dataset.k] = Math.max(0, Number(t.value) || 0);
+  renderWalletSummary(); renderKPIs(); queueWalletSave();
 });
-$('walletTable').addEventListener('click', e => {
-  const i = e.target.dataset.remove; if (i == null) return;
-  state.user.balances.splice(Number(i), 1); renderWallet(); renderKPIs();
+$('walletGroups').addEventListener('click', async e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  if (btn.dataset.remove != null) {
+    const [removed] = state.user.balances.splice(Number(btn.dataset.remove), 1);
+    renderWallet(); renderKPIs(); queueWalletSave(); toast(`Removed ${removed.program}`);
+  } else if (btn.dataset.add) {
+    const id = document.querySelector(`[data-add-select="${btn.dataset.add}"]`).value;
+    const p = state.programs.find(x => x.id === id);
+    if (!p) return toast('Choose a program to add');
+    state.user.balances.push({ program: p.name, code: p.id, type: p.kind, balance: 0, cpp: DEFAULT_CPP[p.id] ?? (p.kind === 'hotel' ? 0.6 : p.kind === 'bank' ? 1.5 : 1.3), transferable: p.kind === 'bank' });
+    renderWallet(); renderKPIs(); queueWalletSave();
+    const input = document.querySelector(`#walletGroups input[data-k="balance"][data-i="${state.user.balances.length - 1}"]`);
+    input?.focus(); input?.select();
+  } else if (btn.dataset.action === 'example-wallet') {
+    state.user = await api('/api/user/example');
+    renderWallet(); renderKPIs(); queueWalletSave();
+  }
 });
-$('addProgramBtn').onclick = () => {
-  const p = state.programs.find(x => x.id === $('addProgram').value); if (!p) return;
-  state.user.balances.push({ program: p.name, code: p.id, type: p.kind, balance: 0, cpp: p.kind === 'hotel' ? 0.6 : 1.4, transferable: p.kind === 'bank' });
-  renderWallet();
-};
-$('saveWallet').onclick = async () => {
+['prefMaxTransfers', 'prefMaxDays', 'prefDefaultCpp', 'prefNonstop'].forEach(id => $(id).addEventListener('change', () => {
   state.user.preferences = {
     ...state.user.preferences,
     maxTransfers: Math.max(1, Number($('prefMaxTransfers').value) || 3),
@@ -127,9 +189,8 @@ $('saveWallet').onclick = async () => {
     defaultCpp: Math.max(0, Number($('prefDefaultCpp').value) || 1.5),
     preferNonstop: $('prefNonstop').value === 'true'
   };
-  try { state.user = await api('/api/user', { method: 'PUT', body: state.user }); renderWallet(); renderKPIs(); toast('Wallet saved'); }
-  catch (e) { toast(e.message); }
-};
+  queueWalletSave();
+}));
 
 // ---------- search ----------
 function currentQuery() {

@@ -24,6 +24,17 @@ test('cross-site requests are refused', async () => {
   assert.equal(r3.status, 200);
 });
 
+test('new users start with an empty wallet; example balances are opt-in and saveable', async () => {
+  const fresh = await (await fetch(base + '/api/user')).json();
+  assert.equal(fresh.balances.length, 0);
+  const example = await (await fetch(base + '/api/user/example')).json();
+  assert.ok(example.balances.some(b => b.type === 'bank') && example.balances.some(b => b.type === 'airline') && example.balances.some(b => b.type === 'hotel'));
+  const saved = await (await json('PUT', '/api/user', example)).json();
+  assert.equal(saved.balances.length, example.balances.length);
+  const bad = await json('PUT', '/api/user', { balances: [{ program: 'Not A Real Program', balance: 5 }] });
+  assert.equal(bad.status, 400);
+});
+
 test('manual awards flow through search and the optimizer end to end', async () => {
   const out = inDays(120), back = inDays(132);
   for (const a of [

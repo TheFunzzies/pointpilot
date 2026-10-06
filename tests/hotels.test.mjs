@@ -6,7 +6,8 @@ import path from 'node:path';
 
 process.env.POINTPILOT_DATA_DIR = mkdtempSync(path.join(os.tmpdir(), 'pointpilot-hotels-'));
 const { mapHotelResult, searchRoomsAero } = await import('../lib/roomsaero.mjs');
-const { updateSettings, apiUsage } = await import('../lib/settings.mjs');
+const { updateSettings, apiUsage, saveUser, exampleUser } = await import('../lib/settings.mjs');
+await saveUser(exampleUser());
 const { searchHotels } = await import('../lib/search.mjs');
 const { createAlert, runMonitor, setNotifier } = await import('../lib/monitor.mjs');
 
