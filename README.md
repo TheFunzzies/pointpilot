@@ -62,6 +62,8 @@ The release fails early if the tag doesn't match `package.json`, or if the lockf
 ## Notes and limits
 
 - seats.aero personal keys are for **non-commercial use** and allow about 1,000 calls a day. PointPilot reuses a result for the same search for 60 minutes (configurable) and shows the day's call count.
+- Award flight details (local times, layovers, aircraft, booking links) come from seats.aero's per-award trip data, loaded automatically for the recommended trip (1 call per leg, cached 6 hours) and on demand for other options. Seat info is the *typical* product for the cabin and aircraft type: AeroLOPA and SeatMaps have no public API, so results link to their seat maps instead.
+- Airport, city, country, airline names and time zones come from `reference/geo.json`, built from Travelpayouts' public data with `npm run build:geo`.
 - rooms.aero prices stays of 1–5 nights. Longer stays are estimated from the 5-night price and marked **ESTIMATED**. Hotel prices are for one room.
 - Travelpayouts prices are economy fares cached from Aviasales searches in about the last 48 hours, so less-popular routes can have gaps. A route's "usual price" is the median of the cheapest fare seen on each of the last 90 days. A fare is only called a deal once there are 3+ days of history, so deals get better the longer PointPilot runs.
 - SerpApi quota is protected: Google is only queried when you tick "Check live Google Flights price", click "Compare with cash price", or once a day to confirm a triggered price alert.

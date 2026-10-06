@@ -1,6 +1,6 @@
 {
   "name": "pointpilot",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "description": "PointPilot: find award space and fund trips from your points portfolio.",
@@ -11,7 +11,8 @@
     "test": "node --test",
     "desktop": "electron .",
     "dist": "electron-builder --win nsis --publish never",
-    "release:check": "node scripts/check-release.mjs"
+    "release:check": "node scripts/check-release.mjs",
+    "build:geo": "node scripts/build-geo.mjs"
   },
   "engines": {
     "node": ">=22.12.0"

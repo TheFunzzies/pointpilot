@@ -13,6 +13,9 @@ import { loadUser, saveUser, exampleUser, publicSettings, updateSettings, getSet
 import { transferData, loadCachedReference, refreshReference, referenceStatus } from './lib/reference.mjs';
 import { PlaceError } from './lib/places.mjs';
 import { searchCash, dealsFromAirports, cashForItinerary } from './lib/cash.mjs';
+import { getTripsCached } from './lib/flights.mjs';
+import { getPlan, addStay, removeStay, clearPlan } from './lib/stayplan.mjs';
+import { recordApiCalls } from './lib/settings.mjs';
 
 const VERSION = process.env.POINTPILOT_VERSION || '0.6.0';
 const MAX_BODY = 25 * 1024 * 1024;
@@ -94,6 +97,16 @@ function makeHandler(getPort) {
 
       if (m === 'POST' && p === '/api/search/trip') return send(res, 200, await searchTrip(await body(req)));
       if (m === 'POST' && p === '/api/search/hotels') return send(res, 200, await searchHotels(await body(req)));
+      if (m === 'GET' && p === '/api/stay-plan') return send(res, 200, await getPlan());
+      if (m === 'POST' && p === '/api/stay-plan/stays') return send(res, 201, await addStay(await body(req)));
+      if (m === 'DELETE' && p === '/api/stay-plan') return send(res, 200, await clearPlan());
+      const stayMatch = p.match(/^\/api\/stay-plan\/stays\/([a-z0-9]+)$/i);
+      if (stayMatch && m === 'DELETE') return send(res, 200, await removeStay(stayMatch[1]));
+      if (m === 'GET' && p === '/api/award/trips') {
+        if (!q.id) return send(res, 400, { error: 'Missing availability id' });
+        const s = await getSettings();
+        return send(res, 200, await getTripsCached({ apiKey: s.seatsAeroApiKey, availabilityId: q.id, cabin: q.cabin }, n => recordApiCalls(n, 'seats')));
+      }
       if (m === 'POST' && p === '/api/cash/search') return send(res, 200, await searchCash(await body(req)));
       if (m === 'POST' && p === '/api/cash/deals') return send(res, 200, await dealsFromAirports(await body(req)));
       if (m === 'POST' && p === '/api/cash/itinerary') return send(res, 200, await cashForItinerary(await body(req)));

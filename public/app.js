@@ -286,14 +286,52 @@ function renderFlightResults(r) {
   $('kpiHint').textContent = `${fmt(best.totalSourcePoints)} pts + ${money(best.taxesUsd)}`;
   const path = best.sources.map(s => `<span class="node">${s.direct ? `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} (have)` : `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} → ${fmt(s.targetPoints)} ${esc(programLabel(s.targetProgram))}${s.bonusPct ? ` (+${Math.round(s.bonusPct * 100)}%)` : ''}`}</span>`).join('');
   const legs = best.legs.map(l => `<div class="legbox"><h5>${esc(l.leg)} · ${esc(l.programName)} ${sourceTag(l)}</h5><p>${legLine(l)}</p>${l.history ? `<span class="history-badge">${esc(l.history.label)} · median ${fmt(l.history.median)}</span>` : ''}</div>`).join('');
+  const flightPanels = best.legs.filter(l => l.availabilityId).map(l => `<div class="note" style="margin-top:12px"><strong>${esc(l.leg)} flights · ${esc(l.origin)} → ${esc(l.destination)} · ${dateFmt(l.date)}</strong><div class="trips" data-trips-for="${esc(l.availabilityId)}" data-cabin="${esc(l.cabin)}">Loading flight details…</div></div>`).join('');
   const rec = `<div class="card reco"><div class="cardhead"><div><div class="eyebrow">Recommended</div><h3>${fmt(best.totalSourcePoints)} points + ${money(best.taxesUsd)} for ${best.travelers} traveler${best.travelers > 1 ? 's' : ''}</h3></div></div>
     <div class="detailgrid">${legs}</div>
-    <div class="metrics" style="margin-top:12px"><div class="metric"><span>Award points needed</span><b>${fmt(best.totalTargetPoints)}</b></div><div class="metric"><span>Taxes &amp; fees</span><b>${money(best.taxesUsd)}</b></div><div class="metric"><span>Effective cost</span><b>${money(best.effectiveCostUsd)}</b></div><div class="metric"><span>Value</span><b class="positive">${best.cpp ? `${best.cpp.toFixed(2)}¢/pt` : 'add cash fare'}</b></div></div>
+    <div class="metrics" style="margin-top:12px"><div class="metric"><span>Award points needed</span><b>${fmt(best.totalTargetPoints)}</b></div><div class="metric"><span>Taxes &amp; fees</span><b>${money(best.taxesUsd)}</b></div><div class="metric"><span>Effective cost</span><b>${money(best.effectiveCostUsd)}</b></div><div class="metric" id="valueMetricBox"><span id="valueMetricLabel">Value</span><b class="positive" id="valueMetric">${best.cpp ? `${best.cpp.toFixed(2)}¢/pt` : 'compare with cash ↓'}</b></div></div>
+    ${flightPanels}
     <div class="path">${path}</div><div class="note">${esc(best.explanation)}</div>${warningsBox([...best.warnings, ...r.dataStatus.warnings])}
     <div id="cashCompare"></div>
     <div class="btnrow">${monitorBtn}<button class="btn" data-action="compare-cash"><svg class="icon"><use href="#i-tag"/></svg>Compare with cash price</button></div></div>`;
-  const others = trips.slice(1, 10).map(t => `<div class="card result"><div><h4>${t.legs.map(l => esc(l.programName)).join(' + ')}</h4><p>${t.legs.map(l => `${esc(l.leg)}: ${esc(l.origin)}→${esc(l.destination)} ${dateFmt(l.date)}${l.direct === true ? ' nonstop' : ''}`).join(' · ')}</p><p>${t.sources.filter(s => !s.direct).map(s => `${fmt(s.fromPoints)} ${esc(programLabel(s.from))}→${esc(programLabel(s.targetProgram))}`).join(', ') || 'Uses miles you already have'}</p></div><div class="right"><span class="pts">${fmt(t.totalSourcePoints)} pts + ${money(t.taxesUsd)}</span><span class="subv">${money(t.effectiveCostUsd)} effective${t.cpp ? ` · ${t.cpp.toFixed(2)}¢/pt` : ''}</span></div></div>`).join('');
+  const others = trips.slice(1, 10).map(t => `<div class="card result" style="flex-wrap:wrap"><div style="flex:1;min-width:260px"><h4>${t.legs.map(l => esc(l.programName)).join(' + ')}</h4><p>${t.legs.map(l => `${esc(l.leg)}: ${esc(l.origin)}→${esc(l.destination)} ${dateFmt(l.date)}${l.direct === true ? ' nonstop' : ''}`).join(' · ')}</p><p>${t.sources.filter(s => !s.direct).map(s => `${fmt(s.fromPoints)} ${esc(programLabel(s.from))}→${esc(programLabel(s.targetProgram))}`).join(', ') || 'Uses miles you already have'}</p>
+    <div class="btnrow" style="margin-top:6px">${t.legs.filter(l => l.availabilityId).map(l => `<button class="btn small" data-action="trip-details" data-id="${esc(l.availabilityId)}" data-cabin="${esc(l.cabin)}">${esc(l.leg)} flights</button>`).join('')}</div></div>
+    <div class="right"><span class="pts">${fmt(t.totalSourcePoints)} pts + ${money(t.taxesUsd)}</span><span class="subv">${money(t.effectiveCostUsd)} effective${t.cpp ? ` · ${t.cpp.toFixed(2)}¢/pt` : ''}</span></div>
+    <div class="trips" style="flex-basis:100%" hidden></div></div>`).join('');
   $('results').innerHTML = rec + `<div class="result-list">${others}</div>`;
+  // Flight details for the recommended trip load automatically (1 seats.aero call per leg, cached 6h).
+  document.querySelectorAll('[data-trips-for]').forEach(el => loadTrips(el, el.dataset.tripsFor, el.dataset.cabin));
+}
+
+// ---------- flight details (seats.aero trips) ----------
+const dur = m => (m == null ? '—' : `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}m`);
+const t12 = hhmm => { if (!hhmm) return '—'; const [h, m] = hhmm.split(':').map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
+const plusDays = n => (n > 0 ? `<span class="plus">+${n}</span>` : n < 0 ? `<span class="plus">${n}</span>` : '');
+
+function renderTrip(t) {
+  const segs = t.segments.map((s, i) => `
+    ${i > 0 ? `<div class="layover">Layover in ${esc(t.layovers[i - 1].city || t.layovers[i - 1].airport)} (${esc(t.layovers[i - 1].airport)}) · ${dur(t.layovers[i - 1].durationMin)}${t.layovers[i - 1].overnight ? ' · overnight' : ''}</div>` : ''}
+    <div class="seg-row">
+      <div><b>${esc(s.flightNumber || '')}</b><div class="muted">${esc(s.airline || s.carrier || '')}</div><div class="muted">${dur(s.durationMin)}</div></div>
+      <div><b>${t12(s.depart?.time)}</b> ${esc(s.origin)}${s.originCity ? ` <span class="muted">${esc(s.originCity)}</span>` : ''}<br><b>${t12(s.arrive?.time)}</b>${s.arriveDayOffset ? `<span class="next-day">+${s.arriveDayOffset} day</span>` : ''} ${esc(s.destination)}${s.destinationCity ? ` <span class="muted">${esc(s.destinationCity)}</span>` : ''}<div class="muted">${esc(s.aircraft || 'Aircraft not listed')}${s.fareClass ? ` · fare class ${esc(s.fareClass)}` : ''}</div></div>
+      <div class="seatinfo"><b>${esc(s.seat.type)}</b><div class="muted">${esc(s.seat.detail)}</div><div><a href="${esc(s.seatMaps.aerolopa)}" target="_blank" rel="noreferrer">AeroLOPA seat map ↗</a><a href="${esc(s.seatMaps.seatmaps)}" target="_blank" rel="noreferrer">SeatMaps ↗</a></div></div>
+    </div>`).join('');
+  return `<div class="trip"><div class="trip-head">
+      <div><div class="trip-times">${t12(t.depart?.time)} → ${t12(t.arrive?.time)}${plusDays(t.arriveDayOffset)}</div>
+      <div class="trip-meta">${dur(t.totalDurationMin)} total · ${t.stops === 0 ? 'Nonstop' : `${t.stops} stop${t.stops > 1 ? 's' : ''} via ${t.layovers.map(l => esc(l.airport)).join(', ')}`} · ${esc(t.airlines.join(', '))}${t.arriveDayOffset > 0 ? ` · <strong>arrives ${t.arriveDayOffset === 1 ? 'the next day' : `${t.arriveDayOffset} days later`} (${dateFmt(t.arrive.date)})</strong>` : ''}</div></div>
+      <div style="text-align:right"><div class="trip-times">${t.mileageCost ? `${fmt(t.mileageCost)} pts` : ''}</div><div class="trip-meta">${t.taxes != null ? `${money(t.taxes)} taxes` : ''}${t.remainingSeats ? ` · ${t.remainingSeats} seat(s)` : ''}${t.mixedCabinPct && t.mixedCabinPct < 100 ? ` · ${t.mixedCabinPct}% in ${esc(t.cabin)}` : ''}</div></div>
+    </div>${segs}</div>`;
+}
+
+async function loadTrips(el, id, cabin) {
+  el.hidden = false;
+  el.innerHTML = '<div class="muted">Loading flight details…</div>';
+  try {
+    const r = await api(`/api/award/trips?id=${encodeURIComponent(id)}&cabin=${encodeURIComponent(cabin || '')}`);
+    if (!r.trips.length) { el.innerHTML = '<div class="muted">seats.aero has no flight-level details for this award.</div>'; return; }
+    const links = r.bookingLinks.length ? `<div class="btnrow" style="margin-top:4px">${r.bookingLinks.slice(0, 3).map(l => `<a class="btn small${l.primary ? ' primary' : ''}" href="${esc(l.url)}" target="_blank" rel="noreferrer">${esc(l.label)} ↗</a>`).join('')}</div>` : '';
+    el.innerHTML = r.trips.slice(0, 4).map(renderTrip).join('') + (r.trips.length > 4 ? `<div class="muted">${r.trips.length - 4} more flight option(s) on this date.</div>` : '') + links;
+  } catch (e) { el.innerHTML = `<div class="muted">${esc(e.message)}</div>`; }
 }
 
 function currentHotelQuery() {
@@ -313,30 +351,96 @@ function fundingText(f) {
   return f.sources.map(s => s.direct ? `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} (have)` : `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} → ${fmt(s.targetPoints)} ${esc(programLabel(s.targetProgram))}${s.bonusPct ? ` (+${Math.round(s.bonusPct * 100)}%)` : ''}`).join(', ');
 }
 
+const catLabel = h => (h.category ? `<span class="cat">${esc(h.programName.replace(/^World of /, ''))} Cat ${esc(h.category)}</span>` : '');
+
+function hotelCard(h, i) {
+  const link = safeUrl(h.bookingUrl);
+  return `<div class="card result"><div>
+    <h4>${esc(h.name)} ${catLabel(h)} ${hotelTag(h)} ${h.affordable ? '' : '<span class="tag warn">NOT ENOUGH POINTS</span>'}${h.estimated ? ' <span class="tag warn">ESTIMATED</span>' : ''}</h4>
+    <p>${esc(h.location)} · ${esc(h.programName)} · ${esc(h.roomType)} · ${dateFmt(h.checkIn)} → ${dateFmt(addDays(h.checkIn, h.nights))} · ${h.nights} night(s)</p>
+    <p>${fundingText(h.funding) || 'Your balances and transfer partners can\'t cover this stay.'}</p>
+    <div class="btnrow" style="margin-top:6px"><button class="btn small primary" data-action="add-stay" data-i="${i}"><svg class="icon"><use href="#i-plus"/></svg>Add to stay plan</button>${link ? `<a class="btn small" href="${esc(link)}" target="_blank" rel="noreferrer">View / book ↗</a>` : ''}</div>
+  </div><div class="right"><span class="pts">${fmt(h.totalPoints)} pts</span><span class="subv">${fmt(h.nightlyPoints)}/night${h.cashUsd ? ` · cash ${money(h.cashUsd)} · ${h.cpp.toFixed(2)}¢/pt` : ''}</span>${h.effectiveCostUsd != null ? `<span class="subv">${money(h.effectiveCostUsd)} in points value</span>` : ''}</div></div>`;
+}
+
+function addDays(iso, n) { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+
 function renderHotels(r) {
   const rows = r.rows || [];
-  $('resultMeta').textContent = `${fmt(rows.length)} hotel award(s) · ${r.nights} night(s) · ${r.query.roomType === 'any' ? 'any room' : esc(r.query.roomType)}`;
+  state.hotelRows = rows;
+  $('resultMeta').textContent = `${fmt(rows.length)} hotel award(s) in ${r.query.cities.join(', ')} · ${r.nights} night(s) · ${r.query.roomType === 'any' ? 'any room' : r.query.roomType}`;
   const best = rows.find(h => h.affordable);
   $('kpiScore').textContent = best ? `${fmt(best.totalPoints)} pts` : '—';
   $('kpiHint').textContent = best ? `${best.name}` : 'no affordable stay';
-  const monitorBtn = '<input id="hotelAlertMax" class="inputnum" type="number" min="0" step="1000" placeholder="Max pts/night" title="Optional: only alert at or below this many points per night"><button class="btn" data-action="monitor-hotel">🔔 Monitor this stay</button>';
-  const warn = warningsBox(r.dataStatus.warnings);
-  if (!rows.length) {
-    const tip = r.dataStatus.api === 'not-configured' ? '<div class="note">Tip: your seats.aero key also unlocks live hotel search (rooms.aero). Add it under <em>Data &amp; System</em>.</div>' : '';
-    $('results').innerHTML = `<div class="card empty"><strong>No hotel award space found for these dates.</strong>${warn}${tip}<div class="btnrow">${monitorBtn}<button class="btn" data-action="manual">Add a hotel award</button></div></div>`;
+  if (rows.length) {
+    const compare = r.cities.length > 1 ? `<div class="city-compare">${r.cities.map(c => `<div class="card city-card"><h3>${esc(c.city)}</h3>
+        <p><b>${c.count}</b> hotel award(s) · <b>${c.affordable}</b> you can afford</p>
+        ${c.cheapest ? `<p>Fewest points: <b>${fmt(c.cheapest.totalPoints)}</b> · ${esc(c.cheapest.name)}${c.cheapest.category ? ` (Cat ${esc(c.cheapest.category)})` : ''}</p>` : ''}
+        ${c.bestValue ? `<p>Lowest points value: <b>${money(c.bestValue.effectiveCostUsd)}</b> · ${esc(c.bestValue.name)}</p>` : ''}
+        <p>${esc(c.programs.join(', '))}</p></div>`).join('')}</div>` : '';
+    const groups = r.query.cities.map(city => {
+      const list = rows.map((h, i) => ({ h, i })).filter(x => x.h.city === city);
+      if (!list.length) return `<div class="city-head"><h3>${esc(city)}</h3><span class="muted">No award space found</span></div>`;
+      return `${r.cities.length > 1 ? `<div class="city-head"><h3>${esc(city)}</h3><span class="muted">${list.length} option(s)</span></div>` : ''}<div class="result-list">${list.slice(0, 20).map(x => hotelCard(x.h, x.i)).join('')}</div>`;
+    }).join('');
+    const monitorBtn = '<input id="hotelAlertMax" class="inputnum" type="number" min="0" step="1000" placeholder="Max pts/night" title="Optional: only alert at or below this many points per night"><button class="btn" data-action="monitor-hotel"><svg class="icon"><use href="#i-bell"/></svg>Monitor these stays</button>';
+    $('results').innerHTML = warningsBox(r.dataStatus.warnings) + compare + groups + `<div class="btnrow">${monitorBtn}</div>`;
     return;
   }
-  const cards = rows.slice(0, 25).map(h => {
-    const link = safeUrl(h.bookingUrl);
-    return `<div class="card result"><div>
-      <h4>${esc(h.name)} ${hotelTag(h)} ${h.affordable ? '' : '<span class="tag warn">NOT ENOUGH POINTS</span>'}${h.estimated ? ' <span class="tag warn">ESTIMATED</span>' : ''}</h4>
-      <p>${esc(h.location)} · ${esc(h.programName)}${h.category ? ` · Cat ${esc(h.category)}` : ''} · ${esc(h.roomType)} · check-in ${dateFmt(h.checkIn)} · ${h.nights} night(s)</p>
-      <p>${fundingText(h.funding) || 'Your balances and transfer partners can\'t cover this stay.'}</p>
-      ${link ? `<p><a href="${esc(link)}" target="_blank" rel="noreferrer">View / book on ${esc(h.programName)} ↗</a></p>` : ''}
-    </div><div class="right"><span class="pts">${fmt(h.totalPoints)} pts</span><span class="subv">${fmt(h.nightlyPoints)}/night${h.cashUsd ? ` · cash ${money(h.cashUsd)} · ${h.cpp.toFixed(2)}¢/pt` : ''}</span>${h.effectiveCostUsd != null ? `<span class="subv">${money(h.effectiveCostUsd)} in points value</span>` : ''}</div></div>`;
-  }).join('');
-  $('results').innerHTML = `${warn}<div class="result-list">${cards}</div><div class="btnrow">${monitorBtn}</div>`;
+  const monitorBtn = '<input id="hotelAlertMax" class="inputnum" type="number" min="0" step="1000" placeholder="Max pts/night" title="Optional: only alert at or below this many points per night"><button class="btn" data-action="monitor-hotel"><svg class="icon"><use href="#i-bell"/></svg>Monitor these stays</button>';
+  const tip = r.dataStatus.api === 'not-configured' ? '<div class="note">Tip: your seats.aero key also unlocks live hotel search (rooms.aero). Add it under <em>Data &amp; System</em>.</div>' : '';
+  $('results').innerHTML = `<div class="card empty"><strong>No hotel award space found in ${esc(r.query.cities.join(', '))} for these dates.</strong>Try nearby dates (date flexibility), a different city name, or a shorter stay.${warningsBox(r.dataStatus.warnings)}${tip}<div class="btnrow">${monitorBtn}<button class="btn" data-action="manual">Add a hotel award</button></div></div>`;
 }
+
+// ---------- stay planner ----------
+async function addStayFromResult(i) {
+  const h = state.hotelRows?.[i]; if (!h) return;
+  try {
+    const plan = await api('/api/stay-plan/stays', { method: 'POST', body: {
+      name: h.name, hotelId: h.hotelId, program: h.program, city: h.city, location: h.location, category: h.category, roomType: h.roomType,
+      checkIn: h.checkIn, checkOut: addDays(h.checkIn, h.nights), nightlyPoints: h.nightlyPoints, cashPerNight: h.cashValue,
+      bookingUrl: h.bookingUrl, dataSource: h.dataSource, estimated: h.estimated
+    } });
+    renderStayPlan(plan);
+    // Set up the next leg: check-in = this check-out, same length of stay.
+    const next = plan.summary.nextCheckIn;
+    $('dateFrom').value = next; $('dateTo').value = addDays(next, h.nights);
+    $('destination').value = ''; $('destination').placeholder = 'Next city, e.g. Kyoto';
+    $('stayPlan').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $('destination').focus();
+    toast(`Added ${h.name}. Next stay starts ${dateFmt(next)}: enter the next city and search.`);
+  } catch (e) { toast(e.message); }
+}
+
+function renderStayPlan(plan) {
+  const el = $('stayPlan');
+  state.plan = plan;
+  if (!plan?.stays.length || state.product !== 'hotels') { el.hidden = true; return; }
+  const s = plan.summary;
+  const fundingPath = s.funding ? s.funding.sources.map(x => `<span class="node">${x.direct ? `${fmt(x.fromPoints)} ${esc(programLabel(x.from))} (have)` : `${fmt(x.fromPoints)} ${esc(programLabel(x.from))} → ${fmt(x.targetPoints)} ${esc(programLabel(x.targetProgram))}${x.bonusPct ? ` (+${Math.round(x.bonusPct * 100)}%)` : ''}`}</span>`).join('') : '';
+  el.hidden = false;
+  el.innerHTML = `<div class="card plan"><div class="cardhead"><div><div class="eyebrow">Stay plan</div><h3>${s.stays} hotel${s.stays > 1 ? 's' : ''} · ${s.nights} night${s.nights > 1 ? 's' : ''} · ${dateFmt(s.start)} → ${dateFmt(s.end)}</h3></div><button class="btn small ghost" data-plan="clear">Clear plan</button></div>
+    <div class="plan-stays">${plan.stays.map((x, i) => `<div class="plan-stay"><span class="num">${i + 1}</span>
+      <div><strong>${esc(x.name)}</strong> ${x.category ? `<span class="cat">${esc(x.programName.replace(/^World of /, ''))} Cat ${esc(x.category)}</span>` : ''}<small>${esc(x.city || x.location)} · ${dateFmt(x.checkIn)} → ${dateFmt(x.checkOut)} · ${x.nights} night(s) · ${esc(x.roomType)}${x.bookingUrl ? ` · <a href="${esc(x.bookingUrl)}" target="_blank" rel="noreferrer">book ↗</a>` : ''}</small></div>
+      <div class="pts">${fmt(x.totalPoints)} ${esc(x.programName.replace(/^World of /, ''))}<small>${x.cashUsd ? `${money(x.cashUsd)} cash` : ''}</small></div>
+      <button class="btn ghost icon-only" data-plan="remove" data-id="${esc(x.id)}" title="Remove"><svg class="icon"><use href="#i-x"/></svg></button></div>`).join('')}</div>
+    <div class="metrics" style="margin-top:12px">
+      <div class="metric"><span>Total points</span><b>${fmt(s.totalPoints)}</b></div>
+      <div class="metric"><span>By program</span><b style="font-size:13px">${s.pointsByProgram.map(p => `${fmt(p.points)} ${esc(p.programName.replace(/^World of /, ''))}`).join(' · ')}</b></div>
+      <div class="metric"><span>Cash price</span><b>${s.cashUsd ? money(s.cashUsd) : '—'}</b></div>
+      <div class="metric"><span>Value</span><b class="positive">${s.cpp ? `${s.cpp.toFixed(2)}¢/pt` : '—'}</b></div></div>
+    ${s.funding ? `<div class="path">${fundingPath}</div>` : '<div class="warnbox">Your current balances and transfer partners can\'t cover the whole plan.</div>'}
+    ${warningsBox(s.warnings)}
+    <div class="note">Next stay starts <strong>${dateFmt(s.nextCheckIn)}</strong>. Enter the next city above and search; dates are already set.</div></div>`;
+}
+
+$('stayPlan').addEventListener('click', async e => {
+  const b = e.target.closest('[data-plan]'); if (!b) return;
+  try {
+    if (b.dataset.plan === 'remove') renderStayPlan(await api(`/api/stay-plan/stays/${b.dataset.id}`, { method: 'DELETE', body: {} }));
+    if (b.dataset.plan === 'clear') renderStayPlan(await api('/api/stay-plan', { method: 'DELETE', body: {} }));
+  } catch (err) { toast(err.message); }
+});
 
 // ---------- cash fares ----------
 const LEVEL_TEXT = { low: 'Prices are LOW for this route right now', typical: 'Prices are typical for this route', high: 'Prices are HIGH for this route right now' };
@@ -384,7 +488,8 @@ function renderCash(r) {
     : r.google ? ''
     : notConfigured ? '<div class="card empty"><strong>Connect a cash fare source</strong>Add a free Travelpayouts token (and optionally a SerpApi key) under <em>Data &amp; System</em> to search cash fares and get price alerts.</div>'
     : '<div class="card empty"><strong>No recent fares found for these dates.</strong>Aviasales may not have cached prices for this route yet. Try ± more days, nearby airports, or a live Google check.</div>';
-  $('results').innerHTML = warningsBox(r.dataStatus.warnings) + google + list + alertForm;
+  const econRef = r.economyReference?.length ? `<div class="note"><strong>Economy fares for reference</strong> (recent Aviasales):<br>${r.economyReference.map(f => `${esc(f.origin)} → ${esc(f.destination)} ${dateFmt(f.departDate)}${f.returnDate ? ` – ${dateFmt(f.returnDate)}` : ''}: ${money(f.price)}`).join('<br>')}</div>` : '';
+  $('results').innerHTML = warningsBox(r.dataStatus.warnings) + google + list + econRef + alertForm;
 }
 
 async function compareCash() {
@@ -397,6 +502,11 @@ async function compareCash() {
     if (!r.available) { box.innerHTML = `<div class="note">${esc(r.reason || 'No cash price found for these dates.')} <a href="${esc(r.url)}" target="_blank" rel="noreferrer">Check Google Flights ↗</a></div>`; return; }
     const cpp = ((r.total - t.taxesUsd) / t.totalSourcePoints) * 100;
     const avgCpp = t.pointsCostUsd / t.totalSourcePoints * 100;
+    // Show the result in the Value box of the recommendation.
+    $('valueMetricLabel').textContent = `Value vs ${money(r.total)} cash`;
+    $('valueMetric').textContent = `${cpp.toFixed(2)}¢/pt`;
+    $('valueMetric').className = cpp >= avgCpp ? 'positive' : '';
+    $('valueMetric').style.color = cpp >= avgCpp ? '' : 'var(--amber)';
     const verdict = r.total <= t.taxesUsd ? 'Paying cash is cheaper than the award taxes — pay cash.'
       : cpp >= avgCpp ? `Points win: you get ${cpp.toFixed(2)}¢ per point, above the ${avgCpp.toFixed(2)}¢ you value them at.`
       : `Consider paying cash: points only get ${cpp.toFixed(2)}¢ each, below the ${avgCpp.toFixed(2)}¢ you value them at.`;
@@ -405,7 +515,15 @@ async function compareCash() {
 }
 
 $('results').addEventListener('click', async e => {
-  const action = e.target.closest('[data-action]')?.dataset.action;
+  const btn = e.target.closest('[data-action]');
+  const action = btn?.dataset.action;
+  if (action === 'trip-details') {
+    const el = btn.closest('.result').querySelector('.trips');
+    if (!el.hidden && el.dataset.loaded === btn.dataset.id) { el.hidden = true; return; }
+    el.dataset.loaded = btn.dataset.id;
+    loadTrips(el, btn.dataset.id, btn.dataset.cabin);
+  }
+  if (action === 'add-stay') addStayFromResult(Number(btn.dataset.i));
   if (action === 'compare-cash') compareCash();
   if (action === 'cash-alert') {
     const q = state.lastCashQuery || currentQuery();
@@ -509,7 +627,7 @@ $('saveManualAward').onclick = async () => {
   catch (e) { $('manualMessage').textContent = e.message; }
 };
 $('saveManualHotel').onclick = async () => {
-  const payload = { program: $('manualHotelProgram').value, name: $('manualHotelName').value.trim(), location: $('manualHotelLocation').value.trim(), checkIn: $('manualHotelDate').value, roomType: $('manualHotelRoomType').value, nightlyPoints: Number($('manualHotelPoints').value || 0), cashValue: Number($('manualHotelCash').value || 0) || null };
+  const payload = { program: $('manualHotelProgram').value, category: $('manualHotelCategory').value.trim() || null, name: $('manualHotelName').value.trim(), location: $('manualHotelLocation').value.trim(), checkIn: $('manualHotelDate').value, roomType: $('manualHotelRoomType').value, nightlyPoints: Number($('manualHotelPoints').value || 0), cashValue: Number($('manualHotelCash').value || 0) || null };
   try { await api('/api/manual-hotel', { method: 'POST', body: payload }); $('manualHotelMessage').textContent = 'Saved.'; toast('Hotel award saved'); }
   catch (e) { $('manualHotelMessage').textContent = e.message; }
 };
@@ -570,7 +688,7 @@ function renderDeals(r) {
   const strong = deals.filter(d => d.pctBelow != null && d.pctBelow >= 10).length;
   $('dealMessage').textContent = deals.length ? `${deals.length} destination(s) from ${r.airports.join(', ')} · ${strong} below their usual price.` : 'No fares found. Check the airport codes or try again later.';
   $('dealResults').innerHTML = warningsBox(r.dataStatus.warnings) + (deals.length ? `<div class="result-list">${deals.map(d => `<div class="card result"><div>
-      <h4>${esc(d.destinationName)} <span class="muted" style="font-weight:500">(${esc(d.destination)})</span> ${dealTag(d)}</h4>
+      <h4>${esc(d.destinationName)}${d.destinationCountry ? `<span class="muted" style="font-weight:500">, ${esc(d.destinationCountry)}</span>` : ''} <span class="tag muted">${esc(d.destination)}</span> ${dealTag(d)}${d.cabin && d.cabin !== 'economy' ? ` <span class="tag brand">${esc(d.cabin.toUpperCase())}</span>` : ''}</h4>
       <p>From ${esc(d.originName)} (${esc(d.origin)}) · ${dateFmt(d.departDate)}${d.returnDate ? ` – ${dateFmt(d.returnDate)}` : ' · one-way'}${d.stops != null ? ` · ${d.stops === 0 ? 'nonstop' : `${d.stops} stop(s)`}` : ''}</p>
       ${d.usualPrice ? `<p>Usual ≈ ${money(d.usualPrice)}</p>` : ''}
       <p><a href="${esc(d.googleFlightsUrl)}" target="_blank" rel="noreferrer">Check on Google Flights ↗</a></p>
@@ -578,12 +696,12 @@ function renderDeals(r) {
 }
 $('findDeals').onclick = async () => {
   busy($('findDeals'), true, 'Searching…');
-  try { renderDeals(await api('/api/cash/deals', { method: 'POST', body: { airports: $('dealAirports').value, maxPrice: Number($('dealMaxPrice').value || 0) } })); }
+  try { renderDeals(await api('/api/cash/deals', { method: 'POST', body: { airports: $('dealAirports').value, cabin: $('dealCabin').value, maxPrice: Number($('dealMaxPrice').value || 0) } })); }
   catch (e) { $('dealMessage').textContent = e.message; } finally { busy($('findDeals'), false); }
 };
 $('watchDeals').onclick = async () => {
   try {
-    const a = await api('/api/alerts', { method: 'POST', body: { kind: 'deals', airports: $('dealAirports').value, maxPrice: Number($('dealMaxPrice').value || 0), minDropPct: Number($('dealMinDrop').value) } });
+    const a = await api('/api/alerts', { method: 'POST', body: { kind: 'deals', airports: $('dealAirports').value, cabin: $('dealCabin').value, maxPrice: Number($('dealMaxPrice').value || 0), minDropPct: Number($('dealMinDrop').value) } });
     state.alerts.unshift(a); renderAlerts(); renderKPIs(); toast(`Watching ${a.query.airports} for fares ${a.minDropPct}%+ below usual.`);
   } catch (e) { toast(e.message); }
 };
@@ -618,6 +736,15 @@ desktop?.onUpdateStatus?.(renderUpdateStatus);
 $('checkUpdates').onclick = async () => { const r = await desktop?.checkForUpdates?.(); if (!desktop) toast('Updates apply to the installed desktop app.'); else if (r && !r.ok) renderUpdateStatus({ status: 'error', message: r.message }); };
 $('installUpdate').onclick = () => desktop?.installUpdate?.();
 
+// Countries typed in the flight search become sensible city suggestions for hotels.
+const COUNTRY_CITIES = {
+  thailand: 'Bangkok, Phuket, Chiang Mai', japan: 'Tokyo, Kyoto, Osaka', italy: 'Rome, Florence, Venice', france: 'Paris, Nice',
+  spain: 'Madrid, Barcelona', portugal: 'Lisbon, Porto', uk: 'London, Edinburgh', 'united kingdom': 'London, Edinburgh', england: 'London',
+  greece: 'Athens, Santorini', vietnam: 'Hanoi, Ho Chi Minh City, Da Nang', indonesia: 'Bali, Jakarta', 'south korea': 'Seoul, Busan', korea: 'Seoul, Busan',
+  australia: 'Sydney, Melbourne', mexico: 'Mexico City, Cancun', germany: 'Berlin, Munich', switzerland: 'Zurich, Geneva', europe: 'Paris, London, Rome',
+  hawaii: 'Honolulu, Maui', uae: 'Dubai, Abu Dhabi', 'new zealand': 'Auckland, Queenstown', china: 'Shanghai, Beijing', india: 'Delhi, Mumbai'
+};
+
 // ---------- navigation ----------
 function showView(name) {
   document.querySelectorAll('.nav').forEach(x => x.classList.toggle('active', x.dataset.view === name));
@@ -630,8 +757,23 @@ desktop?.onNavigate?.(showView);
 document.querySelectorAll('button[data-product]').forEach(b => {
   b.onclick = () => {
     document.querySelectorAll('button[data-product]').forEach(x => x.classList.toggle('active', x === b));
+    const prev = state.product;
     state.product = b.dataset.product;
     const hotels = state.product === 'hotels', cash = state.product === 'cash';
+    // Hotels search by city; flights/cash keep their own destination text.
+    if (hotels && prev !== 'hotels') {
+      state.flightDestination = $('destination').value;
+      const key = $('destination').value.trim().toLowerCase();
+      $('destination').value = state.hotelDestination || COUNTRY_CITIES[key] || ($('destination').value.includes(',') ? '' : $('destination').value);
+      $('flex').value = '0';
+      api('/api/stay-plan').then(renderStayPlan).catch(() => {});
+    } else if (!hotels && prev === 'hotels') {
+      state.hotelDestination = $('destination').value;
+      if (state.flightDestination != null) $('destination').value = state.flightDestination;
+      $('stayPlan').hidden = true;
+    }
+    $('destinationLabel').textContent = hotels ? 'Cities (comma-separated)' : 'Destination';
+    $('destination').placeholder = hotels ? 'Tokyo, Kyoto' : 'Thailand, Tokyo, BKK…';
     $('origins').disabled = hotels; $('directOnly').disabled = hotels; $('travelers').disabled = hotels;
     $('cabin').innerHTML = hotels
       ? '<option value="any" selected>Any room</option><option value="standard">Standard</option><option value="suite">Suite</option>'
