@@ -365,3 +365,4 @@ tbody tr:hover td { background: var(--surface-2); }
 @media (prefers-color-scheme: dark) { .award { background: #3b0a24; color: #f9a8d4; } .stars { color: #fbbf24; } }
 .result p.links { font-size: 12px; }
 .result p.links .btn { padding: 1px 8px; }
+.flag.good { background: var(--green-soft); color: var(--green); }

@@ -49,7 +49,7 @@ async function load() {
     state.alerts = alerts;
     fillProgramSelects();
     renderWallet(); renderPartners(); renderAlerts(); renderProviders(providers.providers); renderKPIs();
-    await Promise.all([refreshHealth(), loadSettings()]);
+    await Promise.all([refreshHealth(), loadSettings(), loadProducts()]);
   } catch (e) {
     $('statusPill').textContent = '● Backend error';
     toast(e.message);
@@ -196,8 +196,26 @@ $('walletGroups').addEventListener('click', async e => {
 }));
 
 // ---------- search ----------
+// ---------- seat products ("find flights with La Première") ----------
+async function loadProducts() {
+  try {
+    const { products } = await api('/api/cabin-products');
+    state.products = products;
+    const group = cabin => products.filter(p => p.cabin === cabin)
+      .map(p => `<option value="${esc(p.key)}">${esc(p.airline)}: ${esc(p.product)}${p.score >= 5 ? ' ★' : ''}${p.certainty === 'varies' ? ' (some aircraft)' : ''}</option>`).join('');
+    $('productHunt').innerHTML = `<option value="">Any seat</option><optgroup label="First class">${group('first')}</optgroup><optgroup label="Business class">${group('business')}</optgroup>`;
+  } catch { /* optional feature */ }
+}
+$('productHunt').addEventListener('change', () => {
+  const p = state.products?.find(x => x.key === $('productHunt').value);
+  if (p && state.product === 'flights') $('cabin').value = p.cabin;
+});
+const productOf = key => state.products?.find(p => p.key === key) || null;
+const optHasProduct = (o, p) => Boolean(p && o.flight && (!o.cabin || o.cabin === p.cabin) && (o.flight.segments || []).some(s => s.carrier === p.carrier && s.seat?.type === p.product));
+
 function currentQuery() {
   return {
+    product: state.product === 'flights' ? $('productHunt').value || null : null,
     origins: $('origins').value, destination: $('destination').value.trim(),
     departDate: $('dateFrom').value, returnDate: $('dateTo').value || null,
     flexDays: Number($('flex').value), cabin: $('cabin').value, travelers: Number($('travelers').value),
@@ -264,6 +282,7 @@ function rawAwardList(title, rows) {
 }
 
 function renderFlightResults(r) {
+  state.lastAwardResult = r;
   const trips = r.trips || [];
   $('resultMeta').textContent = `${fmt(r.outbound?.length || 0)} outbound · ${fmt(r.return?.length || 0)} return flight options${trips.length ? ` · recommended pair selected` : ''}`;
   const monitorBtn = '<button class="btn" data-action="monitor">🔔 Monitor this trip</button>';
@@ -277,7 +296,7 @@ function renderFlightResults(r) {
       unaffordable: 'Award space exists, but your current balances and transfer partners can\'t cover it.'
     }[r.mode] || 'Nothing matched.';
     const tip = r.dataStatus.api === 'not-configured' ? '<div class="note">Tip: add a seats.aero API key under <em>Data &amp; System</em> to search live availability automatically.</div>' : '';
-    $('results').innerHTML = `<div class="card empty"><strong>${esc(why)}</strong>${apiWarn}${rawAwardList('Cheapest outbound seen', r.cheapestOutbound)}${rawAwardList('Cheapest return seen', r.cheapestReturn)}${tip}<div class="btnrow">${monitorBtn}${manualBtn}</div></div>`;
+    $('results').innerHTML = `${productHuntBanner(r)}<div class="card empty"><strong>${esc(why)}</strong>${apiWarn}${rawAwardList('Cheapest outbound seen', r.cheapestOutbound)}${rawAwardList('Cheapest return seen', r.cheapestReturn)}${tip}<div class="btnrow">${monitorBtn}${manualBtn}</div></div>`;
     return;
   }
   award.r = r;
@@ -289,7 +308,9 @@ function renderFlightResults(r) {
   award.loading = new Set();
   const hasReturn = Boolean(r.query.back);
   const programs = [...new Set([...r.outbound, ...r.return].map(o => o.program))];
-  $('results').innerHTML = warningsBox(r.dataStatus.warnings) + `<div id="awSummary"></div>
+  const hunt = r.query.product;
+  const cabinProducts = (state.products || []).filter(p => p.cabin === r.query.cabin);
+  $('results').innerHTML = warningsBox(r.dataStatus.warnings) + productHuntBanner(r) + `<div id="awSummary"></div>
     <div class="card filters" id="awFilters">
       <div><label for="fMaxPts">Max points / person</label><input id="fMaxPts" type="number" min="0" step="5000" placeholder="Any" style="width:120px"></div>
       <div><label for="fMaxHours">Max travel time</label><select id="fMaxHours"><option value="">Any</option><option value="10">10h</option><option value="14">14h</option><option value="18">18h</option><option value="22">22h</option><option value="26">26h</option><option value="32">32h</option></select></div>
@@ -297,6 +318,7 @@ function renderFlightResults(r) {
       <div><label for="fDepart">Departs</label><select id="fDepart"><option value="">Any time</option><option value="0-6">Overnight (12–6 AM)</option><option value="6-12">Morning (6 AM–12 PM)</option><option value="12-18">Afternoon (12–6 PM)</option><option value="18-24">Evening (6 PM–12 AM)</option></select></div>
       <div><label for="fSeat">Seat quality</label><select id="fSeat"><option value="">Any</option><option value="3">Lie-flat or better</option><option value="4">Excellent (direct aisle)</option><option value="5">Top-tier suites only</option></select></div>
       <div><label for="fProgram">Program</label><select id="fProgram"><option value="">All programs</option>${programs.map(p => `<option value="${esc(p)}">${esc(programLabel(p))}</option>`).join('')}</select></div>
+      <div><label for="fProduct">Seat product</label><select id="fProduct" style="max-width:240px"><option value="">Any</option>${cabinProducts.map(p => `<option value="${esc(p.key)}"${hunt?.key === p.key ? ' selected' : ''}>${esc(p.airline)}: ${esc(p.product)}</option>`).join('')}</select></div>
       <div><label for="fSort">Sort by</label><select id="fSort"><option value="points">Fewest points</option><option value="seat">Best seat</option><option value="duration">Shortest travel time</option><option value="depart">Departure time</option></select></div>
       <div><button class="btn small ghost" data-action="clear-filters">Clear filters</button></div>
     </div>
@@ -312,6 +334,19 @@ function renderFlightResults(r) {
   })();
 }
 
+function productHuntBanner(r) {
+  const h = r.dataStatus.productHunt;
+  if (!h) return '';
+  const m = h.matches || { outbound: 0, return: 0 };
+  const found = m.outbound + m.return;
+  const where = [m.outbound ? `${m.outbound} outbound` : '', r.query.back && m.return ? `${m.return} return` : ''].filter(Boolean).join(' and ');
+  return `<div class="card searchbox" style="margin-bottom:12px;border-color:${found ? 'var(--green)' : 'var(--amber-line)'}"><div class="cardhead"><div>
+      <div class="eyebrow">Seat search · ${esc(h.label)}</div>
+      <h3>${found ? `Found ${where} flight${found > 1 ? 's' : ''} with ${esc(h.label)}` : `No ${esc(h.label)} space found on these dates`}</h3>
+      <p>Checked ${h.checkedAwards} award${h.checkedAwards === 1 ? '' : 's'} operated by ${esc(h.carrier)}${h.calls ? ` (${h.calls} seats.aero call${h.calls > 1 ? 's' : ''})` : ''}. Matching flights are marked ✓ and listed first; the "Seat product" filter shows only them.${found ? '' : ' Airlines often release this cabin to partners late or only to their own program. Try more date flexibility, or set an alert.'}</p></div>
+      <button class="btn${found ? '' : ' primary'}" data-action="product-alert"><svg class="icon"><use href="#i-bell"/></svg>Alert me for ${esc(h.label)}</button></div></div>`;
+}
+
 // ---------- award results: pick an outbound and a return ----------
 const award = { r: null, sel: { Outbound: null, Return: null }, recIds: new Set(), show: {}, open: new Set(), seq: 0, day: {}, loading: new Set() };
 const SEAT_TIER = { 5: 'Top-tier suite', 4: 'Excellent lie-flat', 3: 'Lie-flat', 2: 'Older lie-flat', 1: 'Recliner', 0: 'Standard seat' };
@@ -323,6 +358,7 @@ function filteredOptions(leg) {
   const list = (leg === 'Outbound' ? award.r.outbound : award.r.return) || [];
   const v = id => $(id)?.value || '';
   const maxPts = Number(v('fMaxPts')) || 0, maxH = Number(v('fMaxHours')) || 0, stops = v('fStops'), dep = v('fDepart'), seat = Number(v('fSeat')) || 0, prog = v('fProgram'), sort = v('fSort') || 'points';
+  const wantProduct = productOf(v('fProduct'));
   const out = list.filter(o => {
     const f = o.flight;
     if (maxPts && o.mileageCost > maxPts) return false;
@@ -332,6 +368,7 @@ function filteredOptions(leg) {
     if (dep) { if (!f?.depart?.time) return false; const h = Number(f.depart.time.slice(0, 2)); const [a, b] = dep.split('-').map(Number); if (h < a || h >= b) return false; }
     if (seat && !((o.seatScore ?? -1) >= seat)) return false;
     if (prog && o.program !== prog) return false;
+    if (wantProduct && !optHasProduct(o, wantProduct)) return false;
     return true;
   });
   const cmp = {
@@ -362,6 +399,7 @@ function optCard(o, leg) {
       <div class="pts">${fmt(o.mileageCost)}<div class="meta" style="font-weight:500">${taxText(o)} / person</div></div></div>
     <div class="meta2">${seatChip(f?.product)} ${f?.product?.aircraft ? `<span>${esc(f.product.aircraft)}</span>` : ''}<span>${esc(o.programName)}</span>${f ? `<span>${esc(f.airlines.join(', '))} ${esc(f.flightNumbers.join(' / '))}</span>` : (o.airlines ? `<span>${esc(o.airlines)}</span>` : '')}${o.remainingSeats ? `<span>${o.remainingSeats} seat(s)</span>` : ''}${o.history ? `<span class="history-badge" style="margin:0">${esc(o.history.label)}</span>` : ''}${sourceTag(o)}
       ${f || o.availabilityId ? `<button class="btn small ghost" data-action="opt-details" data-id="${esc(o.id)}">${open ? 'Hide details' : 'Flight details'}</button>` : ''}</div>
+    ${award.r?.query.product && optHasProduct(o, award.r.query.product) ? `<div class="meta2"><span class="flag good">✓ ${esc(award.r.query.product.product)} on this flight</span></div>` : ''}
     ${flagsFor(o, leg) ? `<div class="meta2">${flagsFor(o, leg)}</div>` : ''}
     ${conflict ? `<div class="meta" style="color:var(--amber)">${esc(conflict)}</div>` : ''}
     ${open ? `<div class="details">${f ? renderTrip({ ...f, mileageCost: o.mileageCost, taxes: o.totalTaxes }) : `<div class="trips" data-load-trips="${esc(o.availabilityId)}" data-cabin="${esc(o.cabin)}"></div>`}</div>` : ''}
@@ -440,10 +478,13 @@ function renderColumns() {
       const best = Math.max(-1, ...opts.map(o => o.seatScore ?? -1));
       const matches = opts.filter(o => filtered.has(o)).length;
       const programs = new Set(opts.map(o => o.program)).size;
+      const hunt = award.r.query.product;
+      const productHits = hunt ? opts.filter(o => optHasProduct(o, hunt)).length : 0;
       return `<button class="day${d === open ? ' open' : ''}" data-action="open-day" data-leg="${leg}" data-day="${esc(d)}">
         ${sel && dayKey(sel) === d ? '<span class="has-sel">✓</span>' : ''}<b>${esc(dayLabel(d))}</b>
         <span class="rng">${lo === hi ? fmt(lo) : `${kpts(lo)}–${kpts(hi)}`} pts</span>
-        <small>${known ? `${opts.length} flight${opts.length > 1 ? 's' : ''}` : `${programs} program${programs > 1 ? 's' : ''}`}${best >= 3 ? ` · ${'★'.repeat(best - 2)}` : ''}${known && matches < opts.length ? ` · ${matches} match` : ''}</small></button>`;
+        <small>${known ? `${opts.length} flight${opts.length > 1 ? 's' : ''}` : `${programs} program${programs > 1 ? 's' : ''}`}${best >= 3 ? ` · ${'★'.repeat(best - 2)}` : ''}${known && matches < opts.length ? ` · ${matches} match` : ''}</small>
+        ${productHits ? `<small style="color:var(--green);font-weight:700">✓ ${productHits} ${esc(hunt.product)}</small>` : ''}</button>`;
     }).join('');
     const dayOpts = all.filter(o => dayKey(o) === open);
     const loading = dayOpts.some(o => !o.flight && o.availabilityId && award.loading?.has(o.id));
@@ -827,10 +868,21 @@ $('results').addEventListener('click', async e => {
   if (action === 'opt-details') { const id = btn.dataset.id; award.open.has(id) ? award.open.delete(id) : award.open.add(id); renderColumns(); return; }
   if (action === 'more') { award.show[btn.dataset.leg] += 25; renderColumns(); return; }
   if (action === 'reset-rec') { const ids = award.r.recommended?.ids || []; award.sel = { Outbound: ids[0] || null, Return: ids[1] || null }; renderColumns(); renderAwardSummary(); return; }
-  if (action === 'clear-filters') { ['fMaxPts', 'fMaxHours', 'fStops', 'fDepart', 'fSeat', 'fProgram'].forEach(id => { $(id).value = ''; }); renderColumns(); return; }
+  if (action === 'clear-filters') { ['fMaxPts', 'fMaxHours', 'fStops', 'fDepart', 'fSeat', 'fProgram', 'fProduct'].forEach(id => { $(id).value = ''; }); renderColumns(); return; }
   if (action === 'add-builder') { addSelectionToBuilder(); return; }
   if (action === 'hotel-info-all') { busy(btn, true, 'Loading…'); loadHotelInfo(state.hotelRows.filter(h => !h.info)).catch(err => { toast(err.message); renderHotels(state.lastHotels); }); return; }
   if (action === 'hotel-info-one') { const h = state.hotelRows[Number(btn.dataset.i)]; busy(btn, true, '…'); loadHotelInfo([h], 'single').catch(err => { toast(err.message); renderHotels(state.lastHotels); }); return; }
+  if (action === 'product-alert') {
+    const q = state.lastQuery || currentQuery();
+    const p = state.lastAwardResult?.query.product || productOf(q.product);
+    if (!p) return;
+    try {
+      const a = await api('/api/alerts', { method: 'POST', body: { ...q, cabin: p.cabin, track: { mode: 'product', product: p.key, productLabel: `${p.airline} ${p.product}` } } });
+      state.alerts.unshift(a); renderAlerts(); renderKPIs();
+      toast(`Alert saved: you'll be notified when ${p.airline} ${p.product} space appears on these dates.`);
+    } catch (err) { toast(err.message); }
+    return;
+  }
   if (action === 'monitor-open') { $('awAlertPanel').hidden = !$('awAlertPanel').hidden; return; }
   if (action === 'monitor-create') {
     const q = state.lastQuery || currentQuery();
@@ -891,7 +943,9 @@ function renderAlerts() {
       hotel: () => `<span class="tag brand">HOTEL</span> ${esc(q.destination)} · ${esc(q.roomType)} room · ${dateFmt(q.checkIn)}${q.checkOut ? ` – ${dateFmt(q.checkOut)}` : ''} ± ${esc(q.flexDays)}d${q.maxPointsPerNight ? ` · ≤ ${fmt(q.maxPointsPerNight)} pts/night` : ''}`,
       cash: () => `<span class="tag brand">CASH FARE</span> ${esc(q.origins)} → ${esc(q.destination)} · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d${a.targetPrice ? ` · target ${money(a.targetPrice)}` : ''}${a.dealPct ? ` · or ${esc(a.dealPct)}% below usual` : ''}${a.lastNotifiedPrice ? ` · last alert ${money(a.lastNotifiedPrice)}` : ''}`,
       deals: () => `<span class="tag brand">DEAL WATCH</span> from ${esc(q.airports)}${q.destination ? ` to ${esc(q.destination)}` : ' to anywhere'} · ${esc(a.minDropPct)}%+ below usual${q.maxPrice ? ` · under ${money(q.maxPrice)}` : ''}`,
-      award: () => a.track
+      award: () => a.track?.mode === 'product'
+        ? `<span class="tag brand">SEAT SEARCH</span> ${esc(a.track.productLabel || a.track.product)} · ${esc(q.origins)} ⇄ ${esc(q.destination)} · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ''} ± ${esc(q.flexDays)}d · ${esc(q.travelers)} pax${a.maxPointsPerTraveler ? ` · ≤ ${fmt(a.maxPointsPerTraveler)} pts/person` : ''}`
+        : a.track
         ? `<span class="tag brand">${a.track.mode === 'exact' ? 'EXACT FLIGHTS' : 'FLIGHTS OR SIMILAR'}</span> ${a.track.legs.map(l => `${esc(l.leg)} ${esc(l.flightNumbers.join('/') || '')} ${dateFmt(l.date)} (${fmt(l.mileageCost)} pts${l.product ? `, ${esc(l.product)}` : ''})`).join(' · ')} · ${esc(q.cabin)} · ${esc(q.travelers)} pax${a.maxPointsPerTraveler ? ` · ≤ ${fmt(a.maxPointsPerTraveler)} pts/person` : ''}${a.lastTracked ? ` · now: ${a.lastTracked.map(t => `${esc(t.leg)} ${t.found ? `${fmt(t.points)} pts` : 'not available'}`).join(', ')}` : ''}`
         : `<span class="tag brand">AWARD</span> ${esc(q.origins)} → ${esc(q.destination)} · ${esc(q.cabin)} · ${esc(q.travelers)} pax · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d`
     }[a.kind || 'award']?.() || '';
@@ -1230,6 +1284,7 @@ document.querySelectorAll('button[data-product]').forEach(b => {
     $('rank').options[3].disabled = hotels;
     if (hotels && $('rank').value === 'nonstop') $('rank').value = 'overall';
     $('keepFlexibleWrap').hidden = cash;
+    $('productWrap').hidden = state.product !== 'flights';
     $('useGoogleWrap').hidden = !cash;
     syncGoogleDefault();
     $('searchBtn').lastChild.textContent = cash ? 'Search cash fares' : 'Search & optimize';
