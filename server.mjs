@@ -7,7 +7,7 @@ import { listProviders, providerUrlAllowed } from './lib/providers.mjs';
 import { listPrograms } from './lib/programs.mjs';
 import { loadHistory, recordAwards, routeHistoryStats, getSources } from './lib/history.mjs';
 import { saveAwards, normalizeFlightAward, normalizeHotelAward } from './lib/awards.mjs';
-import { searchTrip, searchHotels, evaluateSelection } from './lib/search.mjs';
+import { searchTrip, searchHotels, evaluateSelection, expandAwards } from './lib/search.mjs';
 import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, setNotifier } from './lib/monitor.mjs';
 import { loadUser, saveUser, exampleUser, publicSettings, updateSettings, getSettings, apiUsage } from './lib/settings.mjs';
 import { transferData, loadCachedReference, refreshReference, referenceStatus } from './lib/reference.mjs';
@@ -113,6 +113,7 @@ function makeHandler(getPort) {
       const tripDir = p.match(/^\/api\/trip-plan\/(flights|positioning)\/(outbound|return)$/);
       if (tripDir && m === 'DELETE') return send(res, 200, tripDir[1] === 'flights' ? await removeFlight(tripDir[2]) : await setPositioning(tripDir[2], null));
       if (tripDir && m === 'PUT' && tripDir[1] === 'positioning') return send(res, 200, await setPositioning(tripDir[2], (await body(req)).option));
+      if (m === 'POST' && p === '/api/award/expand') return send(res, 200, await expandAwards(await body(req)));
       if (m === 'POST' && p === '/api/trip/evaluate') return send(res, 200, await evaluateSelection(await body(req)));
       if (m === 'GET' && p === '/api/seatmaps') return send(res, 200, await resolveSeatMaps({ carrier: q.carrier, aircraftName: q.aircraft, aircraftCode: q.code }));
       if (m === 'GET' && p === '/api/award/trips') {

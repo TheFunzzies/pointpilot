@@ -2,302 +2,2816 @@
   "schemaVersion": 2,
   "source": "Roame Transfer Partners Cheat Sheet",
   "sourceUrl": "https://roame.travel/transfer-partners-cheat-sheet",
-  "lastUpdated": "2026-10-05",
+  "lastUpdated": "2026-10-06",
   "note": "Ratios seeded from the Roame snapshot of 2026-10-04. Routes marked \"unverified\" were added in v0.6 from long-standing public partner lists and should be confirmed on Roame. Bonuses stop applying automatically after bonusEnds. Always verify before moving points — transfers are irreversible.",
   "banks": {
-    "amex":       { "name": "American Express Membership Rewards", "minTransfer": 1000, "increment": 1000 },
-    "bilt":       { "name": "Bilt Rewards", "minTransfer": 1000, "increment": 1000 },
-    "capitalone": { "name": "Capital One Miles", "minTransfer": 1000, "increment": 100 },
-    "chase":      { "name": "Chase Ultimate Rewards", "minTransfer": 1000, "increment": 1000 },
-    "citi":       { "name": "Citi ThankYou", "minTransfer": 1000, "increment": 1000 },
-    "wellsfargo": { "name": "Wells Fargo Rewards", "minTransfer": 1000, "increment": 1000 },
-    "marriott":   { "name": "Marriott Bonvoy", "minTransfer": 3000, "increment": 3000, "airlineChunkBonus": { "every": 60000, "bonus": 5000 } },
-    "hyatt":      { "name": "World of Hyatt", "minTransfer": 5000, "increment": 5000 },
-    "ihg":        { "name": "IHG One Rewards", "minTransfer": 10000, "increment": 5000 },
-    "accor":      { "name": "Accor Live Limitless", "minTransfer": 4000, "increment": 2000 },
-    "choice":     { "name": "Choice Privileges", "minTransfer": 5000, "increment": 1000 },
-    "brex":       { "name": "Brex Rewards", "minTransfer": 1000, "increment": 1000 },
-    "ramp":       { "name": "Ramp Rewards", "minTransfer": 1500, "increment": 1500 }
-  },
-  "programs": {
-    "american": {
-      "name": "American Airlines AAdvantage", "kind": "airline", "code": "AA",
-      "transfers": {
-        "citi": { "ratio": [1, 1], "days": 0 },
-        "marriott": { "ratio": [3, 1], "days": 2 },
-        "hyatt": { "ratio": [5, 2], "days": 0 },
-        "ihg": { "ratio": [5, 1], "days": 17 }
-      }
+    "amex": {
+      "name": "American Express Membership Rewards",
+      "minTransfer": 1000,
+      "increment": 1000
     },
-    "alaska": {
-      "name": "Alaska Airlines Atmos Rewards", "kind": "airline", "code": "AS",
-      "transfers": {
-        "bilt": { "ratio": [1, 1], "days": 1 },
-        "marriott": { "ratio": [3, 1], "days": 1 },
-        "ihg": { "ratio": [5, 1], "days": 17 },
-        "brex": { "ratio": [5, 1], "days": 5 }
-      }
+    "bilt": {
+      "name": "Bilt Rewards",
+      "minTransfer": 1000,
+      "increment": 1000
     },
-    "ba": {
-      "name": "British Airways Executive Club", "kind": "airline", "code": "BA",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0 },
-        "bilt": { "ratio": [1, 1], "days": 0 },
-        "capitalone": { "ratio": [1, 1], "days": 0, "bonusPct": 0.2, "bonusEnds": "2026-10-31" },
-        "chase": { "ratio": [1, 1], "days": 0 },
-        "wellsfargo": { "ratio": [1, 1], "days": 0 },
-        "marriott": { "ratio": [3, 1], "days": 0 },
-        "hyatt": { "ratio": [5, 2], "days": 0 },
-        "ihg": { "ratio": [5, 1], "days": 17 },
-        "choice": { "ratio": [5, 1], "days": 5 }
-      }
+    "capitalone": {
+      "name": "Capital One Miles",
+      "minTransfer": 1000,
+      "increment": 100
     },
-    "cathay": {
-      "name": "Cathay Pacific Asia Miles", "kind": "airline", "code": "CX",
-      "transfers": {
-        "amex": { "ratio": [5, 4], "days": 3 },
-        "bilt": { "ratio": [1, 1], "days": 0 },
-        "capitalone": { "ratio": [1, 1], "days": 3 },
-        "citi": { "ratio": [1, 1], "days": 0 },
-        "wellsfargo": { "ratio": [1, 1], "days": 0 },
-        "marriott": { "ratio": [3, 1], "days": 5 }
-      }
+    "chase": {
+      "name": "Chase Ultimate Rewards",
+      "minTransfer": 1000,
+      "increment": 1000
     },
-    "flyingblue": {
-      "name": "Air France/KLM Flying Blue", "kind": "airline", "code": "AF/KL",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 4, "bonusPct": 0.25, "bonusEnds": "2026-10-31" },
-        "bilt": { "ratio": [1, 1], "days": 0 },
-        "capitalone": { "ratio": [1, 1], "days": 0 },
-        "chase": { "ratio": [1, 1], "days": 0 },
-        "citi": { "ratio": [1, 1], "days": 0 },
-        "wellsfargo": { "ratio": [1, 1], "days": 0 },
-        "marriott": { "ratio": [3, 1], "days": 2 },
-        "hyatt": { "ratio": [5, 2], "days": 0 },
-        "ihg": { "ratio": [5, 1], "days": 17 },
-        "accor": { "ratio": [1, 1], "days": 42 }
-      }
+    "citi": {
+      "name": "Citi ThankYou",
+      "minTransfer": 1000,
+      "increment": 1000
     },
-    "aeroplan": {
-      "name": "Air Canada Aeroplan", "kind": "airline", "code": "AC",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0 },
-        "bilt": { "ratio": [1, 1], "days": 0 },
-        "capitalone": { "ratio": [1, 1], "days": 0 },
-        "chase": { "ratio": [1, 1], "days": 0 },
-        "marriott": { "ratio": [3, 1], "days": 0 },
-        "ihg": { "ratio": [5, 1], "days": 17 },
-        "choice": { "ratio": [5, 1], "days": 5 }
-      }
+    "wellsfargo": {
+      "name": "Wells Fargo Rewards",
+      "minTransfer": 1000,
+      "increment": 1000
     },
-    "lifemiles": {
-      "name": "Avianca LifeMiles", "kind": "airline", "code": "AV",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0 },
-        "bilt": { "ratio": [1, 1], "days": 0 },
-        "capitalone": { "ratio": [1, 1], "days": 0 },
-        "citi": { "ratio": [1, 1], "days": 0, "bonusPct": 0.25, "bonusEnds": "2026-10-24" },
-        "wellsfargo": { "ratio": [1, 1], "days": 0 },
-        "marriott": { "ratio": [3, 1], "days": 0 },
-        "ihg": { "ratio": [5, 1], "days": 17 }
-      }
-    },
-    "singapore": {
-      "name": "Singapore Airlines KrisFlyer", "kind": "airline", "code": "SQ",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0 },
-        "capitalone": { "ratio": [1, 1], "days": 2 },
-        "chase": { "ratio": [1, 1], "days": 2 },
-        "citi": { "ratio": [1, 1], "days": 2 },
-        "marriott": { "ratio": [3, 1], "days": 0 },
-        "hyatt": { "ratio": [5, 2], "days": 0 },
-        "ihg": { "ratio": [5, 1], "days": 17 },
-        "ramp": { "ratio": [1.5, 1], "days": 0 }
-      }
-    },
-    "qatar": {
-      "name": "Qatar Airways Privilege Club", "kind": "airline", "code": "QR",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0 },
-        "bilt": { "ratio": [1, 1], "days": 0 },
-        "capitalone": { "ratio": [1, 1], "days": 0 },
-        "citi": { "ratio": [1, 1], "days": 1 },
-        "marriott": { "ratio": [3, 1], "days": 0 },
-        "hyatt": { "ratio": [5, 2], "days": 0 },
-        "ihg": { "ratio": [5, 1], "days": 17 }
-      }
-    },
-    "emirates": {
-      "name": "Emirates Skywards", "kind": "airline", "code": "EK",
-      "transfers": {
-        "amex": { "ratio": [5, 4], "days": 0 },
-        "bilt": { "ratio": [1, 1], "days": 0 },
-        "capitalone": { "ratio": [1, 0.75], "days": 0 },
-        "citi": { "ratio": [1, 0.8], "days": 0 },
-        "marriott": { "ratio": [3, 1], "days": 0 },
-        "ramp": { "ratio": [1.5, 1], "days": 1 }
-      }
-    },
-    "united": {
-      "name": "United MileagePlus", "kind": "airline", "code": "UA",
-      "transfers": {
-        "bilt": { "ratio": [1, 1], "days": 0 },
-        "chase": { "ratio": [1, 1], "days": 0 },
-        "marriott": { "ratio": [3, 1], "days": 0 },
-        "hyatt": { "ratio": [5, 2], "days": 0 },
-        "ihg": { "ratio": [5, 1], "days": 17 }
-      }
-    },
-    "virginatlantic": {
-      "name": "Virgin Atlantic Flying Club", "kind": "airline", "code": "VS",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0 },
-        "bilt": { "ratio": [1, 1], "days": 0 },
-        "capitalone": { "ratio": [1, 1], "days": 0 },
-        "chase": { "ratio": [1, 1], "days": 0 },
-        "citi": { "ratio": [1, 1], "days": 0 },
-        "wellsfargo": { "ratio": [1, 1], "days": 0 },
-        "marriott": { "ratio": [3, 1], "days": 0 },
-        "hyatt": { "ratio": [5, 3], "days": 0 }
-      }
-    },
-    "jetblue": {
-      "name": "JetBlue TrueBlue", "kind": "airline", "code": "B6",
-      "transfers": {
-        "amex": { "ratio": [5, 4], "days": 0 },
-        "capitalone": { "ratio": [1, 0.6], "days": 0 },
-        "chase": { "ratio": [1, 1], "days": 0 },
-        "citi": { "ratio": [1, 1], "days": 0 },
-        "wellsfargo": { "ratio": [1, 1], "days": 0 }
-      }
-    },
-    "delta": {
-      "name": "Delta SkyMiles", "kind": "airline", "code": "DL",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "ana": {
-      "name": "ANA Mileage Club", "kind": "airline", "code": "NH",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 2, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "turkish": {
-      "name": "Turkish Airlines Miles&Smiles", "kind": "airline", "code": "TK",
-      "transfers": {
-        "citi": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "capitalone": { "ratio": [1, 1], "days": 1, "unverified": true },
-        "bilt": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "etihad": {
-      "name": "Etihad Guest", "kind": "airline", "code": "EY",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "citi": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "capitalone": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "qantas": {
-      "name": "Qantas Frequent Flyer", "kind": "airline", "code": "QF",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "citi": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "capitalone": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "eva": {
-      "name": "EVA Air Infinity MileageLands", "kind": "airline", "code": "BR",
-      "transfers": {
-        "citi": { "ratio": [1, 1], "days": 2, "unverified": true },
-        "capitalone": { "ratio": [4, 3], "days": 2, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "thai": {
-      "name": "Thai Airways Royal Orchid Plus", "kind": "airline", "code": "TG",
-      "transfers": {
-        "citi": { "ratio": [1, 1], "days": 3, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "jal": {
-      "name": "Japan Airlines Mileage Bank", "kind": "airline", "code": "JL",
-      "transfers": {
-        "bilt": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "iberia": {
-      "name": "Iberia Plus", "kind": "airline", "code": "IB",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "chase": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "aerlingus": {
-      "name": "Aer Lingus AerClub", "kind": "airline", "code": "EI",
-      "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "chase": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "southwest": {
-      "name": "Southwest Rapid Rewards", "kind": "airline", "code": "WN",
-      "transfers": {
-        "chase": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
-      }
-    },
-    "aeromexico": {
-      "name": "Aeromexico Rewards", "kind": "airline", "code": "AM",
-      "transfers": {
-        "amex": { "ratio": [1, 1.6], "days": 2, "unverified": true },
-        "citi": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "capitalone": { "ratio": [1, 1], "days": 0, "unverified": true },
-        "marriott": { "ratio": [3, 1], "days": 2, "unverified": true }
+    "marriott": {
+      "name": "Marriott Bonvoy",
+      "minTransfer": 3000,
+      "increment": 3000,
+      "airlineChunkBonus": {
+        "every": 60000,
+        "bonus": 5000
       }
     },
     "hyatt": {
-      "name": "World of Hyatt", "kind": "hotel", "code": "Hyatt",
-      "transfers": { "bilt": { "ratio": [1, 1], "days": 0 }, "chase": { "ratio": [1, 1], "days": 0 } }
-    },
-    "hilton": {
-      "name": "Hilton Honors", "kind": "hotel", "code": "Hilton",
-      "transfers": { "amex": { "ratio": [1, 2], "days": 0, "bonusPct": 0.3, "bonusEnds": "2026-10-31" }, "bilt": { "ratio": [1, 1], "days": 0 } }
+      "name": "World of Hyatt",
+      "minTransfer": 5000,
+      "increment": 5000
     },
     "ihg": {
-      "name": "IHG One Rewards", "kind": "hotel", "code": "IHG",
-      "transfers": { "bilt": { "ratio": [1, 1], "days": 0 }, "chase": { "ratio": [1, 1], "days": 0 } }
+      "name": "IHG One Rewards",
+      "minTransfer": 10000,
+      "increment": 5000
+    },
+    "accor": {
+      "name": "Accor Live Limitless",
+      "minTransfer": 4000,
+      "increment": 2000
+    },
+    "choice": {
+      "name": "Choice Privileges",
+      "minTransfer": 5000,
+      "increment": 1000
+    },
+    "brex": {
+      "name": "Brex Rewards",
+      "minTransfer": 1000,
+      "increment": 1000
+    },
+    "ramp": {
+      "name": "Ramp Rewards",
+      "minTransfer": 1500,
+      "increment": 1500
+    }
+  },
+  "programs": {
+    "american": {
+      "name": "American Airlines AAdvantage",
+      "kind": "airline",
+      "code": "AA",
+      "transfers": {
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 17,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "alaska": {
+      "name": "Alaska Airlines Atmos Rewards",
+      "kind": "airline",
+      "code": "AS",
+      "transfers": {
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 1,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 1,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 17,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "brex": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "unverified": true
+        },
+        "choice": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "ba": {
+      "name": "British Airways Executive Club",
+      "kind": "airline",
+      "code": "BA",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "bonusPct": 0.2,
+          "bonusEnds": "2026-10-31",
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "wellsfargo": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 17,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "cathay": {
+      "name": "Cathay Pacific Asia Miles",
+      "kind": "airline",
+      "code": "CX",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            5,
+            4
+          ],
+          "days": 3,
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 3,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "wellsfargo": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "brex": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        }
+      }
+    },
+    "flyingblue": {
+      "name": "Air France/KLM Flying Blue",
+      "kind": "airline",
+      "code": "AF/KL",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 4,
+          "bonusPct": 0.25,
+          "bonusEnds": "2026-10-31",
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "wellsfargo": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 17,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "brex": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 1,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "aeroplan": {
+      "name": "Air Canada Aeroplan",
+      "kind": "airline",
+      "code": "AC",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 17,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "lifemiles": {
+      "name": "Avianca LifeMiles",
+      "kind": "airline",
+      "code": "AV",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "bonusPct": 0.25,
+          "bonusEnds": "2026-10-24",
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ]
+        },
+        "wellsfargo": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 17,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "brex": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "singapore": {
+      "name": "Singapore Airlines KrisFlyer",
+      "kind": "airline",
+      "code": "SQ",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 17,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "brex": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 1,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        }
+      }
+    },
+    "qatar": {
+      "name": "Qatar Airways Privilege Club",
+      "kind": "airline",
+      "code": "QR",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 1,
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ],
+          "bonusPct": 0.35,
+          "bonusEnds": "2026-10-13",
+          "bonusRolling": true
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 17,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1.5
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "emirates": {
+      "name": "Emirates Skywards",
+      "kind": "airline",
+      "code": "EK",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            5,
+            4
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            0.75
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            0.8
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 1
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "brex": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 1,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        }
+      }
+    },
+    "united": {
+      "name": "United MileagePlus",
+      "kind": "airline",
+      "code": "UA",
+      "transfers": {
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 17,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "virginatlantic": {
+      "name": "Virgin Atlantic Flying Club",
+      "kind": "airline",
+      "code": "VS",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "wellsfargo": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            3
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "jetblue": {
+      "name": "JetBlue TrueBlue",
+      "kind": "airline",
+      "code": "B6",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            5,
+            4
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            0.6
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "wellsfargo": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "delta": {
+      "name": "Delta SkyMiles",
+      "kind": "airline",
+      "code": "DL",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "ana": {
+      "name": "ANA Mileage Club",
+      "kind": "airline",
+      "code": "NH",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "turkish": {
+      "name": "Turkish Airlines Miles&Smiles",
+      "kind": "airline",
+      "code": "TK",
+      "transfers": {
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 1,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "etihad": {
+      "name": "Etihad Guest",
+      "kind": "airline",
+      "code": "EY",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "unverified": true
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "qantas": {
+      "name": "Qantas Frequent Flyer",
+      "kind": "airline",
+      "code": "QF",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            25,
+            12
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            2.5
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            2.5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "brex": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "eva": {
+      "name": "EVA Air Infinity MileageLands",
+      "kind": "airline",
+      "code": "BR",
+      "transfers": {
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            4,
+            3
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "unverified": true
+        }
+      }
+    },
+    "thai": {
+      "name": "Thai Airways Royal Orchid Plus",
+      "kind": "airline",
+      "code": "TG",
+      "transfers": {
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 3,
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "jal": {
+      "name": "Japan Airlines Mileage Bank",
+      "kind": "airline",
+      "code": "JL",
+      "transfers": {
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            2,
+            1.5
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "iberia": {
+      "name": "Iberia Plus",
+      "kind": "airline",
+      "code": "IB",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "wellsfargo": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "aerlingus": {
+      "name": "Aer Lingus AerClub",
+      "kind": "airline",
+      "code": "EI",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "wellsfargo": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "southwest": {
+      "name": "Southwest Rapid Rewards",
+      "kind": "airline",
+      "code": "WN",
+      "transfers": {
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            25,
+            12
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            6,
+            1.8
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "aeromexico": {
+      "name": "Aeromexico Rewards",
+      "kind": "airline",
+      "code": "AM",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1.6
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ],
+          "bonusPct": 0.2,
+          "bonusEnds": "2026-10-13",
+          "bonusRolling": true
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "unverified": true
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "hyatt": {
+          "ratio": [
+            5,
+            4
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "brex": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 1,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "hyatt": {
+      "name": "World of Hyatt",
+      "kind": "hotel",
+      "code": "Hyatt",
+      "transfers": {
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ]
+        }
+      }
+    },
+    "hilton": {
+      "name": "Hilton Honors",
+      "kind": "hotel",
+      "code": "Hilton",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            2
+          ],
+          "days": 0,
+          "bonusPct": 0.3,
+          "bonusEnds": "2026-10-31",
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        }
+      }
+    },
+    "ihg": {
+      "name": "IHG One Rewards",
+      "kind": "hotel",
+      "code": "IHG",
+      "transfers": {
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        }
+      }
     },
     "marriott": {
-      "name": "Marriott Bonvoy", "kind": "hotel", "code": "Marriott",
+      "name": "Marriott Bonvoy",
+      "kind": "hotel",
+      "code": "Marriott",
       "transfers": {
-        "amex": { "ratio": [1, 1], "days": 0 },
-        "bilt": { "ratio": [1, 1], "days": 2 },
-        "chase": { "ratio": [1, 1], "days": 2, "bonusPct": 0.7, "bonusEnds": "2026-10-31" },
-        "ramp": { "ratio": [1.5, 1], "days": 0 }
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 2,
+          "bonusPct": 0.7,
+          "bonusEnds": "2026-10-31",
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
       }
     },
     "choice": {
-      "name": "Choice Privileges", "kind": "hotel", "code": "Choice",
-      "transfers": { "amex": { "ratio": [1, 1], "days": 0 }, "capitalone": { "ratio": [1, 1], "days": 0 }, "citi": { "ratio": [1, 1.5], "days": 0 }, "wellsfargo": { "ratio": [1, 2], "days": 0 } }
+      "name": "Choice Privileges",
+      "kind": "hotel",
+      "code": "Choice",
+      "transfers": {
+        "amex": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1.5
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "wellsfargo": {
+          "ratio": [
+            1,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        }
+      }
     },
     "wyndham": {
-      "name": "Wyndham Rewards", "kind": "hotel", "code": "Wyndham",
-      "transfers": { "capitalone": { "ratio": [1, 1], "days": 0 }, "chase": { "ratio": [1, 1], "days": 0 }, "citi": { "ratio": [1, 1], "days": 0 }, "wellsfargo": { "ratio": [1, 2], "days": 0 }, "ramp": { "ratio": [1.5, 1], "days": 0 } }
+      "name": "Wyndham Rewards",
+      "kind": "hotel",
+      "code": "Wyndham",
+      "transfers": {
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "chase": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "wellsfargo": {
+          "ratio": [
+            1,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "ramp": {
+          "ratio": [
+            1.5,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
     },
     "accor": {
-      "name": "Accor Live Limitless", "kind": "hotel", "code": "ALL",
-      "transfers": { "bilt": { "ratio": [3, 2], "days": 0 }, "capitalone": { "ratio": [2, 1], "days": 2 }, "citi": { "ratio": [2, 1], "days": 0 } }
+      "name": "Accor Live Limitless",
+      "kind": "hotel",
+      "code": "ALL",
+      "transfers": {
+        "bilt": {
+          "ratio": [
+            3,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 2,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            2,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        }
+      }
+    },
+    "finnair": {
+      "name": "Finnair Plus",
+      "kind": "airline",
+      "transfers": {
+        "capitalone": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            2,
+            1.3
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "velocity": {
+      "name": "Virgin Australia Velocity",
+      "kind": "airline",
+      "transfers": {
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "ihg": {
+          "ratio": [
+            5,
+            1
+          ],
+          "days": 21,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "accor": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 42,
+          "verifiedBy": [
+            "roame"
+          ]
+        },
+        "choice": {
+          "ratio": [
+            2.5,
+            1
+          ],
+          "days": 5,
+          "verifiedBy": [
+            "roame"
+          ]
+        }
+      }
+    },
+    "iprefer": {
+      "name": "I Prefer Hotel Rewards",
+      "kind": "hotel",
+      "transfers": {
+        "bilt": {
+          "ratio": [
+            1,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        },
+        "capitalone": {
+          "ratio": [
+            1,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg",
+            "upgradedpoints"
+          ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            2
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "upgradedpoints"
+          ]
+        }
+      }
+    },
+    "connectmiles": {
+      "name": "Copa ConnectMiles",
+      "kind": "airline",
+      "transfers": {
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "upgradedpoints"
+          ]
+        }
+      }
+    },
+    "saudia": {
+      "name": "Saudia AlFursan",
+      "kind": "airline",
+      "transfers": {
+        "marriott": {
+          "ratio": [
+            3,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "upgradedpoints"
+          ]
+        }
+      }
+    }
+  },
+  "valuations": {
+    "source": "The Points Guy",
+    "cents": {
+      "aerlingus": 1.4,
+      "aeromexico": 0.8,
+      "aeroplan": 1.4,
+      "flyingblue": 1.3,
+      "american": 1.7,
+      "ana": 1.4,
+      "alaska": 1.5,
+      "lifemiles": 1.4,
+      "ba": 1.4,
+      "cathay": 1.3,
+      "delta": 1.25,
+      "emirates": 1.2,
+      "etihad": 1.2,
+      "finnair": 1.4,
+      "iberia": 1.4,
+      "jetblue": 1.35,
+      "qantas": 1.3,
+      "qatar": 1.4,
+      "singapore": 1.3,
+      "southwest": 1.3,
+      "turkish": 1.1,
+      "united": 1.5,
+      "virginatlantic": 1.3,
+      "accor": 2,
+      "choice": 0.6,
+      "hilton": 0.5,
+      "ihg": 0.5,
+      "marriott": 0.7,
+      "hyatt": 1.7,
+      "wyndham": 1.1
+    }
+  },
+  "verification": {
+    "checkedAt": "2026-10-06",
+    "sources": {
+      "roame": 217,
+      "upgradedpoints": 142,
+      "tpg": 100
     }
   }
 }

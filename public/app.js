@@ -175,7 +175,7 @@ $('walletGroups').addEventListener('click', async e => {
     const id = document.querySelector(`[data-add-select="${btn.dataset.add}"]`).value;
     const p = state.programs.find(x => x.id === id);
     if (!p) return toast('Choose a program to add');
-    state.user.balances.push({ program: p.name, code: p.id, type: p.kind, balance: 0, cpp: DEFAULT_CPP[p.id] ?? (p.kind === 'hotel' ? 0.6 : p.kind === 'bank' ? 1.5 : 1.3), transferable: p.kind === 'bank' });
+    state.user.balances.push({ program: p.name, code: p.id, type: p.kind, balance: 0, cpp: state.partners?.valuations?.cents?.[p.id] ?? DEFAULT_CPP[p.id] ?? (p.kind === 'hotel' ? 0.6 : p.kind === 'bank' ? 1.5 : 1.3), transferable: p.kind === 'bank' });
     renderWallet(); renderKPIs(); queueWalletSave();
     const input = document.querySelector(`#walletGroups input[data-k="balance"][data-i="${state.user.balances.length - 1}"]`);
     input?.focus(); input?.select();
@@ -285,6 +285,8 @@ function renderFlightResults(r) {
   award.recIds = new Set(r.recommended?.ids || []);
   award.show = { Outbound: 25, Return: 25 };
   award.open = new Set();
+  award.day = {};
+  award.loading = new Set();
   const hasReturn = Boolean(r.query.back);
   const programs = [...new Set([...r.outbound, ...r.return].map(o => o.program))];
   $('results').innerHTML = warningsBox(r.dataStatus.warnings) + `<div id="awSummary"></div>
@@ -302,10 +304,16 @@ function renderFlightResults(r) {
   $('awFilters').addEventListener('input', () => { award.show = { Outbound: 25, Return: 25 }; renderColumns(); });
   renderColumns();
   renderAwardSummary();
+  // Load the individual flights for the recommended days right away so times show immediately.
+  (async () => {
+    for (const leg of ['Outbound', 'Return']) if (award.day[leg]) await ensureExpanded(leg, award.day[leg]);
+    renderColumns();
+    renderAwardSummary();
+  })();
 }
 
 // ---------- award results: pick an outbound and a return ----------
-const award = { r: null, sel: { Outbound: null, Return: null }, recIds: new Set(), show: {}, open: new Set(), seq: 0 };
+const award = { r: null, sel: { Outbound: null, Return: null }, recIds: new Set(), show: {}, open: new Set(), seq: 0, day: {}, loading: new Set() };
 const SEAT_TIER = { 5: 'Top-tier suite', 4: 'Excellent lie-flat', 3: 'Lie-flat', 2: 'Older lie-flat', 1: 'Recliner', 0: 'Standard seat' };
 const seatChip = p => (p && p.type ? `<span class="seatchip s${p.score ?? 0}" title="${esc(SEAT_TIER[p.score] || '')}: ${esc(p.detail || '')}${p.certainty === 'varies' ? ' (varies by aircraft)' : ''}">${p.score >= 3 ? '★'.repeat(p.score - 2) + ' ' : ''}${esc(p.type)}${p.certainty === 'varies' ? ' *' : ''}</span>` : '');
 const dayLabel = d => (d ? new Date(`${d}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : '');
@@ -354,27 +362,109 @@ function optCard(o, leg) {
       <div class="pts">${fmt(o.mileageCost)}<div class="meta" style="font-weight:500">${o.totalTaxes != null ? `+ ${money(o.totalTaxes)}` : 'taxes ?'} / person</div></div></div>
     <div class="meta2">${seatChip(f?.product)} ${f?.product?.aircraft ? `<span>${esc(f.product.aircraft)}</span>` : ''}<span>${esc(o.programName)}</span>${f ? `<span>${esc(f.airlines.join(', '))} ${esc(f.flightNumbers.join(' / '))}</span>` : (o.airlines ? `<span>${esc(o.airlines)}</span>` : '')}${o.remainingSeats ? `<span>${o.remainingSeats} seat(s)</span>` : ''}${o.history ? `<span class="history-badge" style="margin:0">${esc(o.history.label)}</span>` : ''}${sourceTag(o)}
       ${f || o.availabilityId ? `<button class="btn small ghost" data-action="opt-details" data-id="${esc(o.id)}">${open ? 'Hide details' : 'Flight details'}</button>` : ''}</div>
+    ${flagsFor(o, leg) ? `<div class="meta2">${flagsFor(o, leg)}</div>` : ''}
     ${conflict ? `<div class="meta" style="color:var(--amber)">${esc(conflict)}</div>` : ''}
     ${open ? `<div class="details">${f ? renderTrip({ ...f, mileageCost: o.mileageCost, taxes: o.totalTaxes }) : `<div class="trips" data-load-trips="${esc(o.availabilityId)}" data-cabin="${esc(o.cabin)}"></div>`}</div>` : ''}
   </div>`;
+}
+
+// ---------- day-first picker: choose a day, then exactly one flight on that day ----------
+const legList = leg => (leg === 'Outbound' ? award.r.outbound : award.r.return) || [];
+const setLegList = (leg, list) => { if (leg === 'Outbound') award.r.outbound = list; else award.r.return = list; };
+const dayKey = o => o.flight?.depart?.date || o.date;
+const median = a => { const s = a.filter(Number.isFinite).sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; };
+const kpts = n => (n >= 100000 ? `${Math.round(n / 1000)}k` : `${(n / 1000).toFixed(n % 1000 ? 1 : 0)}k`);
+
+// Warnings worth seeing at a glance: much longer than typical, tight/long layovers, mixed cabin, price outliers.
+function flagsFor(o, leg) {
+  const flags = [];
+  const list = legList(leg);
+  const f = o.flight;
+  if (f) {
+    const medDur = median(list.filter(x => x.flight).map(x => x.flight.totalDurationMin));
+    if (medDur && f.totalDurationMin > medDur * 1.3 && f.totalDurationMin - medDur >= 240) flags.push(['', `LONG: +${Math.round((f.totalDurationMin - medDur) / 60)}h vs typical`]);
+    for (const l of f.layovers || []) {
+      if (l.flag === 'very-tight') flags.push(['bad', `VERY TIGHT ${l.durationMin}m CONNECTION (${l.airport})`]);
+      else if (l.flag === 'tight') flags.push(['', `TIGHT ${l.durationMin}m CONNECTION (${l.airport})`]);
+      else if (l.flag === 'long') flags.push(['info', `${Math.round(l.durationMin / 60)}h LAYOVER (${l.airport})`]);
+    }
+    if (f.mixedCabinPct && f.mixedCabinPct < 100) flags.push(['', `MIXED CABIN: ${f.mixedCabinPct}% ${o.cabin}`]);
+  }
+  const medPts = median(list.map(x => x.mileageCost));
+  if (medPts && o.mileageCost > medPts * 2) flags.push(['info', `${(o.mileageCost / medPts).toFixed(1)}× TYPICAL POINTS`]);
+  return flags.map(([cls, t]) => `<span class="flag ${cls}">${esc(t)}</span>`).join('');
+}
+
+/** Replace award-level rows for a day with one option per flight (seats.aero trips, cached). */
+async function ensureExpanded(leg, day) {
+  award.loading ||= new Set();
+  const need = legList(leg).filter(o => dayKey(o) === day && !o.flight && o.availabilityId && !award.loading.has(o.id));
+  if (!need.length) return;
+  need.forEach(o => award.loading.add(o.id));
+  try {
+    const r = await api('/api/award/expand', { method: 'POST', body: { awards: need, leg, travelers: award.r.query.travelers } });
+    const ids = new Set(need.map(o => o.id));
+    setLegList(leg, [...legList(leg).filter(o => !ids.has(o.id)), ...r.options]);
+    // If the selection/recommendation was an award (not a flight), pick its cheapest flight.
+    const resolve = id => {
+      if (!ids.has(id)) return id;
+      const fl = r.options.filter(o => (o.awardId || o.id) === id).sort((a, b) => a.mileageCost - b.mileageCost || (a.flight?.totalDurationMin ?? 9e9) - (b.flight?.totalDurationMin ?? 9e9));
+      return fl[0]?.id || id;
+    };
+    if (award.sel[leg]) award.sel[leg] = resolve(award.sel[leg]);
+    award.recIds = new Set([...award.recIds].map(resolve));
+    if (r.dataStatus.warnings.length) toast(r.dataStatus.warnings[0]);
+  } catch (e) { need.forEach(o => award.loading.delete(o.id)); toast(e.message); }
 }
 
 function renderColumns() {
   for (const leg of ['Outbound', 'Return']) {
     const col = $(`awCol-${leg}`);
     if (!col) continue;
-    const all = (leg === 'Outbound' ? award.r.outbound : award.r.return) || [];
-    const list = filteredOptions(leg);
-    const sel = optById(award.sel[leg]);
-    const pinned = sel && !list.includes(sel) ? `<div class="meta" style="margin-bottom:6px">Your selection is hidden by the filters:</div>${optCard(sel, leg)}` : '';
+    const all = legList(leg);
+    const filtered = new Set(filteredOptions(leg));
     const q = award.r.query;
     const route = leg === 'Outbound' ? `${q.origins.join('/')} → ${q.destinations.join('/')}` : `${q.destinations.join('/')} → ${q.origins.join('/')}`;
-    col.innerHTML = `<h3>${leg === 'Outbound' ? '1. Outbound' : '2. Return'} <small>${esc(route)} · showing ${Math.min(list.length, award.show[leg])} of ${all.length}</small></h3>
-      ${pinned}<div class="opts">${list.slice(0, award.show[leg]).map(o => optCard(o, leg)).join('') || '<div class="card empty">No flights match these filters.</div>'}</div>
+    const sel = optById(award.sel[leg]);
+    const days = [...new Set(all.map(dayKey))].sort();
+    if (!award.day[leg] || !days.includes(award.day[leg])) award.day[leg] = sel ? dayKey(sel) : days[0];
+    const open = award.day[leg];
+    const dayCards = days.map(d => {
+      const opts = all.filter(o => dayKey(o) === d);
+      const pts = opts.map(o => o.mileageCost);
+      const lo = Math.min(...pts), hi = Math.max(...pts);
+      const known = opts.some(o => o.flight);
+      const best = Math.max(-1, ...opts.map(o => o.seatScore ?? -1));
+      const matches = opts.filter(o => filtered.has(o)).length;
+      const programs = new Set(opts.map(o => o.program)).size;
+      return `<button class="day${d === open ? ' open' : ''}" data-action="open-day" data-leg="${leg}" data-day="${esc(d)}">
+        ${sel && dayKey(sel) === d ? '<span class="has-sel">✓</span>' : ''}<b>${esc(dayLabel(d))}</b>
+        <span class="rng">${lo === hi ? fmt(lo) : `${kpts(lo)}–${kpts(hi)}`} pts</span>
+        <small>${known ? `${opts.length} flight${opts.length > 1 ? 's' : ''}` : `${programs} program${programs > 1 ? 's' : ''}`}${best >= 3 ? ` · ${'★'.repeat(best - 2)}` : ''}${known && matches < opts.length ? ` · ${matches} match` : ''}</small></button>`;
+    }).join('');
+    const dayOpts = all.filter(o => dayKey(o) === open);
+    const loading = dayOpts.some(o => !o.flight && o.availabilityId && award.loading?.has(o.id));
+    const list = filteredOptions(leg).filter(o => dayKey(o) === open);
+    const hidden = dayOpts.length - list.length;
+    const pinned = sel && dayKey(sel) === open && !list.includes(sel) ? `<div class="meta" style="margin-bottom:6px">Your selection is hidden by the filters:</div>${optCard(sel, leg)}` : '';
+    col.innerHTML = `<h3>${leg === 'Outbound' ? '1. Outbound' : '2. Return'} <small>${esc(route)} · ${days.length} day${days.length > 1 ? 's' : ''}</small></h3>
+      <div class="days">${dayCards}</div>
+      <div class="daylist-head"><strong>${esc(dayLabel(open))}: choose one flight</strong><span class="muted">${list.length} shown${hidden ? ` · ${hidden} hidden by filters` : ''}</span></div>
+      ${loading ? '<div class="card empty">Loading every flight for this day…</div>' : ''}
+      ${pinned}<div class="opts">${list.slice(0, award.show[leg]).map(o => optCard(o, leg)).join('') || (loading ? '' : '<div class="card empty">No flights match these filters on this day.</div>')}</div>
       ${list.length > award.show[leg] ? `<button class="btn small more" data-action="more" data-leg="${leg}">Show ${Math.min(25, list.length - award.show[leg])} more</button>` : ''}`;
     col.querySelectorAll('[data-load-trips]').forEach(el => loadTrips(el, el.dataset.loadTrips, el.dataset.cabin));
     upgradeSeatMaps(col);
   }
+}
+
+async function openDay(leg, day) {
+  award.day[leg] = day;
+  award.show[leg] = 25;
+  renderColumns();
+  await ensureExpanded(leg, day);
+  renderColumns();
+  renderAwardSummary();
 }
 
 function summaryLeg(o, label) {
@@ -383,7 +473,7 @@ function summaryLeg(o, label) {
   return `<div class="summary-leg"><div class="lbl">${label} · ${esc(dayLabel(f?.depart?.date || o.date))}</div>
     <div class="times">${f ? `${t12(f.depart?.time)} ${esc(f.origin)} → ${t12(f.arrive?.time)} ${esc(f.destination)}${plusDays(f.arriveDayOffset)}` : `${esc(o.origin)} → ${esc(o.destination)}`}</div>
     <div class="sub">${f ? `${dur(f.totalDurationMin)} · ${f.stops === 0 ? 'Nonstop' : `via ${f.layovers.map(l => esc(l.airport)).join(', ')}`} · ${esc(f.flightNumbers.join(' / '))}` : 'Flight times not available'}</div>
-    <div class="meta2" style="margin-top:6px">${seatChip(f?.product)}<span>${esc(o.programName)} · ${fmt(o.mileageCost)} pts${o.totalTaxes != null ? ` + ${money(o.totalTaxes)}` : ''} / person</span></div></div>`;
+    <div class="meta2" style="margin-top:6px">${seatChip(f?.product)}<span>${esc(o.programName)} · ${fmt(o.mileageCost)} pts${o.totalTaxes != null ? ` + ${money(o.totalTaxes)}` : ''} / person</span>${flagsFor(o, o.leg === 'Return' ? 'Return' : 'Outbound')}</div></div>`;
 }
 
 async function renderAwardSummary() {
@@ -677,6 +767,7 @@ $('results').addEventListener('click', async e => {
     renderColumns(); renderAwardSummary();
     return;
   }
+  if (action === 'open-day') { openDay(btn.dataset.leg, btn.dataset.day); return; }
   if (action === 'opt-details') { const id = btn.dataset.id; award.open.has(id) ? award.open.delete(id) : award.open.add(id); renderColumns(); return; }
   if (action === 'more') { award.show[btn.dataset.leg] += 25; renderColumns(); return; }
   if (action === 'reset-rec') { const ids = award.r.recommended?.ids || []; award.sel = { Outbound: ids[0] || null, Return: ids[1] || null }; renderColumns(); renderAwardSummary(); return; }
@@ -798,6 +889,7 @@ $('saveManualHotel').onclick = async () => {
 };
 
 // ---------- transfer partners ----------
+const SOURCE_NAMES = { roame: 'Roame', upgradedpoints: 'Upgraded Points', tpg: 'The Points Guy' };
 function renderPartners() {
   const d = state.partners; if (!d) return;
   const today = new Date().toISOString().slice(0, 10);
@@ -805,10 +897,11 @@ function renderPartners() {
   const rows = [];
   for (const [target, p] of Object.entries(d.programs || {})) for (const [bank, e] of Object.entries(p.transfers || {})) {
     const bonusLive = e.bonusPct && (!e.bonusEnds || e.bonusEnds >= today);
-    rows.push(`<tr><td>${esc(p.name)}</td><td>${esc(bankName(bank))}</td><td>${esc(e.ratio[0])}:${esc(e.ratio[1])}</td><td>${e.days ? `${esc(e.days)}d` : 'Instant'}</td><td>${bonusLive ? `${Math.round(e.bonusPct * 100)}% until ${esc(e.bonusEnds || '?')}` : '—'}</td><td>${e.unverified ? '<span class="tag warn">UNVERIFIED</span>' : '<span class="tag">OK</span>'}</td></tr>`);
+    rows.push(`<tr><td>${esc(p.name)}</td><td>${esc(bankName(bank))}</td><td>${esc(e.ratio[0])}:${esc(e.ratio[1])}</td><td>${e.days ? `${esc(e.days)}d` : 'Instant'}</td><td>${bonusLive ? `+${Math.round(e.bonusPct * 100)}% ${e.bonusRolling ? '(live now; end date not published)' : `until ${esc(e.bonusEnds || '?')}`}` : '—'}</td><td>${e.unverified ? '<span class="tag warn">UNVERIFIED</span>' : e.verifiedBy?.length ? `<span class="tag" title="${esc(e.verifiedBy.map(s => SOURCE_NAMES[s] || s).join(', '))}">✓ ${e.verifiedBy.length} source${e.verifiedBy.length > 1 ? 's' : ''}</span>` : '<span class="tag muted">NOT CHECKED</span>'}</td></tr>`);
   }
   $('partnerTable').innerHTML = rows.sort().join('');
-  $('partnerMeta').textContent = `Data as of ${d.lastUpdated} (${d.status?.origin || 'bundled'}). ${d.note || ''}`;
+  const v = d.verification;
+  $('partnerMeta').textContent = `Data as of ${d.lastUpdated} (${d.status?.origin || 'bundled'}).${v ? ` Cross-checked ${v.checkedAt} against ${Object.keys(v.sources).map(s => SOURCE_NAMES[s] || s).join(', ')}; routes are auto-updated when the sources agree.` : ''} Always confirm before transferring: transfers can't be undone.`;
 }
 $('refreshPartners').onclick = async () => {
   busy($('refreshPartners'), true, 'Checking…');

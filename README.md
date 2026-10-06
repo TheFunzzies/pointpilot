@@ -23,6 +23,8 @@ Then open **Data & System** and paste your seats.aero API key (seats.aero → Se
 | Transfer partners | `reference/transfer-partners.json` | Bundled in the app, **plus** fetched from `main` on this repo twice a day (newer `lastUpdated` wins) |
 | Your wallet, alerts, settings, award cache, history | `%APPDATA%\PointPilot\data` | Yours; never replaced by updates or removed on uninstall |
 
+**Transfer data is cross-checked daily.** The *Transfer partner check* workflow compares `reference/transfer-partners.json` with Roame, Upgraded Points and The Points Guy. It auto-applies only changes that at least two sources agree on (or that every source covering that currency agrees on, e.g. Roame for Hyatt/Accor), plus live bonuses from Roame with a rolling 7-day end date. It records which sources verified each route and TPG's point valuations, and writes everything it didn't apply to `reference/transfer-check.md`. Run it locally with `node scripts/check-transfers.mjs`.
+
 To correct a transfer ratio or add a bonus for every user: edit `reference/transfer-partners.json`, bump `lastUpdated`, and merge to `main`. CI validates the file, and installed apps pick it up within 12 hours. No release is needed.
 
 ## Develop
