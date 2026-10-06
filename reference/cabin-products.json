@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "lastUpdated": "2026-10-06",
+  "note": "Typical premium-cabin products by airline and aircraft, compiled from airline information and reviews (The Points Guy, One Mile at a Time, Upgraded Points and others). Many fleets are mixed: when certainty is 'varies' the product depends on the specific aircraft — check the seat map. Score: 5 = top-tier private suite (usually with a door), 4 = excellent lie-flat with direct aisle access, 3 = good lie-flat, 2 = older lie-flat/angled or no aisle access for all, 1 = recliner. Corrections: edit this file on main; installed apps refresh it automatically.",
+  "airlines": {
+    "QR": { "name": "Qatar Airways",
+      "business": [
+        { "aircraft": ["351", "35K", "A350-1000"], "product": "Qsuite", "detail": "Private suite with a closing door; 1-2-1 direct aisle access, with double beds/quads in the middle. Every A350-1000 has Qsuite.", "score": 5, "certainty": "all" },
+        { "aircraft": ["789", "787-9"], "product": "Business Suite (787-9)", "detail": "Reverse-herringbone suite with a door (not the full Qsuite layout).", "score": 4, "certainty": "typical" },
+        { "aircraft": ["77W", "77L", "359", "777-300ER", "777-200LR", "A350-900"], "product": "Qsuite on many aircraft", "detail": "Selected 777s and A350-900s have Qsuite; others have older 1-2-1 or 2-2-2 business seats. Check the seat map.", "score": 4, "certainty": "varies" },
+        { "aircraft": ["388", "A380"], "product": "A380 business", "detail": "Upper-deck 1-2-1 business with direct aisle access and an onboard lounge.", "score": 4, "certainty": "typical" }
+      ],
+      "first": [ { "aircraft": ["388", "A380"], "product": "A380 First", "detail": "Open first-class suite with a separate seat and bed.", "score": 5, "certainty": "typical" } ],
+      "default": { "business": { "product": "Qatar business", "detail": "Lie-flat; product varies by aircraft.", "score": 3 } }
+    },
+    "DL": { "name": "Delta",
+      "business": [
+        { "aircraft": ["359", "339", "351", "A350-900", "A330-900", "A350-1000"], "product": "Delta One Suite", "detail": "1-2-1 suite with a sliding door and direct aisle access.", "score": 5, "certainty": "all" },
+        { "aircraft": ["764", "767-400"], "product": "Delta One Suite (no door on many)", "detail": "Suite-style 1-2-1 seats; the 767-400 version mostly lacks a closing door.", "score": 4, "certainty": "varies" },
+        { "aircraft": ["763", "767-300"], "product": "Delta One (suites on refitted aircraft)", "detail": "Refitted 767-300ERs have Delta One Suites; others have older staggered seats.", "score": 3, "certainty": "varies" },
+        { "aircraft": ["332", "333", "A330-200", "A330-300"], "product": "Delta One (herringbone / staggered)", "detail": "Lie-flat with direct aisle access on most; no doors.", "score": 3, "certainty": "varies" }
+      ],
+      "default": { "business": { "product": "Delta One / Delta First", "detail": "Long-haul is lie-flat; domestic narrow-bodies are recliners.", "score": 3 } }
+    },
+    "NH": { "name": "ANA",
+      "business": [
+        { "aircraft": ["77W", "777-300ER"], "product": "THE Room", "detail": "Very wide suite with a door, alternating forward/rear facing; one of the best business seats flying.", "score": 5, "certainty": "typical" },
+        { "aircraft": ["789", "78X", "788", "787-9", "787-10", "787-8"], "product": "Business Staggered (THE Room FX on new 787-9s)", "detail": "Most 787s have the older staggered 1-2-1 seat; new 787-9s delivered from late 2026 get THE Room FX suites with doors.", "score": 3, "certainty": "varies" }
+      ],
+      "first": [ { "aircraft": ["77W", "777-300ER"], "product": "THE Suite", "detail": "Enclosed first-class suite with a very large screen.", "score": 5, "certainty": "typical" } ],
+      "default": { "business": { "product": "ANA business", "detail": "Lie-flat on long-haul aircraft.", "score": 3 } }
+    },
+    "JL": { "name": "Japan Airlines",
+      "business": [
+        { "aircraft": ["351", "A350-1000"], "product": "A350-1000 Business Suite", "detail": "New private suite with a door (54 seats). Flies Tokyo Haneda to JFK, LAX, DFW, LHR and CDG.", "score": 5, "certainty": "all" },
+        { "aircraft": ["77W", "777-300ER"], "product": "JAL SKY SUITE", "detail": "1-2-1 lie-flat with direct aisle access and lots of privacy.", "score": 4, "certainty": "typical" },
+        { "aircraft": ["789", "788", "787-9", "787-8"], "product": "JAL SKY SUITE II / III", "detail": "Lie-flat; SKY SUITE III is 1-2-1 with aisle access, older II is 2-2-2 style.", "score": 3, "certainty": "varies" }
+      ],
+      "first": [
+        { "aircraft": ["351", "A350-1000"], "product": "A350-1000 First Suite", "detail": "New enclosed first suite with a door.", "score": 5, "certainty": "all" },
+        { "aircraft": ["77W", "777-300ER"], "product": "JAL SKY SUITE First", "detail": "Very large 1-2-1 first-class seat.", "score": 5, "certainty": "typical" }
+      ],
+      "default": { "business": { "product": "JAL business", "detail": "Lie-flat on long-haul aircraft.", "score": 3 } }
+    },
+    "UA": { "name": "United",
+      "business": [
+        { "aircraft": ["789", "787-9"], "product": "Polaris (Polaris Studio on newest 787-9s)", "detail": "1-2-1 Polaris seats with direct aisle access; new 'Elevated' 787-9s add front-row Polaris Studio suites with doors.", "score": 4, "certainty": "varies" },
+        { "aircraft": ["77W", "772", "78X", "788", "764", "763", "777-300ER", "777-200", "787-10", "787-8", "767-400", "767-300"], "product": "Polaris", "detail": "1-2-1 lie-flat with direct aisle access.", "score": 4, "certainty": "typical" }
+      ],
+      "default": { "business": { "product": "United Polaris / First", "detail": "Polaris on long-haul wide-bodies; domestic first is a recliner.", "score": 3 } }
+    },
+    "AA": { "name": "American Airlines",
+      "business": [
+        { "aircraft": ["A321XLR", "32X", "XLR"], "product": "Flagship Suite (A321XLR)", "detail": "Lie-flat suite with a door on a narrow-body.", "score": 4, "certainty": "all" },
+        { "aircraft": ["789", "787-9"], "product": "Flagship Business / Flagship Suite (787-9P)", "detail": "New 787-9P aircraft have Flagship Suites with doors; older 787-9s have reverse-herringbone Flagship Business.", "score": 4, "certainty": "varies" },
+        { "aircraft": ["77W", "777-300ER"], "product": "Flagship Business (Flagship Suite on refitted aircraft)", "detail": "Reverse herringbone today; Flagship Suites being retrofitted through 2027.", "score": 4, "certainty": "varies" },
+        { "aircraft": ["788", "787-8"], "product": "Flagship Business", "detail": "1-2-1 lie-flat with direct aisle access.", "score": 3, "certainty": "typical" },
+        { "aircraft": ["772", "777-200"], "product": "Flagship Business", "detail": "Mix of seat types depending on the aircraft.", "score": 3, "certainty": "varies" },
+        { "aircraft": ["A321T", "32B", "A321"], "product": "Flagship Business (transcon)", "detail": "Lie-flat on A321T transcontinental aircraft; standard A321 first is a recliner.", "score": 2, "certainty": "varies" }
+      ],
+      "first": [ { "aircraft": ["77W", "777-300ER"], "product": "Flagship First", "detail": "1-1-1 lie-flat first class.", "score": 4, "certainty": "typical" } ],
+      "default": { "business": { "product": "American business / first", "detail": "Lie-flat on long-haul; domestic first is a recliner.", "score": 3 } }
+    },
+    "AC": { "name": "Air Canada",
+      "business": [ { "aircraft": ["77W", "77L", "789", "788", "333", "332", "777-300ER", "777-200LR", "787-9", "787-8", "A330"], "product": "Signature Class", "detail": "1-2-1 reverse herringbone with direct aisle access.", "score": 4, "certainty": "typical" } ],
+      "default": { "business": { "product": "Air Canada business", "detail": "Signature Class on long-haul; North American business is a recliner.", "score": 3 } }
+    },
+    "BA": { "name": "British Airways",
+      "business": [
+        { "aircraft": ["351", "78X", "A350-1000", "787-10"], "product": "Club Suite", "detail": "1-2-1 suite with a door.", "score": 4, "certainty": "all" },
+        { "aircraft": ["77W", "772", "788", "789", "777-300ER", "777-200", "787-8", "787-9"], "product": "Club Suite on refitted aircraft (older Club World on others)", "detail": "Many have been refitted with Club Suite; older Club World is 2-4-2 / 2-3-2 face-to-face.", "score": 3, "certainty": "varies" },
+        { "aircraft": ["388", "A380"], "product": "Club World", "detail": "Older high-density layout without direct aisle access for all.", "score": 2, "certainty": "typical" }
+      ],
+      "first": [ { "aircraft": ["77W", "772", "788", "789", "78X", "388"], "product": "British Airways First", "detail": "1-2-1 lie-flat first class.", "score": 4, "certainty": "typical" } ],
+      "default": { "business": { "product": "Club World / Club Suite", "detail": "Lie-flat; Club Suite where refitted.", "score": 3 } }
+    },
+    "AF": { "name": "Air France",
+      "business": [ { "aircraft": ["359", "77W", "772", "A350-900", "777-300ER", "777-200"], "product": "Air France business (1-2-1)", "detail": "New 1-2-1 business seats on A350s and refitted 777s; some older aircraft remain.", "score": 4, "certainty": "varies" } ],
+      "first": [ { "aircraft": ["77W", "777-300ER"], "product": "La Première", "detail": "Ultra-premium first suite with curtains; very limited award access.", "score": 5, "certainty": "typical" } ],
+      "default": { "business": { "product": "Air France business", "detail": "Lie-flat on long-haul.", "score": 3 } }
+    },
+    "KL": { "name": "KLM",
+      "business": [ { "aircraft": ["78X", "789", "77W", "772", "787-10", "787-9", "777-300ER"], "product": "World Business Class", "detail": "1-2-1 lie-flat; new seats on many refitted aircraft.", "score": 3, "certainty": "varies" } ],
+      "default": { "business": { "product": "World Business Class", "detail": "Lie-flat on long-haul.", "score": 3 } }
+    },
+    "LH": { "name": "Lufthansa",
+      "business": [ { "aircraft": ["789", "359", "787-9", "A350-900"], "product": "Allegris (on newer aircraft)", "detail": "New Allegris business seats with several seat options; older aircraft still have 2-2-2 angled-to-flat seats.", "score": 4, "certainty": "varies" } ],
+      "first": [ { "aircraft": ["748", "359", "747-8", "A350-900"], "product": "Lufthansa First", "detail": "Spacious first class; Allegris first suites on some A350s.", "score": 4, "certainty": "varies" } ],
+      "default": { "business": { "product": "Lufthansa business", "detail": "Often 2-2-2 without direct aisle access on older aircraft.", "score": 2 } }
+    },
+    "LX": { "name": "SWISS",
+      "business": [ { "aircraft": ["77W", "333", "343", "777-300ER", "A330-300", "A340-300"], "product": "SWISS Business", "detail": "Alternating 1-2-1 / 2-1-2 layout; 'throne' solo seats are the best.", "score": 3, "certainty": "typical" } ],
+      "first": [ { "aircraft": ["77W", "777-300ER"], "product": "SWISS First", "detail": "Private first-class suite.", "score": 5, "certainty": "typical" } ]
+    },
+    "SQ": { "name": "Singapore Airlines",
+      "business": [
+        { "aircraft": ["359", "77W", "A350-900", "777-300ER"], "product": "Singapore business (2013)", "detail": "Very wide 1-2-1 seat with direct aisle access; you flip the seat over to make the bed.", "score": 4, "certainty": "typical" },
+        { "aircraft": ["388", "A380"], "product": "A380 business (2017)", "detail": "1-2-1 seats; centre pairs form a double bed.", "score": 4, "certainty": "typical" },
+        { "aircraft": ["78X", "787-10"], "product": "Regional business (2018)", "detail": "1-2-1 lie-flat, smaller than the long-haul seat.", "score": 3, "certainty": "typical" }
+      ],
+      "first": [
+        { "aircraft": ["388", "A380"], "product": "Suites", "detail": "Enclosed suite with a separate bed and chair; among the best first classes.", "score": 5, "certainty": "typical" },
+        { "aircraft": ["77W", "777-300ER"], "product": "First Class (2013)", "detail": "Very wide first-class seat.", "score": 5, "certainty": "typical" }
+      ]
+    },
+    "CX": { "name": "Cathay Pacific",
+      "business": [
+        { "aircraft": ["77W", "777-300ER"], "product": "Aria Suite (on refitted aircraft)", "detail": "New business suite with a door on refitted 777-300ERs; others have reverse herringbone.", "score": 4, "certainty": "varies" },
+        { "aircraft": ["359", "351", "A350-900", "A350-1000"], "product": "Cathay business", "detail": "1-2-1 reverse herringbone with direct aisle access.", "score": 4, "certainty": "typical" }
+      ],
+      "first": [ { "aircraft": ["77W", "777-300ER"], "product": "Cathay First", "detail": "1-1-1 first class, very spacious.", "score": 5, "certainty": "typical" } ]
+    },
+    "EK": { "name": "Emirates",
+      "business": [
+        { "aircraft": ["388", "A380"], "product": "A380 business", "detail": "1-2-1 business plus onboard bar.", "score": 4, "certainty": "typical" },
+        { "aircraft": ["77W", "777-300ER"], "product": "777 business (varies)", "detail": "Older 777s are 2-3-2; refitted and new aircraft are 1-2-1.", "score": 2, "certainty": "varies" }
+      ],
+      "first": [
+        { "aircraft": ["388", "A380"], "product": "A380 First Suite", "detail": "Private suite with onboard shower spa.", "score": 5, "certainty": "typical" },
+        { "aircraft": ["77W", "777-300ER"], "product": "First (Game Changer suite on some)", "detail": "Fully enclosed suites on the newest 777s.", "score": 5, "certainty": "varies" }
+      ]
+    },
+    "EY": { "name": "Etihad",
+      "business": [ { "aircraft": ["789", "781", "351", "359", "388", "787-9", "787-10", "A350-1000", "A380"], "product": "Business Studio", "detail": "Lie-flat with direct aisle access; good privacy.", "score": 4, "certainty": "typical" } ],
+      "first": [
+        { "aircraft": ["388", "A380"], "product": "First Apartment", "detail": "Separate seat and bed; The Residence is a separate product.", "score": 5, "certainty": "typical" },
+        { "aircraft": ["789", "787-9"], "product": "First Suite", "detail": "Enclosed first-class suite.", "score": 5, "certainty": "typical" }
+      ]
+    },
+    "TK": { "name": "Turkish Airlines",
+      "business": [
+        { "aircraft": ["789", "359", "787-9", "A350-900"], "product": "Turkish business (1-2-1)", "detail": "Lie-flat with direct aisle access.", "score": 4, "certainty": "typical" },
+        { "aircraft": ["77W", "333", "777-300ER", "A330-300"], "product": "Turkish business (2-3-2 / 2-2-2)", "detail": "Lie-flat but no direct aisle access for everyone.", "score": 2, "certainty": "typical" }
+      ]
+    },
+    "VS": { "name": "Virgin Atlantic",
+      "business": [
+        { "aircraft": ["351", "359", "A350-1000", "A350-900", "A330-900"], "product": "Upper Class Suite / Retreat Suite", "detail": "Herringbone suite with a door; Retreat Suites at the front of the A350-1000/A330neo.", "score": 4, "certainty": "typical" },
+        { "aircraft": ["789", "787-9", "333", "A330-300"], "product": "Upper Class", "detail": "Herringbone seats facing the aisle.", "score": 3, "certainty": "typical" }
+      ]
+    },
+    "KE": { "name": "Korean Air",
+      "business": [
+        { "aircraft": ["77W", "789", "78X", "777-300ER", "787-9", "787-10"], "product": "Prestige Suites", "detail": "1-2-1 lie-flat; newest aircraft add doors (Prestige Suites 2.0).", "score": 4, "certainty": "varies" },
+        { "aircraft": ["388", "A380"], "product": "Prestige Sleeper", "detail": "2-2-2 upper-deck seats.", "score": 2, "certainty": "typical" }
+      ],
+      "first": [ { "aircraft": ["77W", "388", "777-300ER", "A380"], "product": "Kosmo Suites", "detail": "Enclosed first-class suite.", "score": 4, "certainty": "typical" } ]
+    },
+    "BR": { "name": "EVA Air",
+      "business": [ { "aircraft": ["77W", "789", "78X", "777-300ER", "787-9", "787-10"], "product": "Royal Laurel Class", "detail": "1-2-1 lie-flat with direct aisle access.", "score": 4, "certainty": "typical" } ]
+    },
+    "TG": { "name": "Thai Airways",
+      "business": [ { "aircraft": ["359", "789", "78X", "77W", "A350-900", "787-9", "787-10", "777-300ER"], "product": "Royal Silk", "detail": "1-2-1 lie-flat on A350/787s; some 777s are older.", "score": 3, "certainty": "varies" } ]
+    },
+    "B6": { "name": "JetBlue",
+      "business": [ { "aircraft": ["321", "32Q", "A321", "A321neo", "A321LR"], "product": "Mint (Mint Suite on newer aircraft)", "detail": "Lie-flat on a narrow-body; newer A321neo/LR have Mint Suites with doors.", "score": 4, "certainty": "varies" } ]
+    },
+    "QF": { "name": "Qantas",
+      "business": [ { "aircraft": ["789", "333", "332", "388", "787-9", "A330", "A380"], "product": "Qantas Business Suite", "detail": "1-2-1 lie-flat with direct aisle access.", "score": 4, "certainty": "typical" } ],
+      "first": [ { "aircraft": ["388", "A380"], "product": "Qantas First", "detail": "1-1-1 first class.", "score": 4, "certainty": "typical" } ]
+    },
+    "IB": { "name": "Iberia",
+      "business": [ { "aircraft": ["359", "351", "333", "332", "A350", "A330"], "product": "Iberia business", "detail": "1-2-1 lie-flat with direct aisle access.", "score": 4, "certainty": "typical" } ]
+    },
+    "AY": { "name": "Finnair",
+      "business": [ { "aircraft": ["359", "333", "A350-900", "A330-300"], "product": "AirLounge business (on refitted aircraft)", "detail": "Non-reclining 'lounge chair' that becomes a flat bed; some aircraft still have the older 1-2-1 seat.", "score": 3, "certainty": "varies" } ]
+    },
+    "EI": { "name": "Aer Lingus",
+      "business": [ { "aircraft": ["332", "333", "A321XLR", "A321LR", "A330"], "product": "Aer Lingus business", "detail": "Lie-flat, staggered; throne seats are best.", "score": 3, "certainty": "typical" } ]
+    },
+    "NZ": { "name": "Air New Zealand",
+      "business": [ { "aircraft": ["789", "787-9", "77W"], "product": "Business Premier", "detail": "Herringbone seats facing the aisle; Business Premier Luxe on new 787s.", "score": 3, "certainty": "varies" } ]
+    },
+    "AS": { "name": "Alaska Airlines",
+      "business": [ { "aircraft": ["789", "787-9", "332", "A330-200"], "product": "Alaska international business (ex-Hawaiian)", "detail": "Lie-flat suites on long-haul wide-bodies.", "score": 4, "certainty": "varies" } ]
+    }
+  }
+}

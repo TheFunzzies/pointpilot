@@ -7,7 +7,7 @@ import { listProviders, providerUrlAllowed } from './lib/providers.mjs';
 import { listPrograms } from './lib/programs.mjs';
 import { loadHistory, recordAwards, routeHistoryStats, getSources } from './lib/history.mjs';
 import { saveAwards, normalizeFlightAward, normalizeHotelAward } from './lib/awards.mjs';
-import { searchTrip, searchHotels } from './lib/search.mjs';
+import { searchTrip, searchHotels, evaluateSelection } from './lib/search.mjs';
 import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, setNotifier } from './lib/monitor.mjs';
 import { loadUser, saveUser, exampleUser, publicSettings, updateSettings, getSettings, apiUsage } from './lib/settings.mjs';
 import { transferData, loadCachedReference, refreshReference, referenceStatus } from './lib/reference.mjs';
@@ -15,6 +15,9 @@ import { PlaceError } from './lib/places.mjs';
 import { searchCash, dealsFromAirports, cashForItinerary } from './lib/cash.mjs';
 import { getTripsCached } from './lib/flights.mjs';
 import { getPlan, addStay, removeStay, clearPlan } from './lib/stayplan.mjs';
+import { resolveSeatMaps } from './lib/seatmaps.mjs';
+import { getTripPlan, updateTripSettings, setFlights, clearTrip, searchPositioning, removeFlight, setPositioning } from './lib/tripplan.mjs';
+import { loadCachedCabins, refreshCabins } from './lib/cabins.mjs';
 import { recordApiCalls } from './lib/settings.mjs';
 
 const VERSION = process.env.POINTPILOT_VERSION || '0.6.0';
@@ -102,6 +105,16 @@ function makeHandler(getPort) {
       if (m === 'DELETE' && p === '/api/stay-plan') return send(res, 200, await clearPlan());
       const stayMatch = p.match(/^\/api\/stay-plan\/stays\/([a-z0-9]+)$/i);
       if (stayMatch && m === 'DELETE') return send(res, 200, await removeStay(stayMatch[1]));
+      if (m === 'GET' && p === '/api/trip-plan') return send(res, 200, await getTripPlan());
+      if (m === 'PUT' && p === '/api/trip-plan/settings') return send(res, 200, await updateTripSettings(await body(req)));
+      if (m === 'PUT' && p === '/api/trip-plan/flights') return send(res, 200, await setFlights(await body(req)));
+      if (m === 'DELETE' && p === '/api/trip-plan') return send(res, 200, await clearTrip());
+      if (m === 'POST' && p === '/api/trip-plan/positioning/search') return send(res, 200, await searchPositioning(await body(req)));
+      const tripDir = p.match(/^\/api\/trip-plan\/(flights|positioning)\/(outbound|return)$/);
+      if (tripDir && m === 'DELETE') return send(res, 200, tripDir[1] === 'flights' ? await removeFlight(tripDir[2]) : await setPositioning(tripDir[2], null));
+      if (tripDir && m === 'PUT' && tripDir[1] === 'positioning') return send(res, 200, await setPositioning(tripDir[2], (await body(req)).option));
+      if (m === 'POST' && p === '/api/trip/evaluate') return send(res, 200, await evaluateSelection(await body(req)));
+      if (m === 'GET' && p === '/api/seatmaps') return send(res, 200, await resolveSeatMaps({ carrier: q.carrier, aircraftName: q.aircraft, aircraftCode: q.code }));
       if (m === 'GET' && p === '/api/award/trips') {
         if (!q.id) return send(res, 400, { error: 'Missing availability id' });
         const s = await getSettings();
@@ -182,11 +195,13 @@ export function startServer({ port = Number(process.env.PORT || 3000), onReady, 
   server.listen(port, '127.0.0.1', async () => {
     actualPort = server.address().port;
     await loadCachedReference().catch(e => console.warn('[reference]', e.message));
+    await loadCachedCabins().catch(e => console.warn('[cabins]', e.message));
     console.log(`PointPilot ${VERSION} running at http://127.0.0.1:${actualPort} (data: ${dataDir()})`);
     onReady?.(actualPort);
-    // Pull the latest transfer-partner data from GitHub now and twice a day.
-    refreshReference().then(r => r.updated && console.log('[reference] transfer partners updated to', r.lastUpdated));
-    setInterval(() => refreshReference(), 12 * 3600 * 1000).unref();
+    // Pull the latest transfer-partner and cabin-product data from GitHub now and twice a day.
+    const refreshAll = () => { refreshReference().then(r => r.updated && console.log('[reference] transfer partners updated to', r.lastUpdated)); refreshCabins(); };
+    refreshAll();
+    setInterval(refreshAll, 12 * 3600 * 1000).unref();
     if (monitor) scheduleMonitor();
   });
   server.on('close', () => clearTimeout(monitorTimer));

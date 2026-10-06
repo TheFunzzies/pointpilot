@@ -295,3 +295,50 @@ tbody tr:hover td { background: var(--surface-2); }
 .plan-stay .pts { font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
 .plan-stay small { display: block; color: var(--muted); font-size: 12px; }
 @media (max-width: 680px) { .seg-row { grid-template-columns: 1fr; } .plan-stay { grid-template-columns: 30px 1fr auto; } .plan-stay .pts { grid-column: 2; text-align: left; } }
+
+/* ---------- v0.10: flight picker, filters, trip builder ---------- */
+.summary-card { padding: 18px; border: 2px solid var(--brand); }
+.summary-legs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.summary-leg { padding: 12px 14px; border-radius: var(--radius-sm); background: var(--brand-soft); }
+.summary-leg .lbl { font-size: 11.5px; font-weight: 700; color: var(--brand-ink); text-transform: uppercase; letter-spacing: .05em; }
+.summary-leg .times { font-size: 20px; font-weight: 700; margin: 2px 0; font-variant-numeric: tabular-nums; }
+.summary-leg .sub { font-size: 12.5px; color: var(--ink-2); }
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; padding: 12px 14px; margin-top: 14px; }
+.filters > div { display: grid; gap: 4px; }
+.filters label { font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.filters select, .filters input { padding: 6px 8px; font-size: 13px; }
+.picker { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; align-items: start; }
+.picker.single { grid-template-columns: 1fr; }
+.picker-col h3 { margin: 0 0 8px; font-size: 15px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.picker-col h3 small { color: var(--muted); font-weight: 500; font-size: 12px; }
+.opts { display: grid; gap: 8px; }
+.opt { position: relative; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); cursor: pointer; transition: border-color .12s, box-shadow .12s, background .12s; }
+.opt:hover { border-color: var(--line-strong); box-shadow: var(--shadow); }
+.opt.selected { border: 2px solid var(--brand); background: var(--brand-soft); padding: 11px 13px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); }
+.opt.dim { opacity: .5; }
+.opt .row1 { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.opt .times { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.opt .times .plus { color: var(--amber); font-size: 11px; vertical-align: super; margin-left: 2px; }
+.opt .pts { font-size: 16px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.opt .meta { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+.opt .meta2 { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.opt .check { position: absolute; top: -9px; right: 10px; background: var(--brand); color: #fff; font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+.opt .details { margin-top: 8px; cursor: default; }
+.seatchip { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+.seatchip.s5 { background: #fef3c7; color: #92400e; }
+.seatchip.s4 { background: var(--green-soft); color: var(--green); }
+.seatchip.s3 { background: var(--brand-soft); color: var(--brand-ink); }
+.seatchip.s2, .seatchip.s1, .seatchip.s0 { background: var(--surface-3); color: var(--muted); }
+@media (prefers-color-scheme: dark) { .seatchip.s5 { background: #3b2a06; color: #fcd34d; } }
+.more { margin-top: 8px; }
+.builder-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+.timeline { display: grid; gap: 10px; }
+.tl-item { display: grid; grid-template-columns: 38px 1fr; gap: 12px; }
+.tl-dot { width: 34px; height: 34px; border-radius: 99px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.tl-dot.todo { background: var(--amber-soft); color: var(--amber); }
+.tl-card { padding: 12px 14px; }
+.tl-card h4 { margin: 0 0 2px; font-size: 14.5px; }
+.tl-card p { margin: 2px 0; font-size: 12.5px; color: var(--muted); }
+.sticky { position: sticky; top: 16px; }
+@media (max-width: 1100px) { .builder-grid { grid-template-columns: 1fr; } .sticky { position: static; } }
+@media (max-width: 900px) { .picker, .summary-legs { grid-template-columns: 1fr; } }

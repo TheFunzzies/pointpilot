@@ -15,6 +15,8 @@
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3zM9 3v15M15 6v15"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
 </svg>
 <div class="shell">
@@ -22,6 +24,7 @@
   <div class="brand"><span class="brand-mark"><svg class="icon"><use href="#i-plane"/></svg></span><div class="brand-text">Point<span>Pilot</span></div></div>
   <nav>
     <button class="nav active" data-view="search"><svg class="icon"><use href="#i-search"/></svg>Trip Optimizer</button>
+    <button class="nav" data-view="builder"><svg class="icon"><use href="#i-map"/></svg>Trip Builder</button>
     <button class="nav" data-view="wallet"><svg class="icon"><use href="#i-wallet"/></svg>My Points</button>
     <button class="nav" data-view="deals"><svg class="icon"><use href="#i-tag"/></svg>Cash Deals</button>
     <button class="nav" data-view="alerts"><svg class="icon"><use href="#i-bell"/></svg>Alerts</button>
@@ -46,12 +49,23 @@
 <div><label for="dateFrom" id="dateFromLabel">Departure date</label><input id="dateFrom" type="date"></div>
 <div><label for="dateTo" id="dateToLabel">Return date (optional)</label><input id="dateTo" type="date"></div>
 <div><label for="flex">Date flexibility</label><select id="flex"><option value="0">Exact</option><option value="3" selected>± 3 days</option><option value="7">± 7 days</option><option value="14">± 14 days</option></select></div>
-<div><label for="rank">Rank by</label><select id="rank"><option value="overall" selected>Lowest effective cost</option><option value="points">Fewest points</option><option value="cpp">Best cents / point</option><option value="nonstop">Nonstop first</option></select></div>
+<div><label for="rank">Rank by</label><select id="rank"><option value="overall" selected>Lowest effective cost</option><option value="points">Fewest points</option><option value="cpp">Best cents / point</option><option value="nonstop">Nonstop first</option><option value="seat">Best seat (business/first)</option><option value="duration">Shortest travel time</option></select></div>
 </div>
 <div class="chips"><label class="check"><input id="directOnly" type="checkbox"> Nonstop only</label><label class="check" id="keepFlexibleWrap"><input id="keepFlexible" type="checkbox" checked> Preserve flexible points when possible</label><label class="check" id="useGoogleWrap" hidden><input id="useGoogle" type="checkbox"> Check live Google Flights price (uses 1 SerpApi search)</label></div>
 <div class="searchfoot"><span id="searchMessage">Ready.</span><button class="btn primary" id="searchBtn"><svg class="icon"><use href="#i-search"/></svg>Search &amp; optimize</button></div></div>
 <div id="stayPlan" hidden></div>
 <div class="card resultsbar"><div><h2>Opportunities</h2><p id="resultMeta">No search yet.</p></div></div><div id="results"></div>
+</section>
+
+<section id="view-builder" class="view">
+<div class="viewhead"><div><h2>Trip Builder</h2><p>Your award flights, hotels and the flights between home and the award airports, assembled into one trip with one combined points and cash total.</p></div><button class="btn ghost" id="clearTrip">Clear flights</button></div>
+<div class="card searchbox"><div class="formgrid" style="margin-top:0">
+<div><label for="tbHome">Home airport (start)</label><input id="tbHome" maxlength="3" placeholder="BOS"></div>
+<div><label for="tbReturnTo">Return home to</label><input id="tbReturnTo" maxlength="3" placeholder="BOS"></div>
+<div><label for="tbBufferOut">Arrive before award flight (hours)</label><input id="tbBufferOut" type="number" min="1" max="24" step="0.5"></div>
+<div><label for="tbBufferBack">Leave after award lands (hours)</label><input id="tbBufferBack" type="number" min="1" max="24" step="0.5"></div>
+</div><p class="muted" style="margin:10px 0 0;font-size:12.5px">Separate tickets don't protect connections, so leave a generous buffer (3h+ before an international departure is a good rule).</p></div>
+<div class="builder-grid" style="margin-top:14px"><div class="timeline" id="tbTimeline"></div><div class="sticky" id="tbSummary"></div></div>
 </section>
 
 <section id="view-wallet" class="view">
@@ -69,10 +83,12 @@
 <div class="stack">
 <div class="card searchbox"><div class="formgrid" style="margin-top:0">
 <div><label for="dealAirports">Home airports</label><input id="dealAirports" placeholder="JFK,EWR,BOS"></div>
+<div><label for="dealDestination">Destination (optional)</label><input id="dealDestination" placeholder="Anywhere — or Tokyo, LIS, Italy"></div>
 <div><label for="dealCabin">Cabin</label><select id="dealCabin"><option value="economy" selected>Economy</option><option value="business">Business</option></select></div>
 <div><label for="dealMaxPrice">Max price per person (USD)</label><input id="dealMaxPrice" type="number" min="0" step="50" placeholder="Any"></div>
 <div><label for="dealMinDrop">Alert when at least</label><select id="dealMinDrop"><option value="15">15% below usual</option><option value="25" selected>25% below usual</option><option value="35">35% below usual</option><option value="50">50% below usual</option></select></div>
 </div><div class="searchfoot"><span id="dealMessage">Deals become more accurate as PointPilot builds price history (3+ days per route).</span><div class="btnrow" style="margin:0"><button class="btn" id="watchDeals"><svg class="icon"><use href="#i-bell"/></svg>Watch these airports</button><button class="btn primary" id="findDeals"><svg class="icon"><use href="#i-search"/></svg>Find deals</button></div></div></div>
+<div class="cardhead" id="dealTabsBar" hidden><div class="seg" id="dealTabs"><button class="seg active" data-scope="all">All</button><button class="seg" data-scope="international">International</button><button class="seg" data-scope="domestic">Domestic</button></div><div class="btnrow" style="margin:0" id="dealGoogleLinks"></div></div>
 <div id="dealResults"></div>
 </div></section>
 

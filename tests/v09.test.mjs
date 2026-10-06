@@ -40,7 +40,10 @@ test('trip details: local times, next-day arrival, layover, aircraft and seat ex
   assert.deepEqual(t.flightNumbers, ['NH9', 'NH805']);
   assert.equal(t.segments[0].airline, 'All Nippon Airways');
   assert.equal(t.segments[0].aircraft, 'Boeing 777-300ER');
-  assert.match(t.segments[0].seat.type, /Lie-flat/);
+  assert.equal(t.segments[0].seat.type, 'THE Room');      // curated ANA 777-300ER business product
+  assert.equal(t.segments[0].seat.score, 5);
+  assert.equal(t.product.type, 'THE Room');                // longest segment decides the trip's product
+  assert.equal(t.departUtc, '2027-03-05T15:30:00Z');
   assert.match(t.segments[0].seatMaps.aerolopa, /aerolopa\.com/);
 });
 
