@@ -359,7 +359,7 @@ function optCard(o, leg) {
     ${selected ? '<span class="check">✓ SELECTED</span>' : rec ? '<span class="check" style="background:var(--green)">RECOMMENDED</span>' : ''}
     <div class="row1"><div><div class="times">${f ? `${t12(f.depart?.time)} → ${t12(f.arrive?.time)}${plusDays(f.arriveDayOffset)}` : esc(dayLabel(o.date))}</div>
       <div class="meta">${f ? `${esc(dayLabel(f.depart?.date))} · ${dur(f.totalDurationMin)} · ${stopsTxt}` : `${esc(o.origin)} → ${esc(o.destination)}${stopsTxt ? ` · ${stopsTxt}` : ''} · flight times not available`}</div></div>
-      <div class="pts">${fmt(o.mileageCost)}<div class="meta" style="font-weight:500">${o.totalTaxes != null ? `+ ${money(o.totalTaxes)}` : 'taxes ?'} / person</div></div></div>
+      <div class="pts">${fmt(o.mileageCost)}<div class="meta" style="font-weight:500">${taxText(o)} / person</div></div></div>
     <div class="meta2">${seatChip(f?.product)} ${f?.product?.aircraft ? `<span>${esc(f.product.aircraft)}</span>` : ''}<span>${esc(o.programName)}</span>${f ? `<span>${esc(f.airlines.join(', '))} ${esc(f.flightNumbers.join(' / '))}</span>` : (o.airlines ? `<span>${esc(o.airlines)}</span>` : '')}${o.remainingSeats ? `<span>${o.remainingSeats} seat(s)</span>` : ''}${o.history ? `<span class="history-badge" style="margin:0">${esc(o.history.label)}</span>` : ''}${sourceTag(o)}
       ${f || o.availabilityId ? `<button class="btn small ghost" data-action="opt-details" data-id="${esc(o.id)}">${open ? 'Hide details' : 'Flight details'}</button>` : ''}</div>
     ${flagsFor(o, leg) ? `<div class="meta2">${flagsFor(o, leg)}</div>` : ''}
@@ -375,9 +375,12 @@ const dayKey = o => o.flight?.depart?.date || o.date;
 const median = a => { const s = a.filter(Number.isFinite).sort((x, y) => x - y); return s.length ? s[Math.floor(s.length / 2)] : null; };
 const kpts = n => (n >= 100000 ? `${Math.round(n / 1000)}k` : `${(n / 1000).toFixed(n % 1000 ? 1 : 0)}k`);
 
+const taxText = o => (o.taxesMissing ? (o.totalTaxes != null ? `+ ≈${money(o.totalTaxes)} est.` : '+ taxes ?') : o.totalTaxes != null ? `+ ${money(o.totalTaxes)}` : '+ taxes ?');
+
 // Warnings worth seeing at a glance: much longer than typical, tight/long layovers, mixed cabin, price outliers.
 function flagsFor(o, leg) {
   const flags = [];
+  if (o.taxesMissing) flags.push(['', o.taxesEstimate ? `TAXES NOT REPORTED: ≈${money(o.taxesEstimate.value)} EST.` : 'TAXES NOT REPORTED: CHECK PROGRAM']);
   const list = legList(leg);
   const f = o.flight;
   if (f) {
@@ -473,7 +476,7 @@ function summaryLeg(o, label) {
   return `<div class="summary-leg"><div class="lbl">${label} · ${esc(dayLabel(f?.depart?.date || o.date))}</div>
     <div class="times">${f ? `${t12(f.depart?.time)} ${esc(f.origin)} → ${t12(f.arrive?.time)} ${esc(f.destination)}${plusDays(f.arriveDayOffset)}` : `${esc(o.origin)} → ${esc(o.destination)}`}</div>
     <div class="sub">${f ? `${dur(f.totalDurationMin)} · ${f.stops === 0 ? 'Nonstop' : `via ${f.layovers.map(l => esc(l.airport)).join(', ')}`} · ${esc(f.flightNumbers.join(' / '))}` : 'Flight times not available'}</div>
-    <div class="meta2" style="margin-top:6px">${seatChip(f?.product)}<span>${esc(o.programName)} · ${fmt(o.mileageCost)} pts${o.totalTaxes != null ? ` + ${money(o.totalTaxes)}` : ''} / person</span>${flagsFor(o, o.leg === 'Return' ? 'Return' : 'Outbound')}</div></div>`;
+    <div class="meta2" style="margin-top:6px">${seatChip(f?.product)}<span>${esc(o.programName)} · ${fmt(o.mileageCost)} pts ${taxText(o)} / person</span>${flagsFor(o, o.leg === 'Return' ? 'Return' : 'Outbound')}</div></div>`;
 }
 
 async function renderAwardSummary() {
@@ -485,7 +488,20 @@ async function renderAwardSummary() {
       ${!isRec && award.recIds.size ? '<button class="btn small" data-action="reset-rec">Back to recommended</button>' : ''}</div>
     <div class="summary-legs">${summaryLeg(out, 'Outbound')}${hasReturn ? summaryLeg(back, 'Return') : ''}</div>
     <div id="awFunding"></div><div id="cashCompare"></div>
-    <div class="btnrow"><button class="btn primary" data-action="add-builder"${out ? '' : ' disabled'}><svg class="icon"><use href="#i-map"/></svg>Add to Trip Builder</button><button class="btn" data-action="compare-cash"${out ? '' : ' disabled'}><svg class="icon"><use href="#i-tag"/></svg>Compare with cash price</button><button class="btn" data-action="monitor"><svg class="icon"><use href="#i-bell"/></svg>Monitor this trip</button></div></div>`;
+    <div class="btnrow"><button class="btn primary" data-action="add-builder"${out ? '' : ' disabled'}><svg class="icon"><use href="#i-map"/></svg>Add to Trip Builder</button><button class="btn" data-action="compare-cash"${out ? '' : ' disabled'}><svg class="icon"><use href="#i-tag"/></svg>Compare with cash price</button><button class="btn" data-action="monitor-open"><svg class="icon"><use href="#i-bell"/></svg>Set an alert</button></div>
+    <div id="awAlertPanel" class="note" hidden>
+      <strong>Alert me when…</strong>
+      <div class="btnrow" style="margin-top:8px">
+        <select id="alertMode">
+          ${out?.flight ? `<option value="exact">These exact flights (${esc([out, back].filter(Boolean).map(o => o.flight?.flightNumbers.join('/') || o.date).join(' + '))}) are available</option>
+          <option value="similar" selected>These flights or similar: same day, ≤10% more points, same or better seat</option>` : ''}
+          <option value="any"${out?.flight ? '' : ' selected'}>Any award on these dates fits my points</option>
+        </select>
+        <input id="alertMaxPts" class="inputnum" type="number" min="0" step="5000" placeholder="Max pts / person">
+        <button class="btn primary small" data-action="monitor-create">Create alert</button>
+      </div>
+      <p class="muted" style="margin:6px 0 0;font-size:12px">Checked in the background (Data &amp; System → alert interval); you get a Windows notification when it matches or the price drops.</p>
+    </div></div>`;
   if (!out) return;
   const seq = ++award.seq;
   const legs = [out, ...(hasReturn && back ? [back] : [])];
@@ -499,7 +515,7 @@ async function renderAwardSummary() {
     $('kpiScore').textContent = money(t.effectiveCostUsd);
     $('kpiHint').textContent = `${fmt(t.totalSourcePoints)} pts + ${money(t.taxesUsd)}`;
     const path = t.sources.map(s => `<span class="node">${s.direct ? `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} (have)` : `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} → ${fmt(s.targetPoints)} ${esc(programLabel(s.targetProgram))}${s.bonusPct ? ` (+${Math.round(s.bonusPct * 100)}%)` : ''}`}</span>`).join('');
-    $('awFunding').innerHTML = `<div class="metrics" style="margin-top:12px"><div class="metric"><span>Award points needed</span><b>${fmt(t.totalTargetPoints)}</b></div><div class="metric"><span>Taxes &amp; fees</span><b>${money(t.taxesUsd)}</b></div><div class="metric"><span>Effective cost</span><b>${money(t.effectiveCostUsd)}</b></div><div class="metric"><span id="valueMetricLabel">Value</span><b class="positive" id="valueMetric">${t.cpp ? `${t.cpp.toFixed(2)}¢/pt` : 'compare with cash ↓'}</b></div></div>
+    $('awFunding').innerHTML = `<div class="metrics" style="margin-top:12px"><div class="metric"><span>Award points needed</span><b>${fmt(t.totalTargetPoints)}</b></div><div class="metric"><span>Taxes &amp; fees${t.taxesEstimated ? ' (incl. estimate)' : ''}</span><b>${t.taxesEstimated ? '≈' : ''}${money(t.taxesUsd)}</b></div><div class="metric"><span>Effective cost</span><b>${money(t.effectiveCostUsd)}</b></div><div class="metric"><span id="valueMetricLabel">Value</span><b class="positive" id="valueMetric">${t.cpp ? `${t.cpp.toFixed(2)}¢/pt` : 'compare with cash ↓'}</b></div></div>
       <div class="path">${path}</div>${warningsBox(t.warnings)}`;
   } catch (e) { if (seq === award.seq) $('awFunding').innerHTML = `<div class="warnbox">${esc(e.message)}</div>`; }
 }
@@ -594,21 +610,53 @@ function fundingText(f) {
 
 const catLabel = h => (h.category ? `<span class="cat">${esc(h.programName.replace(/^World of /, ''))} Cat ${esc(h.category)}</span>` : '');
 
+function hotelQuality(h) {
+  const i = h.info;
+  const stars = i?.stars ? `<span class="stars" title="${i.stars}-star hotel (Google)">${'★'.repeat(i.stars)}<span class="muted" style="font-weight:500"> ${i.stars}-star</span></span>` : '';
+  const rating = i?.rating ? `<a href="${esc(h.reviewLinks.google)}" target="_blank" rel="noreferrer" title="Google reviews">${i.rating.toFixed(1)} ★ Google${i.reviews ? ` (${fmt(i.reviews)} reviews)` : ''}</a>` : '';
+  const awards = (h.awards || []).map(a => `<a class="award" href="${esc(a.url)}" target="_blank" rel="noreferrer" title="MICHELIN Guide distinction">${'🔑'.repeat(a.keys)} ${esc(a.label)}</a>`).join(' ');
+  return { stars, rating, awards };
+}
+
 function hotelCard(h, i) {
   const link = safeUrl(h.bookingUrl);
+  const q = hotelQuality(h);
+  const L = h.reviewLinks || {};
   return `<div class="card result"><div>
     <h4>${esc(h.name)} ${catLabel(h)} ${hotelTag(h)} ${h.affordable ? '' : '<span class="tag warn">NOT ENOUGH POINTS</span>'}${h.estimated ? ' <span class="tag warn">ESTIMATED</span>' : ''}</h4>
+    ${q.stars || q.rating || q.awards ? `<p class="quality">${[q.stars, q.rating, q.awards].filter(Boolean).join(' · ')}</p>` : ''}
     <p>${esc(h.location)} · ${esc(h.programName)} · ${esc(h.roomType)} · ${dateFmt(h.checkIn)} → ${dateFmt(addDays(h.checkIn, h.nights))} · ${h.nights} night(s)</p>
-    <p>${fundingText(h.funding) || 'Your balances and transfer partners can\'t cover this stay.'}</p>
+    <p>${fundingText(h.funding) || 'Your remaining balances and transfer partners can\'t cover this stay.'}</p>
+    <p class="links">Reviews &amp; awards: <a href="${esc(L.google)}" target="_blank" rel="noreferrer">Google</a> · <a href="${esc(L.tripadvisor)}" target="_blank" rel="noreferrer">TripAdvisor</a> · <a href="${esc(L.forbes)}" target="_blank" rel="noreferrer">Forbes Travel Guide</a> · <a href="${esc(L.michelin)}" target="_blank" rel="noreferrer">MICHELIN Guide</a>${h.info ? '' : ` · <button class="btn small ghost" data-action="hotel-info-one" data-i="${i}">Get star rating</button>`}</p>
     <div class="btnrow" style="margin-top:6px"><button class="btn small primary" data-action="add-stay" data-i="${i}"><svg class="icon"><use href="#i-plus"/></svg>Add to stay plan</button>${link ? `<a class="btn small" href="${esc(link)}" target="_blank" rel="noreferrer">View / book ↗</a>` : ''}</div>
   </div><div class="right"><span class="pts">${fmt(h.totalPoints)} pts</span><span class="subv">${fmt(h.nightlyPoints)}/night${h.cashUsd ? ` · cash ${money(h.cashUsd)} · ${h.cpp.toFixed(2)}¢/pt` : ''}</span>${h.effectiveCostUsd != null ? `<span class="subv">${money(h.effectiveCostUsd)} in points value</span>` : ''}</div></div>`;
+}
+
+/** Load star class + Google rating for the hotels shown (one SerpApi search per program per city). */
+async function loadHotelInfo(rows, mode = 'program') {
+  const r = state.lastHotels;
+  const byCity = new Map();
+  for (const h of rows) { const c = h.hotelCity || h.city; if (!byCity.has(c)) byCity.set(c, []); byCity.get(c).push(h); }
+  let calls = 0;
+  for (const [city, hs] of byCity) {
+    const res = await api('/api/hotels/enrich', { method: 'POST', body: { city, checkIn: r.query.checkIn, checkOut: r.query.checkOut, mode, hotels: hs.map(h => ({ name: h.name, city: h.hotelCity || h.city, program: h.program, latitude: h.latitude, longitude: h.longitude })) } });
+    calls += res.calls;
+    for (const h of state.hotelRows) if (res.info[h.infoKey]) h.info = res.info[h.infoKey];
+  }
+  renderHotels(r);
+  const missing = rows.filter(h => !h.info).length;
+  toast(`${calls ? `Used ${calls} SerpApi search${calls > 1 ? 'es' : ''}. ` : ''}${missing ? `${missing} hotel(s) not matched: use "Get star rating" on a card.` : 'Ratings loaded.'}`);
 }
 
 function addDays(iso, n) { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 
 function renderHotels(r) {
-  const rows = r.rows || [];
-  state.hotelRows = rows;
+  if (state.lastHotels !== r) { state.lastHotels = r; state.hotelRows = r.rows || []; }
+  const minStars = Number(state.hotelMinStars || 0);
+  const allRows = state.hotelRows;
+  // Filtering keeps original indexes so "Add to stay plan" still points at the right hotel.
+  const rows = allRows;
+  const visible = h => !minStars || (h.info?.stars || 0) >= minStars;
   $('resultMeta').textContent = `${fmt(rows.length)} hotel award(s) in ${r.query.cities.join(', ')} · ${r.nights} night(s) · ${r.query.roomType === 'any' ? 'any room' : r.query.roomType}`;
   const best = rows.find(h => h.affordable);
   $('kpiScore').textContent = best ? `${fmt(best.totalPoints)} pts` : '—';
@@ -620,12 +668,20 @@ function renderHotels(r) {
         ${c.bestValue ? `<p>Lowest points value: <b>${money(c.bestValue.effectiveCostUsd)}</b> · ${esc(c.bestValue.name)}</p>` : ''}
         <p>${esc(c.programs.join(', '))}</p></div>`).join('')}</div>` : '';
     const groups = r.query.cities.map(city => {
-      const list = rows.map((h, i) => ({ h, i })).filter(x => x.h.city === city);
-      if (!list.length) return `<div class="city-head"><h3>${esc(city)}</h3><span class="muted">No award space found</span></div>`;
+      const list = rows.map((h, i) => ({ h, i })).filter(x => x.h.city === city && visible(x.h));
+      if (!list.length) return `<div class="city-head"><h3>${esc(city)}</h3><span class="muted">${minStars ? `No ${minStars}-star+ hotels with known ratings` : 'No award space found'}</span></div>`;
       return `${r.cities.length > 1 ? `<div class="city-head"><h3>${esc(city)}</h3><span class="muted">${list.length} option(s)</span></div>` : ''}<div class="result-list">${list.slice(0, 20).map(x => hotelCard(x.h, x.i)).join('')}</div>`;
     }).join('');
     const monitorBtn = '<input id="hotelAlertMax" class="inputnum" type="number" min="0" step="1000" placeholder="Max pts/night" title="Optional: only alert at or below this many points per night"><button class="btn" data-action="monitor-hotel"><svg class="icon"><use href="#i-bell"/></svg>Monitor these stays</button>';
-    $('results').innerHTML = warningsBox(r.dataStatus.warnings) + compare + groups + `<div class="btnrow">${monitorBtn}</div>`;
+    const unknown = allRows.filter(h => !h.info).length;
+    const programsByCity = new Set(allRows.filter(h => !h.info).map(h => `${h.city}|${h.program}`)).size;
+    const toolbar = `<div class="card filters" style="margin-bottom:12px">
+      <div><label for="hotelMinStars">Hotel class</label><select id="hotelMinStars"><option value="0">Any</option><option value="3"${minStars === 3 ? ' selected' : ''}>3-star+</option><option value="4"${minStars === 4 ? ' selected' : ''}>4-star+</option><option value="5"${minStars === 5 ? ' selected' : ''}>5-star only</option></select></div>
+      ${unknown ? `<div><button class="btn small" data-action="hotel-info-all">Load star ratings &amp; reviews</button><span class="muted" style="font-size:12px;margin-left:6px">about ${programsByCity} SerpApi search${programsByCity === 1 ? '' : 'es'}, cached 60 days</span></div>` : '<div class="muted" style="font-size:12.5px">Ratings loaded (Google)</div>'}
+      <div class="muted" style="font-size:12px">🔑 = MICHELIN Key hotel</div></div>`;
+    const planNote = r.dataStatus.planNote ? `<div class="note">Payments below use what's left <strong>after the ${r.dataStatus.planNote.stays} stay${r.dataStatus.planNote.stays > 1 ? 's' : ''} already in your stay plan</strong> (${r.dataStatus.planNote.committed.map(c => `${fmt(c.points)} ${esc(programLabel(c.from))}`).join(', ')} committed).</div>` : '';
+    $('results').innerHTML = warningsBox(r.dataStatus.warnings) + planNote + toolbar + compare + groups + `<div class="btnrow">${monitorBtn}</div>`;
+    $('hotelMinStars').onchange = e => { state.hotelMinStars = Number(e.target.value); renderHotels(r); };
     return;
   }
   const monitorBtn = '<input id="hotelAlertMax" class="inputnum" type="number" min="0" step="1000" placeholder="Max pts/night" title="Optional: only alert at or below this many points per night"><button class="btn" data-action="monitor-hotel"><svg class="icon"><use href="#i-bell"/></svg>Monitor these stays</button>';
@@ -773,6 +829,22 @@ $('results').addEventListener('click', async e => {
   if (action === 'reset-rec') { const ids = award.r.recommended?.ids || []; award.sel = { Outbound: ids[0] || null, Return: ids[1] || null }; renderColumns(); renderAwardSummary(); return; }
   if (action === 'clear-filters') { ['fMaxPts', 'fMaxHours', 'fStops', 'fDepart', 'fSeat', 'fProgram'].forEach(id => { $(id).value = ''; }); renderColumns(); return; }
   if (action === 'add-builder') { addSelectionToBuilder(); return; }
+  if (action === 'hotel-info-all') { busy(btn, true, 'Loading…'); loadHotelInfo(state.hotelRows.filter(h => !h.info)).catch(err => { toast(err.message); renderHotels(state.lastHotels); }); return; }
+  if (action === 'hotel-info-one') { const h = state.hotelRows[Number(btn.dataset.i)]; busy(btn, true, '…'); loadHotelInfo([h], 'single').catch(err => { toast(err.message); renderHotels(state.lastHotels); }); return; }
+  if (action === 'monitor-open') { $('awAlertPanel').hidden = !$('awAlertPanel').hidden; return; }
+  if (action === 'monitor-create') {
+    const q = state.lastQuery || currentQuery();
+    const mode = $('alertMode').value, max = Number($('alertMaxPts').value || 0);
+    const legs = [optById(award.sel.Outbound), award.r.query.back ? optById(award.sel.Return) : null].filter(Boolean);
+    const track = mode === 'any' ? null : { mode, legs: legs.map(o => ({ leg: o.leg, date: o.flight?.depart?.date || o.date, flightNumbers: o.flight?.flightNumbers || [], program: o.program, programName: o.programName, mileageCost: o.mileageCost, seatScore: o.seatScore, product: o.flight?.product?.type || null })) };
+    const title = track ? `${legs.map(o => o.flight?.flightNumbers.join('/') || o.date).join(' + ')}${mode === 'similar' ? ' or similar' : ''}` : `${q.destination} ${q.cabin} · ${q.travelers} pax`;
+    try {
+      const a = await api('/api/alerts', { method: 'POST', body: { ...q, track, maxPointsPerTraveler: max, title } });
+      state.alerts.unshift(a); renderAlerts(); renderKPIs(); $('awAlertPanel').hidden = true;
+      toast(track ? 'Flight alert saved. You\'ll be notified when these flights are bookable.' : 'Trip alert saved.');
+    } catch (err) { toast(err.message); }
+    return;
+  }
   if (action === 'trip-details') {
     const el = btn.closest('.result').querySelector('.trips');
     if (!el.hidden && el.dataset.loaded === btn.dataset.id) { el.hidden = true; return; }
@@ -819,7 +891,9 @@ function renderAlerts() {
       hotel: () => `<span class="tag brand">HOTEL</span> ${esc(q.destination)} · ${esc(q.roomType)} room · ${dateFmt(q.checkIn)}${q.checkOut ? ` – ${dateFmt(q.checkOut)}` : ''} ± ${esc(q.flexDays)}d${q.maxPointsPerNight ? ` · ≤ ${fmt(q.maxPointsPerNight)} pts/night` : ''}`,
       cash: () => `<span class="tag brand">CASH FARE</span> ${esc(q.origins)} → ${esc(q.destination)} · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d${a.targetPrice ? ` · target ${money(a.targetPrice)}` : ''}${a.dealPct ? ` · or ${esc(a.dealPct)}% below usual` : ''}${a.lastNotifiedPrice ? ` · last alert ${money(a.lastNotifiedPrice)}` : ''}`,
       deals: () => `<span class="tag brand">DEAL WATCH</span> from ${esc(q.airports)}${q.destination ? ` to ${esc(q.destination)}` : ' to anywhere'} · ${esc(a.minDropPct)}%+ below usual${q.maxPrice ? ` · under ${money(q.maxPrice)}` : ''}`,
-      award: () => `<span class="tag brand">AWARD</span> ${esc(q.origins)} → ${esc(q.destination)} · ${esc(q.cabin)} · ${esc(q.travelers)} pax · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d`
+      award: () => a.track
+        ? `<span class="tag brand">${a.track.mode === 'exact' ? 'EXACT FLIGHTS' : 'FLIGHTS OR SIMILAR'}</span> ${a.track.legs.map(l => `${esc(l.leg)} ${esc(l.flightNumbers.join('/') || '')} ${dateFmt(l.date)} (${fmt(l.mileageCost)} pts${l.product ? `, ${esc(l.product)}` : ''})`).join(' · ')} · ${esc(q.cabin)} · ${esc(q.travelers)} pax${a.maxPointsPerTraveler ? ` · ≤ ${fmt(a.maxPointsPerTraveler)} pts/person` : ''}${a.lastTracked ? ` · now: ${a.lastTracked.map(t => `${esc(t.leg)} ${t.found ? `${fmt(t.points)} pts` : 'not available'}`).join(', ')}` : ''}`
+        : `<span class="tag brand">AWARD</span> ${esc(q.origins)} → ${esc(q.destination)} · ${esc(q.cabin)} · ${esc(q.travelers)} pax · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d`
     }[a.kind || 'award']?.() || '';
     return `<div class="rowalert"><div><strong>${esc(a.title)}</strong>
       <div class="muted" style="font-size:11px">${desc}</div>

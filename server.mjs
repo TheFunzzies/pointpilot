@@ -16,6 +16,7 @@ import { searchCash, dealsFromAirports, cashForItinerary } from './lib/cash.mjs'
 import { getTripsCached } from './lib/flights.mjs';
 import { getPlan, addStay, removeStay, clearPlan } from './lib/stayplan.mjs';
 import { resolveSeatMaps } from './lib/seatmaps.mjs';
+import { enrichHotels } from './lib/hotelinfo.mjs';
 import { getTripPlan, updateTripSettings, setFlights, clearTrip, searchPositioning, removeFlight, setPositioning } from './lib/tripplan.mjs';
 import { loadCachedCabins, refreshCabins } from './lib/cabins.mjs';
 import { recordApiCalls } from './lib/settings.mjs';
@@ -113,6 +114,7 @@ function makeHandler(getPort) {
       const tripDir = p.match(/^\/api\/trip-plan\/(flights|positioning)\/(outbound|return)$/);
       if (tripDir && m === 'DELETE') return send(res, 200, tripDir[1] === 'flights' ? await removeFlight(tripDir[2]) : await setPositioning(tripDir[2], null));
       if (tripDir && m === 'PUT' && tripDir[1] === 'positioning') return send(res, 200, await setPositioning(tripDir[2], (await body(req)).option));
+      if (m === 'POST' && p === '/api/hotels/enrich') return send(res, 200, await enrichHotels(await body(req)));
       if (m === 'POST' && p === '/api/award/expand') return send(res, 200, await expandAwards(await body(req)));
       if (m === 'POST' && p === '/api/trip/evaluate') return send(res, 200, await evaluateSelection(await body(req)));
       if (m === 'GET' && p === '/api/seatmaps') return send(res, 200, await resolveSeatMaps({ carrier: q.carrier, aircraftName: q.aircraft, aircraftCode: q.code }));

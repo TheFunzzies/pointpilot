@@ -356,3 +356,12 @@ tbody tr:hover td { background: var(--surface-2); }
 .flag.bad { background: var(--red-soft); color: var(--red); }
 .flag.info { background: var(--surface-3); color: var(--muted); }
 .daylist-head { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 2px 8px; font-size: 13px; }
+
+/* ---------- v0.12: hotel quality ---------- */
+.result p.quality { color: var(--ink-2); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; }
+.stars { color: #d97706; font-weight: 700; letter-spacing: 1px; }
+.award { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: #fdf2f8; color: #9d174d; text-decoration: none; }
+.award:hover { text-decoration: none; filter: brightness(.97); }
+@media (prefers-color-scheme: dark) { .award { background: #3b0a24; color: #f9a8d4; } .stars { color: #fbbf24; } }
+.result p.links { font-size: 12px; }
+.result p.links .btn { padding: 1px 8px; }
