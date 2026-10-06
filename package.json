@@ -1,6 +1,6 @@
 {
   "name": "pointpilot",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "private": true,
   "type": "module",
   "description": "PointPilot: find award space and fund trips from your points portfolio.",
@@ -45,7 +45,14 @@
       "desktop/**"
     ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "artifactName": "PointPilot-Setup-${version}.exe",
       "icon": "build/icon.ico"
     },

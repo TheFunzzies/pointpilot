@@ -61,11 +61,11 @@ async function refreshHealth() {
   const live = h.liveData === 'seats.aero';
   $('statusPill').textContent = live ? '● Live data: seats.aero' : '● Manual data only';
   $('modeLabel').textContent = live ? 'Live award data' : 'Manual data only';
-  $('modeHint').textContent = live ? `${h.apiCallsToday} seats.aero calls today` : 'Add a seats.aero key in Data & System for live availability.';
+  $('modeHint').textContent = live ? `Flights + hotels · ${h.apiCallsToday} flight / ${h.roomsCallsToday} hotel API calls today` : 'Add a seats.aero key in Data & System for live availability.';
   $('liveDot').style.background = live ? '#19835b' : '#e0a434';
   $('sysHistory').textContent = `${fmt(h.awardObservations)} observations`;
   $('sysTransfer').textContent = `Updated ${h.reference.lastUpdated} (${h.reference.origin})`;
-  $('apiCalls').textContent = fmt(h.apiCallsToday);
+  $('apiCalls').textContent = `${fmt(h.apiCallsToday)} flights · ${fmt(h.roomsCallsToday)} hotels`;
   const info = desktop ? await desktop.appInfo() : null;
   $('sysDataDir').textContent = info?.dataDir || h.dataDir;
   if (info && !info.packaged) renderUpdateStatus({ status: 'unavailable', message: 'Development build — automatic updates run in the installed app.' });
@@ -146,10 +146,13 @@ async function runSearch() {
   busy($('searchBtn'), true, 'Searching…');
   try {
     if (state.product === 'hotels') {
-      msg.textContent = 'Searching recorded hotel awards…';
-      const r = await api('/api/search/hotels', { method: 'POST', body: { destination: $('destination').value, checkIn: $('dateFrom').value, checkOut: $('dateTo').value, flexDays: Number($('flex').value) } });
+      msg.textContent = 'Searching hotel award space…';
+      const q = currentHotelQuery();
+      state.lastHotelQuery = q;
+      const r = await api('/api/search/hotels', { method: 'POST', body: q });
       renderHotels(r);
-      msg.textContent = r.rows.length ? `${r.rows.length} hotel award(s) for ${r.nights} night(s).` : 'No recorded hotel awards match. Add one under Manual Entry.';
+      const src = { fetched: 'live rooms.aero data', 'recent-cache': 'rooms.aero data from the last hour', 'not-configured': 'manually entered hotels only', error: 'the local cache (rooms.aero failed)' }[r.dataStatus.api] || 'local data';
+      msg.textContent = `${r.rows.length} hotel award(s) in ${r.query.destination} for ${r.nights} night(s), using ${src}.`;
       return;
     }
     msg.textContent = 'Searching award space and optimizing against your points…';
@@ -218,16 +221,59 @@ function renderFlightResults(r) {
   $('results').innerHTML = rec + `<div class="result-list">${others}</div>`;
 }
 
+function currentHotelQuery() {
+  return {
+    destination: $('destination').value.trim(), checkIn: $('dateFrom').value, checkOut: $('dateTo').value || null,
+    flexDays: Number($('flex').value), roomType: $('cabin').value, rank: $('rank').value, preserveFlexible: $('keepFlexible').checked
+  };
+}
+
+function hotelTag(h) {
+  if (h.dataSource === 'rooms.aero') return `<span class="tag">LIVE · ${h.ageHours < 1 ? '<1' : Math.round(h.ageHours)}h old</span>`;
+  return `<span class="tag muted">MANUAL · ${h.ageHours < 24 ? 'today' : `${Math.round(h.ageHours / 24)}d old`}</span>`;
+}
+
+function fundingText(f) {
+  if (!f) return '';
+  return f.sources.map(s => s.direct ? `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} (have)` : `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} → ${fmt(s.targetPoints)} ${esc(programLabel(s.targetProgram))}${s.bonusPct ? ` (+${Math.round(s.bonusPct * 100)}%)` : ''}`).join(', ');
+}
+
 function renderHotels(r) {
-  $('resultMeta').textContent = `${fmt(r.rows.length)} recorded hotel award(s)`;
-  $('kpiScore').textContent = r.rows[0]?.cpp ? `${r.rows[0].cpp.toFixed(2)}¢/pt` : '—';
-  $('results').innerHTML = r.rows.length ? r.rows.slice(0, 15).map(h => `<div class="card result"><div><h4>${esc(h.name)} ${h.affordable ? '' : '<span class="tag warn">NOT ENOUGH POINTS</span>'}</h4><p>${esc(h.location)} · ${esc(h.programName)} · ${esc(h.roomType)} · check-in ${dateFmt(h.checkIn)} · ${h.nights} night(s)</p><p>${h.funding ? h.funding.sources.map(s => s.direct ? `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} (have)` : `${fmt(s.fromPoints)} ${esc(programLabel(s.from))}→${esc(programLabel(s.targetProgram))}`).join(', ') : ''}</p></div><div class="right"><span class="pts">${fmt(h.totalPoints)} pts total</span><span class="subv">${fmt(h.nightlyPoints)}/night${h.cashValue ? ` · ${money(h.cashValue)} cash · ${h.cpp.toFixed(2)}¢/pt` : ''}</span></div></div>`).join('')
-    : '<div class="card empty"><strong>No recorded hotel awards match.</strong><div class="btnrow"><button class="btn primary" data-action="manual">Add a hotel award</button></div></div>';
+  const rows = r.rows || [];
+  $('resultMeta').textContent = `${fmt(rows.length)} hotel award(s) · ${r.nights} night(s) · ${r.query.roomType === 'any' ? 'any room' : esc(r.query.roomType)}`;
+  const best = rows.find(h => h.affordable);
+  $('kpiScore').textContent = best ? `${fmt(best.totalPoints)} pts` : '—';
+  $('kpiHint').textContent = best ? `${best.name}` : 'no affordable stay';
+  const monitorBtn = '<input id="hotelAlertMax" class="inputnum" type="number" min="0" step="1000" placeholder="Max pts/night" title="Optional: only alert at or below this many points per night"><button class="btn" data-action="monitor-hotel">🔔 Monitor this stay</button>';
+  const warn = warningsBox(r.dataStatus.warnings);
+  if (!rows.length) {
+    const tip = r.dataStatus.api === 'not-configured' ? '<div class="note">Tip: your seats.aero key also unlocks live hotel search (rooms.aero). Add it under <em>Data &amp; System</em>.</div>' : '';
+    $('results').innerHTML = `<div class="card empty"><strong>No hotel award space found for these dates.</strong>${warn}${tip}<div class="btnrow">${monitorBtn}<button class="btn" data-action="manual">Add a hotel award</button></div></div>`;
+    return;
+  }
+  const cards = rows.slice(0, 25).map(h => {
+    const link = safeUrl(h.bookingUrl);
+    return `<div class="card result"><div>
+      <h4>${esc(h.name)} ${hotelTag(h)} ${h.affordable ? '' : '<span class="tag warn">NOT ENOUGH POINTS</span>'}${h.estimated ? ' <span class="tag warn">ESTIMATED</span>' : ''}</h4>
+      <p>${esc(h.location)} · ${esc(h.programName)}${h.category ? ` · Cat ${esc(h.category)}` : ''} · ${esc(h.roomType)} · check-in ${dateFmt(h.checkIn)} · ${h.nights} night(s)</p>
+      <p>${fundingText(h.funding) || 'Your balances and transfer partners can\'t cover this stay.'}</p>
+      ${link ? `<p><a href="${esc(link)}" target="_blank" rel="noreferrer">View / book on ${esc(h.programName)} ↗</a></p>` : ''}
+    </div><div class="right"><span class="pts">${fmt(h.totalPoints)} pts</span><span class="subv">${fmt(h.nightlyPoints)}/night${h.cashUsd ? ` · cash ${money(h.cashUsd)} · ${h.cpp.toFixed(2)}¢/pt` : ''}</span>${h.effectiveCostUsd != null ? `<span class="subv">${money(h.effectiveCostUsd)} in points value</span>` : ''}</div></div>`;
+  }).join('');
+  $('results').innerHTML = `${warn}<div class="result-list">${cards}</div><div class="btnrow">${monitorBtn}</div>`;
 }
 
 $('results').addEventListener('click', async e => {
   const action = e.target.dataset.action;
   if (action === 'manual') showView('manual');
+  if (action === 'monitor-hotel') {
+    const q = state.lastHotelQuery || currentHotelQuery();
+    const max = Number($('hotelAlertMax')?.value || 0);
+    try {
+      const a = await api('/api/alerts', { method: 'POST', body: { ...q, kind: 'hotel', maxPointsPerNight: max, title: `${q.destination} hotel${max ? ` ≤ ${fmt(max)}/night` : ''}` } });
+      state.alerts.unshift(a); renderAlerts(); renderKPIs(); toast('Hotel monitor saved.');
+    } catch (err) { toast(err.message); }
+  }
   if (action === 'monitor') {
     const q = state.lastQuery || currentQuery();
     try {
@@ -244,8 +290,11 @@ function renderAlerts() {
   $('alerts').innerHTML = state.alerts.map(a => {
     const q = a.query || {};
     const last = a.lastResult ? `${a.lastResult.matches} match(es) · checked ${new Date(a.lastCheckedAt).toLocaleString()}` : 'Not checked yet';
+    const desc = a.kind === 'hotel'
+      ? `🏨 ${esc(q.destination)} · ${esc(q.roomType)} room · ${dateFmt(q.checkIn)}${q.checkOut ? ` – ${dateFmt(q.checkOut)}` : ''} ± ${esc(q.flexDays)}d${q.maxPointsPerNight ? ` · ≤ ${fmt(q.maxPointsPerNight)} pts/night` : ''}`
+      : `✈️ ${esc(q.origins)} → ${esc(q.destination)} · ${esc(q.cabin)} · ${esc(q.travelers)} pax · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d`;
     return `<div class="rowalert"><div><strong>${esc(a.title)}</strong>
-      <div class="muted" style="font-size:11px">${esc(q.origins)} → ${esc(q.destination)} · ${esc(q.cabin)} · ${esc(q.travelers)} pax · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d</div>
+      <div class="muted" style="font-size:11px">${desc}</div>
       <div class="muted" style="font-size:11px">${esc(last)}${a.lastResult?.best ? ` — ${esc(a.lastResult.best)}` : ''}</div></div>
       <div class="btnrow" style="margin:0"><button class="btn small" data-toggle="${esc(a.id)}" data-active="${a.active ? '1' : ''}">${a.active ? 'Pause' : 'Resume'}</button><button class="btn small" data-delete="${esc(a.id)}">Remove</button></div></div>`;
   }).join('');
@@ -388,7 +437,13 @@ document.querySelectorAll('button[data-product]').forEach(b => {
     document.querySelectorAll('button[data-product]').forEach(x => x.classList.toggle('active', x === b));
     state.product = b.dataset.product;
     const hotels = state.product === 'hotels';
-    $('cabin').disabled = hotels; $('origins').disabled = hotels; $('directOnly').disabled = hotels;
+    $('origins').disabled = hotels; $('directOnly').disabled = hotels; $('travelers').disabled = hotels;
+    $('cabin').innerHTML = hotels
+      ? '<option value="any" selected>Any room</option><option value="standard">Standard</option><option value="suite">Suite</option>'
+      : '<option selected value="business">Business</option><option value="first">First</option><option value="premium">Premium Economy</option><option value="economy">Economy</option>';
+    $('cabinLabel').textContent = hotels ? 'Room' : 'Cabin';
+    $('rank').options[3].disabled = hotels;
+    if (hotels && $('rank').value === 'nonstop') $('rank').value = 'overall';
     $('dateFromLabel').textContent = hotels ? 'Check-in' : 'Departure date';
     $('dateToLabel').textContent = hotels ? 'Check-out' : 'Return date (optional)';
   };

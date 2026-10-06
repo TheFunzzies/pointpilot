@@ -79,7 +79,7 @@ function makeHandler(getPort) {
 
       if (m === 'GET' && p === '/api/health') {
         const [h, s, usage] = await Promise.all([loadHistory(), getSettings(), apiUsage()]);
-        return send(res, 200, { ok: true, version: VERSION, awardObservations: h.length, dataDir: dataDir(), liveData: s.seatsAeroApiKey ? 'seats.aero' : 'manual-only', apiCallsToday: usage.calls, reference: referenceStatus() });
+        return send(res, 200, { ok: true, version: VERSION, awardObservations: h.length, dataDir: dataDir(), liveData: s.seatsAeroApiKey ? 'seats.aero' : 'manual-only', apiCallsToday: usage.calls, roomsCallsToday: usage.roomsCalls, reference: referenceStatus() });
       }
       if (m === 'GET' && p === '/api/user') return send(res, 200, await loadUser());
       if (m === 'PUT' && p === '/api/user') return send(res, 200, await saveUser(await body(req)));

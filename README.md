@@ -2,7 +2,7 @@
 
 A Windows desktop app that finds award flights and works out the cheapest way to pay for them from your own mix of airline miles, hotel points and transferable bank points.
 
-- **Live award search** through the [seats.aero](https://seats.aero) Partner API (optional, needs a seats.aero Pro key), plus manual entry for anything it doesn't cover.
+- **Live award search** for flights through the [seats.aero](https://seats.aero) Partner API, and for hotels (Hilton, Hyatt, IHG, Marriott, Choice, Wyndham, I Prefer) through its sister service [rooms.aero](https://rooms.aero). Both are optional and use the same seats.aero Pro key, each with its own daily quota. Manual entry covers anything else.
 - **Portfolio-aware optimizer** that funds the *whole trip* for *all travelers*. It uses miles you already hold first, then picks bank transfers by your own ¢/point values. It respects transfer minimums and increments, time-limited bonuses, the Marriott 60k→25k bonus, slow transfers and a max-transfers limit.
 - **Alerts** re-check saved trips in the background and show a Windows notification (and an optional Slack/Discord webhook) when new matching space appears.
 - **Price history** from published award-chart benchmarks plus every price PointPilot sees, used to label deals ("12% below historical median").
@@ -61,6 +61,7 @@ The release fails early if the tag doesn't match `package.json`, or if the lockf
 ## Notes and limits
 
 - seats.aero personal keys are for **non-commercial use** and allow about 1,000 calls a day. PointPilot reuses a result for the same search for 60 minutes (configurable) and shows the day's call count.
+- rooms.aero prices stays of 1–5 nights. Longer stays are estimated from the 5-night price and marked **ESTIMATED**. Hotel prices are for one room.
 - seats.aero's summary data doesn't always include taxes. When taxes are unknown, the effective cost understates the real price, and the result says so.
 - Routes marked **UNVERIFIED** in Transfer Partners were added from long-standing public partner lists. Confirm them on Roame before moving points; transfers are irreversible.
 - PointPilot never automates airline or hotel websites or bypasses bot checks. The capture window is a normal browser for searching manually.
