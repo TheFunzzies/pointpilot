@@ -1,13 +1,7 @@
-$ErrorActionPreference = "Stop"
-Write-Host "PointPilot Windows 11 build" -ForegroundColor Cyan
-if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw "Node.js is required. Install Node.js 22.12+ and rerun." }
-$nodeVersion = node -p "process.versions.node"
-Write-Host "Node.js $nodeVersion"
-npm install
-if ($LASTEXITCODE -ne 0) { throw "npm install failed." }
-npm test
-if ($LASTEXITCODE -ne 0) { throw "PointPilot tests failed." }
-npm run dist
-if ($LASTEXITCODE -ne 0) { throw "Windows installer build failed." }
-Write-Host "`nInstaller ready:" -ForegroundColor Green
-Write-Host (Join-Path $PWD "dist\PointPilot-Setup-0.5.0.exe")
+$ErrorActionPreference = 'Stop'
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw 'Node.js 22.12+ is required to build PointPilot.' }
+npm ci; if ($LASTEXITCODE) { throw 'npm ci failed' }
+npm test; if ($LASTEXITCODE) { throw 'Tests failed' }
+npm run dist; if ($LASTEXITCODE) { throw 'Installer build failed' }
+$version = node -p "require('./package.json').version"
+Write-Host "Installer ready: dist\PointPilot-Setup-$version.exe" -ForegroundColor Green

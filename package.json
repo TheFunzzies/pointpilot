@@ -1,19 +1,16 @@
 {
   "name": "pointpilot",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
-  "description": "PointPilot Windows 11 rewards optimizer with manual capture, historical award pricing, portfolio-aware optimization, and GitHub auto-updates.",
+  "description": "PointPilot: find award space and fund trips from your points portfolio.",
+  "main": "desktop/main.cjs",
   "scripts": {
-    "start": "node --env-file-if-exists=.env server.mjs",
-    "monitor": "node --env-file-if-exists=.env monitor.mjs",
-    "capture": "node scraper/manual-capture.mjs",
+    "start": "node server.mjs",
+    "monitor": "node server.mjs --monitor-once",
     "test": "node --test",
-    "seed-history": "node historical/seed-history.mjs",
     "desktop": "electron .",
     "dist": "electron-builder --win nsis --publish never",
-    "configure-github": "node scripts/configure-github.mjs",
-    "release": "electron-builder --win nsis --publish always",
     "release:check": "node scripts/check-release.mjs"
   },
   "engines": {
@@ -22,11 +19,15 @@
   "dependencies": {
     "electron-updater": "6.8.9"
   },
-  "main": "desktop/main.cjs",
   "devDependencies": {
     "electron": "44.5.1",
     "electron-builder": "26.17.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TheFunzzies/pointpilot.git"
+  },
+  "homepage": "https://github.com/TheFunzzies/pointpilot",
   "build": {
     "appId": "com.pointpilot.desktop",
     "productName": "PointPilot",
@@ -36,19 +37,15 @@
       "buildResources": "build"
     },
     "files": [
-      "**/*",
-      "!dist{,/**}",
-      "!README-DIRECT-SCRAPING.md"
+      "package.json",
+      "server.mjs",
+      "lib/**",
+      "public/**",
+      "reference/**",
+      "desktop/**"
     ],
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ],
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
       "artifactName": "PointPilot-Setup-${version}.exe",
       "icon": "build/icon.ico"
     },
@@ -58,11 +55,14 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "PointPilot"
+      "shortcutName": "PointPilot",
+      "deleteAppDataOnUninstall": false
     },
     "publish": [
       {
         "provider": "github",
+        "owner": "TheFunzzies",
+        "repo": "pointpilot",
         "releaseType": "release"
       }
     ]

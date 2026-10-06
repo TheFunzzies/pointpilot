@@ -1,36 +1,53 @@
-name: Build and Publish PointPilot Release
+name: Release
 
+# Push a tag like v0.6.0 (matching package.json "version") to build the Windows installer and
+# publish it as a GitHub Release. Installed copies of PointPilot pick it up automatically.
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    tags: ['v*.*.*']
 
 permissions:
   contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
     runs-on: windows-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22.12.0
+          node-version: 22
           cache: npm
 
-      - name: Install dependencies
-        run: npm install
+      - run: npm ci
 
-      - name: Run tests
-        run: npm test
+      - run: npm test
 
-      - name: Validate release configuration
+      - name: Validate release (tag matches version, lockfile, publish target)
         run: npm run release:check
 
-      - name: Build and publish GitHub Release
-        run: npm run release
+      - name: Build installer
+        run: npx electron-builder --win nsis --publish never
+
+      # Upload with the GitHub CLI instead of electron-builder's publisher so a re-run replaces
+      # assets cleanly. latest.yml is what installed apps read to discover the update.
+      - name: Publish GitHub Release
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $assets = @(Get-ChildItem dist -File | Where-Object { $_.Name -match '\.(exe|blockmap)$' -or $_.Name -eq 'latest.yml' } | ForEach-Object { $_.FullName })
+          if ($assets.Count -lt 3) { throw "Expected installer, blockmap and latest.yml in dist/, found: $($assets -join ', ')" }
+          gh release view $tag 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $tag @assets --clobber
+            gh release edit $tag --draft=false --latest
+          } else {
+            gh release create $tag @assets --title "PointPilot $tag" --generate-notes --latest
+          }

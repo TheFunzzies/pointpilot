@@ -1,70 +1,399 @@
+'use strict';
 const $ = id => document.getElementById(id);
-let product = 'flights', user = {balances:[],preferences:{}}, alerts = [], partners = {programs:{}}, providers = [], lastSearch = null;
-const demoDest = {Thailand:['BKK','HKT','CNX','DMK'],Japan:['NRT','HND','KIX'],Europe:['LHR','CDG','AMS','FRA','MAD','FCO'],Bali:['DPS'],Singapore:['SIN'],London:['LHR','LGW'],Paris:['CDG','ORY']};
-const labels = {amex:'Amex MR',chase:'Chase UR',capitalone:'Capital One Miles',citi:'Citi ThankYou',bilt:'Bilt',wellsfargo:'Wells Fargo',aeroplan:'Aeroplan',united:'United',american:'AAdvantage',flyingblue:'Flying Blue',ba:'British Airways Avios',qatar:'Qatar Avios',lifemiles:'LifeMiles',singapore:'KrisFlyer',virginatlantic:'Virgin Atlantic',hyatt:'Hyatt',hilton:'Hilton',marriott:'Marriott',ihg:'IHG',choice:'Choice',wyndham:'Wyndham',alaska:'Alaska / Atmos'};
-function money(n){return n==null||!Number.isFinite(Number(n))?'—':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(Number(n))}
-function fmt(n){return new Intl.NumberFormat('en-US').format(Math.round(Number(n)||0))}
-function dateFmt(x){return x?new Date(x+'T00:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'—'}
-function toast(t){$('toast').textContent=t;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2600)}
-async function api(path, options={}){const r=await fetch(path,{headers:{'content-type':'application/json',...(options.headers||{})},...options});const t=await r.text();let p={};try{p=JSON.parse(t)}catch{}if(!r.ok)throw new Error(p.error||`HTTP ${r.status}`);return p}
-function initDates(){const d=new Date();d.setDate(d.getDate()+165);const r=new Date(d);r.setDate(r.getDate()+12);$('dateFrom').value=d.toISOString().slice(0,10);$('dateTo').value=r.toISOString().slice(0,10)}
-async function load(){try{[user,partners,alerts,$meta,providers]=await Promise.all([api('/api/user'),api('/api/transfer-partners'),api('/api/alerts'),api('/api/health'),api('/api/providers').then(x=>x.providers)]);renderWallet();renderPartners();renderAlerts();renderKPIs();renderProviders();$('modeLabel').textContent='Direct + manual';$('statusPill').textContent='● Direct + manual data';$('sysHistory').textContent=fmt($meta.awardObservations||0)+' observations'; if($('sysDataDir')) { const info=await window.pointpilot?.appInfo?.(); $('sysDataDir').textContent=info?.dataDir||'Browser storage'; if(info && !info.packaged) renderUpdateStatus?.({status:'unavailable',message:'Development mode: automatic GitHub updates activate in packaged releases.'}); }}catch(e){$('statusPill').textContent='● Backend error';toast(e.message)}}
-function renderKPIs(){const total=user.balances.reduce((s,b)=>s+Number(b.balance||0),0),flex=user.balances.filter(b=>b.type==='bank').reduce((s,b)=>s+Number(b.balance||0),0);$('kpiTotal').textContent=fmt(total);$('kpiFlex').textContent=fmt(flex);$('kpiAlerts').textContent=alerts.filter(a=>a.active!==false).length}
-function renderWallet(){const tb=$('walletTable');tb.innerHTML=user.balances.map((b,i)=>`<tr><td><strong>${b.program}</strong><br><span class="muted">${b.code}</span></td><td>${b.type}</td><td><input class="inputnum" data-i="${i}" data-k="balance" value="${b.balance}"></td><td><input class="inputnum" data-i="${i}" data-k="cpp" value="${b.cpp}"></td><td>${b.transferable?'<span class="pill">Yes</span>':'No'}</td></tr>`).join('');tb.querySelectorAll('input').forEach(x=>x.addEventListener('input',e=>{const i=+e.target.dataset.i,k=e.target.dataset.k;user.balances[i][k]=Number(e.target.value)||0;renderKPIs()}))}
-async function saveWallet(){await api('/api/user',{method:'PUT',body:JSON.stringify(user)});toast('Wallet saved')}
-function ratioText(e){return `${e.ratio[0]}:${e.ratio[1]}`}
-function renderPartners(){const rows=[];for(const [target,p] of Object.entries(partners.programs||{}))for(const [bank,e] of Object.entries(p.transfers||{}))rows.push({target:p.name,bank:partners.banks?.[bank]||bank,ratio:ratioText(e),days:e.days||0,bonus:e.bonusPct?`${Math.round(e.bonusPct*100)}% until ${e.bonusEnds}`:'—'});rows.sort((a,b)=>a.target.localeCompare(b.target));$('partnerTable').innerHTML=rows.map(r=>`<tr><td>${r.target}</td><td>${r.bank}</td><td>${r.ratio}</td><td>${r.days===0?'Instant':`${r.days}d`}</td><td>${r.bonus}</td></tr>`).join('')}
-function renderAlerts(){const wrap=$('alerts');$('alertEmpty').style.display=alerts.length?'none':'block';wrap.innerHTML=alerts.map(a=>`<div class="card rowalert"><div><strong>${a.title}</strong><div class="muted" style="font-size:11px">${a.origin} → ${a.destination} · ${a.cabin} · ${dateFmt(a.start_date)}–${dateFmt(a.end_date)}</div><div class="muted" style="font-size:11px">Max ${fmt(a.maxPoints||0)} pts · min ${a.minCpp||0}¢/pt</div></div><div style="display:flex;gap:8px;align-items:center"><span class="pill">${a.active===false?'Paused':'Monitoring'}</span><button class="btn small" onclick="delAlert('${a.id}')">Remove</button></div></div>`).join('')}
-async function delAlert(id){await api('/api/alerts/'+id,{method:'DELETE'});alerts=alerts.filter(a=>a.id!==id);renderAlerts();renderKPIs();toast('Alert removed')}
-function flexWindow(date,f){const t=new Date(date+'T00:00:00').getTime();return {start:new Date(t-f*86400000).toISOString().slice(0,10),end:new Date(t+f*86400000).toISOString().slice(0,10)}}
-function activeOrigins(){return $('origins').value.split(',').map(x=>x.trim().toUpperCase()).filter(Boolean).join(',')}
-function destCodes(){const v=$('destination').value.trim();return /^[A-Za-z]{3}(,[A-Za-z]{3})*$/.test(v)?v.toUpperCase():(demoDest[v]||demoDest[v[0]?.toUpperCase()+v.slice(1)]||['BKK','HKT','CNX']).join(',')}
-async function searchOne(origin,destination,start,end,searchId){return api(`/api/search/flights?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&start_date=${start}&end_date=${end}&cabin=${$('cabin').value}&travelers=${$('travelers').value}&search_id=${encodeURIComponent(searchId)}`)}
-function histHint(h){if(!h||!h.count||h.median==null)return '';return h.count>=3?` <span class="history-badge">${fmt(h.min)} low · ${fmt(h.median)} median</span>`:''}
-async function runSearch(){const msg=$('searchMessage');msg.textContent='Searching captured award inventory and historical context…';$('searchBtn').disabled=true;try{if(product==='hotels'){const f=flexWindow($('dateFrom').value,Number($('flex').value));const r=await api(`/api/search/hotels?destination=${encodeURIComponent($('destination').value)}&start_date=${f.start}&end_date=${f.end}&search_id=${encodeURIComponent(crypto.randomUUID())}`);lastSearch={kind:'hotel',rows:r.rows||[]};renderHotels(r.rows||[],r.mode);msg.textContent=r.mode==='manual'?'No captured hotel inventory. Use Manual Capture / entry.':`${r.rows?.length||0} captured hotel opportunities found.`;return}
-const f1=flexWindow($('dateFrom').value,Number($('flex').value)),f2=flexWindow($('dateTo').value,Number($('flex').value)),orig=activeOrigins(),dest=destCodes(),searchId=crypto.randomUUID();const [out,back]=await Promise.all([searchOne(orig,dest,f1.start,f1.end,searchId+'-out'),searchOne(dest,orig,f2.start,f2.end,searchId+'-back')]);lastSearch={kind:'flight',out:out.rows||[],back:back.rows||[],mode:out.mode};await renderFlightResults(out.rows||[],back.rows||[]);msg.textContent=out.mode==='manual'?'No captured inventory matched the search. Use Manual Capture or Manual Award Entry, then search again.':`Found ${fmt((out.rows||[]).length+(back.rows||[]).length)} captured award records.`;$('kpiHint').textContent=out.mode==='manual'?'manual capture needed':'portfolio-optimized';}catch(e){msg.textContent=`Search failed: ${e.message}`;toast(e.message)}finally{$('searchBtn').disabled=false}}
-async function renderFlightResults(out,back){$('resultMeta').textContent=`${fmt(out.length)} outbound · ${fmt(back.length)} return opportunities`;if(!out.length||!back.length){$('results').innerHTML=`<div class="card empty"><strong>No captured round-trip award match was found.</strong><div style="margin-top:5px">This provider may require a manual search. PointPilot preserves the search so you can add the observed result to its historical database.</div><button class="btn primary" style="margin-top:11px" onclick="showManual()">Open Manual Capture</button><button class="btn" style="margin:11px 0 0 7px" onclick="saveCurrentAlert()">🔔 Monitor trip</button></div>`;$('kpiScore').textContent='—';return}
-const pairs=[];for(const o of out.slice().sort((a,b)=>a.mileageCost-b.mileageCost).slice(0,14))for(const r of back.slice().sort((a,b)=>a.mileageCost-b.mileageCost).slice(0,14)){if(new Date(r.date+'T00:00:00')<new Date(o.date+'T00:00:00'))continue;pairs.push([o,r])}
-const optResults=await Promise.all(pairs.slice(0,60).map(pair=>api('/api/optimize-trip',{method:'POST',body:JSON.stringify({legs:[{...pair[0],leg:'Outbound'},{...pair[1],leg:'Return'}],balances:user.balances,preferences:{...user.preferences,preserveFlexiblePoints:$('keepFlexible').checked}})}).catch(()=>({result:null}))));const opts=optResults.map(x=>x.result).filter(Boolean).sort((a,b)=>b.score-a.score),best=opts[0];$('kpiScore').textContent=best?money(best.economicCost):'—';if(!best){$('results').innerHTML=`<div class="card empty"><strong>Awards exist, but none are affordable with the current portfolio.</strong><div style="margin-top:5px">Add balances or capture another program.</div></div>`;return}
-const path=best.sources.map(s=>`<span class="node">${s.fromPoints?fmt(s.fromPoints):''} ${label(s.from)} → ${s.targetPoints?fmt(s.targetPoints):''} ${label(s.targetProgram)}</span>`).join('<span class="arrow">→</span>');const legs=best.legs.map(l=>`<div class="legbox"><h5>${l.leg} · ${l.program}</h5><p>${l.origin} → ${l.destination} · ${dateFmt(l.date)} · ${fmt(l.points)} target points</p>${l.history?`<div style="margin-top:6px">${histHint(l.history)}</div>`:''}</div>`).join('');const rec=`<div class="card reco"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="eyebrow">Recommended trip strategy</div><h3 style="margin-top:3px">Use ${fmt(best.totalSourcePoints)} total points for the full round trip</h3></div><span class="tag">CAPTURED</span></div><div class="detailgrid">${legs}</div><div class="metrics" style="margin-top:12px"><div class="metric"><span>Target awards</span><b>${fmt(best.totalTargetPoints)} pts</b></div><div class="metric"><span>Points sourced</span><b>${fmt(best.totalSourcePoints)}</b></div><div class="metric"><span>Est. taxes</span><b>${money(best.totalTaxes)}</b></div><div class="metric"><span>CPP</span><b class="positive">${best.cpp?best.cpp.toFixed(2)+'¢':'n/a'}</b></div></div><div class="path">${path}</div><div class="note"><strong>Why this wins:</strong> ${best.explanation}</div><div style="margin-top:12px"><button class="btn primary small" onclick='window.showStrategy(${JSON.stringify(best)})'>Show booking plan</button><button class="btn small" style="margin-left:7px" onclick="saveCurrentAlert()">🔔 Monitor</button></div></div>`;const cards=opts.slice(1,7).map(x=>`<div class="card result"><div><h4>${x.legs.map(l=>l.program).join(' + ')}</h4><p>${x.legs.map(l=>`${l.leg} ${dateFmt(l.date)}`).join(' · ')}</p></div><div class="right"><span class="pts">${fmt(x.totalSourcePoints)} pts</span><span class="subv">${x.cpp?x.cpp.toFixed(2)+'¢/pt · ':''}${money(x.totalTaxes)} taxes</span></div></div>`).join('');$('results').innerHTML=rec+`<div class="result-list">${cards}</div>`}
-function label(c){return labels[c]||c}
-window.showStrategy=x=>alert(`Recommended strategy\n\n${x.legs.map(l=>`${l.leg}: ${l.origin} → ${l.destination} on ${l.program} for ${fmt(l.points)} points`).join('\n')}\n\nSource points: ${fmt(x.totalSourcePoints)}\nTaxes: ${money(x.totalTaxes)}\nOpportunity cost: ${money(x.economicCost)}\n\n${x.sources.map(s=>`${label(s.from)}: ${fmt(s.fromPoints)} → ${label(s.targetProgram)}${s.bonusPct?` (${Math.round(s.bonusPct*100)}% bonus)`:''}`).join('\n')}`)
-function renderHotels(rows,mode){$('resultMeta').textContent=`${fmt(rows.length)} captured hotel opportunities`;$('results').innerHTML=rows.length?rows.slice(0,12).map(r=>`<div class="card result"><div><h4>${r.name} <span class="tag">CAPTURED</span></h4><p>${r.location} · ${label(r.program)} · check-in ${dateFmt(r.checkIn)}</p></div><div class="right"><span class="pts">${fmt(r.nightlyPoints)} pts/night</span><span class="subv">${money(r.cashValue)} cash · ${r.cpp?r.cpp.toFixed(2)+'¢/pt':''}</span></div></div>`).join(''):`<div class="card empty"><strong>No captured hotel awards found.</strong><div>Use Manual Capture / entry to add the exact hotel price you saw.</div><button class="btn primary" style="margin-top:11px" onclick="showManual()">Open Manual Capture</button></div>`;const first=rows[0];$('kpiScore').textContent=first&&first.cpp?first.cpp.toFixed(2)+'¢/pt':'—'}
-async function saveCurrentAlert(){const a={title:`${$('destination').value} ${product==='flights'?$('cabin').value:'hotel'} search`,origin:activeOrigins(),destination:$('destination').value,start_date:flexWindow($('dateFrom').value,Number($('flex').value)).start,end_date:flexWindow($('dateTo').value,Number($('flex').value)).end,cabin:$('cabin').value,travelers:Number($('travelers').value),maxPoints:0,minCpp:0,requiresManualCapture:true};const saved=await api('/api/alerts',{method:'POST',body:JSON.stringify(a)});alerts.unshift(saved);renderAlerts();renderKPIs();toast('Trip monitor saved')}
-function renderProviders(){
-  const sel=$('manualProvider');
-  sel.innerHTML=providers.filter(p=>p.product==='flight').map(p=>`<option value="${p.id}">${p.name} · ${p.mode}</option>`).join('');
-  $('providerList').innerHTML=providers.filter(p=>p.id!=='demo_authorized').map(p=>`<div class="provider-card"><strong>${p.name}</strong><span>${p.mode==='restricted'?'Manual / approved API required':'Authorized direct connector'}</span><div style="margin-top:7px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn small provider-open" data-provider="${p.id}" data-url="${p.homepage}">Open in PointPilot ↗</button><a class="btn small" href="${p.homepage}" target="_blank" rel="noreferrer">Open in browser ↗</a></div></div>`).join('');
-  document.querySelectorAll('.provider-open').forEach(btn=>btn.onclick=()=>{
-    if(window.pointpilot?.openProvider) { window.pointpilot.openProvider(btn.dataset.provider, btn.dataset.url); toast('Provider browser opened. Complete the search normally.'); }
-    else window.open(btn.dataset.url,'_blank','noopener');
-  });
-}
-function showManual(){document.querySelector('.nav[data-view="manual"]').click()}
-async function loadHistory(){const q=new URLSearchParams();if($('histProgram').value)q.set('program',$('histProgram').value);if($('histOrigin').value)q.set('origin',$('histOrigin').value);if($('histDestination').value)q.set('destination',$('histDestination').value);if($('histCabin').value)q.set('cabin',$('histCabin').value);const [h,s]=await Promise.all([api('/api/history?'+q.toString()),api('/api/history/sources')]);$('historyTable').innerHTML=(h.rows||[]).map(r=>`<tr><td>${dateFmt((r.observedAt||r.effectiveFrom||'').slice(0,10))}${r.effectiveFrom?`<div class="muted" style="font-size:10px">effective ${r.effectiveFrom}${r.effectiveTo?' → '+r.effectiveTo:''}</div>`:''}</td><td>${label(r.program)}</td><td>${r.origin&&r.destination?r.origin+' → '+r.destination:(r.market||r.category||'Program benchmark')}</td><td>${r.cabin||r.roomType||'—'}</td><td>${r.pointsCommon?fmt(r.pointsCommon):(r.pointsMin||r.pointsMax?`${fmt(r.pointsMin||r.pointsMax)}${r.pointsMax&&r.pointsMin!==r.pointsMax?'–'+fmt(r.pointsMax):''}`:'—')}</td><td>${r.sourceType}</td><td>${r.confidence}</td><td>${r.sourceUrl?`<a href="${r.sourceUrl}" target="_blank" rel="noreferrer">${(r.sourceTitle||'Source').slice(0,42)} ↗</a>`:'—'}</td></tr>`).join('')||'<tr><td colspan="8">No matching history.</td></tr>';$('historySources').innerHTML=`<strong>Seed coverage:</strong> ${s.sources.length} public historical source(s) loaded. These are benchmark records—not live availability—and every seed keeps source provenance.`}
-async function saveManualHotel(){const payload={provider:$('manualHotelProvider').value,program:$('manualHotelProgram').value.trim()||$('manualHotelProvider').value,name:$('manualHotelName').value.trim(),location:$('manualHotelLocation').value.trim(),checkIn:$('manualHotelDate').value,roomType:$('manualHotelRoomType').value,nightlyPoints:Number($('manualHotelPoints').value||0),cashValue:Number($('manualHotelCash').value||0)};if(!payload.name||!payload.location||!payload.checkIn||!payload.nightlyPoints){$('manualHotelMessage').textContent='Hotel, location, check-in and points/night are required.';return}await api('/api/manual-hotel',{method:'POST',body:JSON.stringify(payload)});$('manualHotelMessage').textContent='Saved. The hotel observation is now part of the historical database.';toast('Historical hotel observation saved');loadHistory();}
-async function saveManualAward(){const payload={provider:$('manualProvider').value,program:$('manualProgram').value.trim()||$('manualProvider').value,origin:$('manualOrigin').value.trim().toUpperCase(),destination:$('manualDestination').value.trim().toUpperCase(),date:$('manualDate').value,cabin:$('manualCabin').value,mileageCost:Number($('manualPoints').value||0),totalTaxes:Number($('manualTaxes').value||0),cashValue:Number($('manualCash').value||0),remainingSeats:Number($('manualSeats').value||0)};if(!payload.origin||!payload.destination||!payload.date||!payload.mileageCost){$('manualMessage').textContent='Origin, destination, date and points are required.';return}await api('/api/manual-award',{method:'POST',body:JSON.stringify(payload)});$('manualMessage').textContent='Saved. The observation is now searchable and will contribute to route history.';toast('Historical observation saved');loadHistory();}
-$('searchBtn').onclick=runSearch;$('saveWallet').onclick=saveWallet;$('runMonitor').onclick=async()=>{const r=await api('/api/monitor/run',{method:'POST',body:'{}'});toast(`Monitor checked ${r.alertsChecked} alert(s)`);};$('noAvail').onclick=()=>{$('results').innerHTML=`<div class="card empty"><strong>No award space matched your current rules.</strong><div style="margin-top:5px">Use Manual Capture to refresh a restricted program, then save the exact award.</div><button class="btn primary" style="margin-top:11px" onclick="showManual()">Open Manual Capture</button><button class="btn" style="margin:11px 0 0 7px" onclick="saveCurrentAlert()">🔔 Monitor this trip</button></div>`;$('saveNoAvail')?.remove();$('resultMeta').textContent='0 matches'};
-$('refreshHistory').onclick=loadHistory;['histProgram','histOrigin','histDestination','histCabin'].forEach(id=>$(id).addEventListener('change',loadHistory));$('saveManualAward').onclick=saveManualAward;$('saveManualHotel').onclick=saveManualHotel;
-document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));$('view-'+b.dataset.view).classList.add('active');if(b.dataset.view==='history')loadHistory()});
-document.querySelectorAll('button[data-product]').forEach(b=>b.onclick=()=>{document.querySelectorAll('button[data-product]').forEach(x=>x.classList.remove('active'));b.classList.add('active');product=b.dataset.product;$('cabin').innerHTML=product==='flights'?'<option selected value="business">Business</option><option value="first">First</option><option value="premium">Premium Economy</option><option value="economy">Economy</option>':'<option selected value="standard">Standard room</option><option value="suite">Suite</option>'});
-$('resetBtn').onclick=()=>{localStorage.clear();toast('Demo reset');location.reload()};initDates();load();
+const desktop = window.pointpilot || null;
 
-function renderUpdateStatus(u){
-  const version=$('updateVersion'),msg=$('updateMessage');
-  if(!version||!msg)return;
-  const download=$('downloadUpdate'),install=$('installUpdate');
-  if(download)download.style.display='none';
-  if(install)install.style.display='none';
-  if(u?.status==='checking'){version.textContent='Checking…';msg.textContent='Checking GitHub Releases for a newer PointPilot build.';}
-  else if(u?.status==='available'){version.textContent=`Update available: ${u.version}`;msg.textContent='A newer PointPilot build is ready. Download it when convenient.';if(download)download.style.display='inline-block';}
-  else if(u?.status==='downloading'){version.textContent=`Downloading ${u.version||''} ${u.percent||0}%`;msg.textContent='The update is downloading in the background.';}
-  else if(u?.status==='downloaded'){version.textContent=`Ready to install: ${u.version}`;msg.textContent='Restart PointPilot to finish installing the update.';if(install)install.style.display='inline-block';}
-  else if(u?.status==='current'){version.textContent=`Up to date · v${u.version||''}`;msg.textContent='You are running the latest available PointPilot release.';}
-  else if(u?.status==='unavailable'){version.textContent='Updater not active';msg.textContent=u.message||'The updater becomes active in packaged GitHub releases.';}
-  else if(u?.status==='error'){version.textContent='Update check failed';msg.textContent=u.message||'PointPilot could not contact GitHub Releases.';}
+const state = { product: 'flights', user: { balances: [], preferences: {} }, alerts: [], partners: null, programs: [], lastQuery: null };
+
+// ---------- helpers ----------
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmt = n => new Intl.NumberFormat('en-US').format(Math.round(Number(n) || 0));
+const money = n => (n == null || !Number.isFinite(Number(n)) ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(n)));
+const dateFmt = x => (x ? new Date(`${String(x).slice(0, 10)}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
+const programLabel = id => state.programs.find(p => p.id === id)?.name || id;
+const safeUrl = u => (/^https:\/\//i.test(String(u || '')) ? u : null);
+
+let toastTimer;
+function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3200); }
+
+async function api(path, { method = 'GET', body } = {}) {
+  const r = await fetch(path, { method, headers: body !== undefined ? { 'content-type': 'application/json' } : {}, body: body !== undefined ? JSON.stringify(body) : undefined });
+  const text = await r.text();
+  let payload = {};
+  try { payload = text ? JSON.parse(text) : {}; } catch { /* non-JSON */ }
+  if (!r.ok) throw new Error(payload.error || `HTTP ${r.status}`);
+  return payload;
 }
-window.pointpilot?.onUpdateStatus?.(renderUpdateStatus);
-$('checkUpdates')?.addEventListener('click',async()=>{const r=await window.pointpilot?.checkForUpdates?.();if(r?.message)renderUpdateStatus({status:r.ok?'checking':'error',message:r.message});});
-$('downloadUpdate')?.addEventListener('click',async()=>{const r=await window.pointpilot?.downloadUpdate?.();if(!r?.ok)toast(r?.message||'Update download failed');});
-$('installUpdate')?.addEventListener('click',async()=>{const r=await window.pointpilot?.installUpdate?.();if(!r?.ok)toast(r?.message||'Update installation failed');});
+
+function busy(button, on, label) {
+  if (!button) return;
+  if (on) { button.dataset.label = button.textContent; button.textContent = label || 'Working…'; button.disabled = true; }
+  else { button.textContent = button.dataset.label || button.textContent; button.disabled = false; }
+}
+
+// ---------- boot ----------
+function initDates() {
+  const d = new Date(); d.setDate(d.getDate() + 150);
+  const r = new Date(d); r.setDate(r.getDate() + 12);
+  $('dateFrom').value = d.toISOString().slice(0, 10);
+  $('dateTo').value = r.toISOString().slice(0, 10);
+}
+
+async function load() {
+  try {
+    const [programs, user, partners, alerts, providers] = await Promise.all([
+      api('/api/programs'), api('/api/user'), api('/api/transfer-partners'), api('/api/alerts'), api('/api/providers')
+    ]);
+    state.programs = programs.programs;
+    state.user = user;
+    state.partners = partners;
+    state.alerts = alerts;
+    fillProgramSelects();
+    renderWallet(); renderPartners(); renderAlerts(); renderProviders(providers.providers); renderKPIs();
+    await Promise.all([refreshHealth(), loadSettings()]);
+  } catch (e) {
+    $('statusPill').textContent = '● Backend error';
+    toast(e.message);
+  }
+}
+
+async function refreshHealth() {
+  const h = await api('/api/health');
+  const live = h.liveData === 'seats.aero';
+  $('statusPill').textContent = live ? '● Live data: seats.aero' : '● Manual data only';
+  $('modeLabel').textContent = live ? 'Live award data' : 'Manual data only';
+  $('modeHint').textContent = live ? `${h.apiCallsToday} seats.aero calls today` : 'Add a seats.aero key in Data & System for live availability.';
+  $('liveDot').style.background = live ? '#19835b' : '#e0a434';
+  $('sysHistory').textContent = `${fmt(h.awardObservations)} observations`;
+  $('sysTransfer').textContent = `Updated ${h.reference.lastUpdated} (${h.reference.origin})`;
+  $('apiCalls').textContent = fmt(h.apiCallsToday);
+  const info = desktop ? await desktop.appInfo() : null;
+  $('sysDataDir').textContent = info?.dataDir || h.dataDir;
+  if (info && !info.packaged) renderUpdateStatus({ status: 'unavailable', message: 'Development build — automatic updates run in the installed app.' });
+  else if (!desktop) renderUpdateStatus({ status: 'unavailable', message: 'Running in a browser — updates apply to the desktop app.' });
+  else renderUpdateStatus({ status: 'idle', version: info.version });
+}
+
+function fillProgramSelects() {
+  const opts = kind => state.programs.filter(p => !kind || kind.includes(p.kind)).map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+  $('manualProgram').innerHTML = opts(['airline']);
+  $('manualHotelProgram').innerHTML = opts(['hotel']);
+  $('histProgram').innerHTML = '<option value="">All programs</option>' + opts();
+}
+
+// ---------- wallet ----------
+function renderKPIs() {
+  const b = state.user.balances;
+  $('kpiTotal').textContent = fmt(b.reduce((s, x) => s + Number(x.balance || 0), 0));
+  $('kpiFlex').textContent = fmt(b.filter(x => x.type === 'bank').reduce((s, x) => s + Number(x.balance || 0), 0));
+  $('kpiAlerts').textContent = state.alerts.filter(a => a.active !== false).length;
+}
+
+function renderWallet() {
+  const rows = state.user.balances;
+  $('walletTable').innerHTML = rows.map((b, i) => `<tr>
+    <td><strong>${esc(b.program)}</strong><br><span class="muted">${esc(b.code)}</span></td>
+    <td>${esc(b.type)}</td>
+    <td><input class="inputnum" data-i="${i}" data-k="balance" type="number" min="0" value="${esc(b.balance)}"></td>
+    <td><input class="inputnum" data-i="${i}" data-k="cpp" type="number" min="0" step="0.05" value="${esc(b.cpp)}"></td>
+    <td><button class="btn small" data-remove="${i}">Remove</button></td></tr>`).join('');
+  const have = new Set(rows.map(b => b.code));
+  $('addProgram').innerHTML = state.programs.filter(p => !have.has(p.id)).map(p => `<option value="${esc(p.id)}">${esc(p.name)} (${esc(p.kind)})</option>`).join('');
+  const prefs = { maxTransfers: 3, maxTransferDays: 3, defaultCpp: 1.5, preferNonstop: false, ...state.user.preferences };
+  $('prefMaxTransfers').value = prefs.maxTransfers;
+  $('prefMaxDays').value = prefs.maxTransferDays;
+  $('prefDefaultCpp').value = prefs.defaultCpp;
+  $('prefNonstop').value = String(Boolean(prefs.preferNonstop));
+}
+
+$('walletTable').addEventListener('input', e => {
+  const t = e.target; if (!t.dataset.k) return;
+  state.user.balances[Number(t.dataset.i)][t.dataset.k] = Number(t.value) || 0;
+  renderKPIs();
+});
+$('walletTable').addEventListener('click', e => {
+  const i = e.target.dataset.remove; if (i == null) return;
+  state.user.balances.splice(Number(i), 1); renderWallet(); renderKPIs();
+});
+$('addProgramBtn').onclick = () => {
+  const p = state.programs.find(x => x.id === $('addProgram').value); if (!p) return;
+  state.user.balances.push({ program: p.name, code: p.id, type: p.kind, balance: 0, cpp: p.kind === 'hotel' ? 0.6 : 1.4, transferable: p.kind === 'bank' });
+  renderWallet();
+};
+$('saveWallet').onclick = async () => {
+  state.user.preferences = {
+    ...state.user.preferences,
+    maxTransfers: Math.max(1, Number($('prefMaxTransfers').value) || 3),
+    maxTransferDays: Math.max(0, Number($('prefMaxDays').value) || 0),
+    defaultCpp: Math.max(0, Number($('prefDefaultCpp').value) || 1.5),
+    preferNonstop: $('prefNonstop').value === 'true'
+  };
+  try { state.user = await api('/api/user', { method: 'PUT', body: state.user }); renderWallet(); renderKPIs(); toast('Wallet saved'); }
+  catch (e) { toast(e.message); }
+};
+
+// ---------- search ----------
+function currentQuery() {
+  return {
+    origins: $('origins').value, destination: $('destination').value.trim(),
+    departDate: $('dateFrom').value, returnDate: $('dateTo').value || null,
+    flexDays: Number($('flex').value), cabin: $('cabin').value, travelers: Number($('travelers').value),
+    nonstopOnly: $('directOnly').checked, preserveFlexible: $('keepFlexible').checked, rank: $('rank').value
+  };
+}
+
+async function runSearch() {
+  const msg = $('searchMessage');
+  busy($('searchBtn'), true, 'Searching…');
+  try {
+    if (state.product === 'hotels') {
+      msg.textContent = 'Searching recorded hotel awards…';
+      const r = await api('/api/search/hotels', { method: 'POST', body: { destination: $('destination').value, checkIn: $('dateFrom').value, checkOut: $('dateTo').value, flexDays: Number($('flex').value) } });
+      renderHotels(r);
+      msg.textContent = r.rows.length ? `${r.rows.length} hotel award(s) for ${r.nights} night(s).` : 'No recorded hotel awards match. Add one under Manual Entry.';
+      return;
+    }
+    msg.textContent = 'Searching award space and optimizing against your points…';
+    const q = currentQuery();
+    state.lastQuery = q;
+    const r = await api('/api/search/trip', { method: 'POST', body: q });
+    renderFlightResults(r);
+    const src = { fetched: 'live seats.aero data', 'recent-cache': 'seats.aero data from the last hour', 'not-configured': 'manually entered awards only', error: 'the local cache (seats.aero failed)', skipped: 'local data' }[r.dataStatus.api] || 'local data';
+    msg.textContent = `Searched ${r.query.origins.join(', ')} → ${r.query.destinations.join(', ')} using ${src}.`;
+  } catch (e) {
+    msg.textContent = `Search failed: ${e.message}`;
+  } finally { busy($('searchBtn'), false); }
+}
+
+function legLine(l) {
+  const bits = [`${esc(l.origin)} → ${esc(l.destination)}`, dateFmt(l.date), `${fmt(l.pointsPerTraveler)} pts/person`];
+  if (l.totalTaxes != null) bits.push(`${money(l.totalTaxes)} taxes/person`); else bits.push('taxes unknown');
+  if (l.direct === true) bits.push('nonstop'); else if (l.direct === false) bits.push('connecting');
+  if (l.airlines) bits.push(esc(l.airlines));
+  return bits.join(' · ');
+}
+
+function sourceTag(l) {
+  if (l.dataSource === 'seats.aero') return `<span class="tag">LIVE · ${l.ageHours < 1 ? '<1' : Math.round(l.ageHours)}h old</span>`;
+  return `<span class="tag muted">MANUAL · ${l.ageHours < 24 ? 'today' : `${Math.round(l.ageHours / 24)}d old`}</span>`;
+}
+
+function warningsBox(list) {
+  const items = [...new Set(list)].filter(Boolean);
+  return items.length ? `<div class="warnbox"><strong>Check before you transfer:</strong><ul>${items.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : '';
+}
+
+function rawAwardList(title, rows) {
+  if (!rows?.length) return '';
+  return `<div class="note"><strong>${esc(title)}</strong><br>${rows.map(r => `${esc(r.programName)}: ${esc(r.origin)}→${esc(r.destination)} ${dateFmt(r.date)}, ${fmt(r.mileageCost)} pts/person`).join('<br>')}</div>`;
+}
+
+function renderFlightResults(r) {
+  const trips = r.trips || [];
+  $('resultMeta').textContent = `${fmt(r.counts.outbound)} outbound · ${fmt(r.counts.return)} return awards · ${fmt(trips.length)} fundable option(s)`;
+  const monitorBtn = '<button class="btn" data-action="monitor">🔔 Monitor this trip</button>';
+  const manualBtn = '<button class="btn" data-action="manual">Add an award manually</button>';
+  const apiWarn = warningsBox(r.dataStatus.warnings);
+  if (!trips.length) {
+    $('kpiScore').textContent = '—'; $('kpiHint').textContent = 'no fundable option';
+    const why = {
+      'no-inventory': 'No award space was found for these dates.',
+      'no-valid-pairs': 'Outbound and return space exist, but no return is on or after an outbound date.',
+      unaffordable: 'Award space exists, but your current balances and transfer partners can\'t cover it.'
+    }[r.mode] || 'Nothing matched.';
+    const tip = r.dataStatus.api === 'not-configured' ? '<div class="note">Tip: add a seats.aero API key under <em>Data &amp; System</em> to search live availability automatically.</div>' : '';
+    $('results').innerHTML = `<div class="card empty"><strong>${esc(why)}</strong>${apiWarn}${rawAwardList('Cheapest outbound seen', r.cheapestOutbound)}${rawAwardList('Cheapest return seen', r.cheapestReturn)}${tip}<div class="btnrow">${monitorBtn}${manualBtn}</div></div>`;
+    return;
+  }
+  const best = trips[0];
+  $('kpiScore').textContent = money(best.effectiveCostUsd);
+  $('kpiHint').textContent = `${fmt(best.totalSourcePoints)} pts + ${money(best.taxesUsd)}`;
+  const path = best.sources.map(s => `<span class="node">${s.direct ? `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} (have)` : `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} → ${fmt(s.targetPoints)} ${esc(programLabel(s.targetProgram))}${s.bonusPct ? ` (+${Math.round(s.bonusPct * 100)}%)` : ''}`}</span>`).join('');
+  const legs = best.legs.map(l => `<div class="legbox"><h5>${esc(l.leg)} · ${esc(l.programName)} ${sourceTag(l)}</h5><p>${legLine(l)}</p>${l.history ? `<span class="history-badge">${esc(l.history.label)} · median ${fmt(l.history.median)}</span>` : ''}</div>`).join('');
+  const rec = `<div class="card reco"><div class="cardhead"><div><div class="eyebrow">Recommended</div><h3>${fmt(best.totalSourcePoints)} points + ${money(best.taxesUsd)} for ${best.travelers} traveler${best.travelers > 1 ? 's' : ''}</h3></div></div>
+    <div class="detailgrid">${legs}</div>
+    <div class="metrics" style="margin-top:12px"><div class="metric"><span>Award points needed</span><b>${fmt(best.totalTargetPoints)}</b></div><div class="metric"><span>Taxes &amp; fees</span><b>${money(best.taxesUsd)}</b></div><div class="metric"><span>Effective cost</span><b>${money(best.effectiveCostUsd)}</b></div><div class="metric"><span>Value</span><b class="positive">${best.cpp ? `${best.cpp.toFixed(2)}¢/pt` : 'add cash fare'}</b></div></div>
+    <div class="path">${path}</div><div class="note">${esc(best.explanation)}</div>${warningsBox([...best.warnings, ...r.dataStatus.warnings])}
+    <div class="btnrow">${monitorBtn}</div></div>`;
+  const others = trips.slice(1, 10).map(t => `<div class="card result"><div><h4>${t.legs.map(l => esc(l.programName)).join(' + ')}</h4><p>${t.legs.map(l => `${esc(l.leg)}: ${esc(l.origin)}→${esc(l.destination)} ${dateFmt(l.date)}${l.direct === true ? ' nonstop' : ''}`).join(' · ')}</p><p>${t.sources.filter(s => !s.direct).map(s => `${fmt(s.fromPoints)} ${esc(programLabel(s.from))}→${esc(programLabel(s.targetProgram))}`).join(', ') || 'Uses miles you already have'}</p></div><div class="right"><span class="pts">${fmt(t.totalSourcePoints)} pts + ${money(t.taxesUsd)}</span><span class="subv">${money(t.effectiveCostUsd)} effective${t.cpp ? ` · ${t.cpp.toFixed(2)}¢/pt` : ''}</span></div></div>`).join('');
+  $('results').innerHTML = rec + `<div class="result-list">${others}</div>`;
+}
+
+function renderHotels(r) {
+  $('resultMeta').textContent = `${fmt(r.rows.length)} recorded hotel award(s)`;
+  $('kpiScore').textContent = r.rows[0]?.cpp ? `${r.rows[0].cpp.toFixed(2)}¢/pt` : '—';
+  $('results').innerHTML = r.rows.length ? r.rows.slice(0, 15).map(h => `<div class="card result"><div><h4>${esc(h.name)} ${h.affordable ? '' : '<span class="tag warn">NOT ENOUGH POINTS</span>'}</h4><p>${esc(h.location)} · ${esc(h.programName)} · ${esc(h.roomType)} · check-in ${dateFmt(h.checkIn)} · ${h.nights} night(s)</p><p>${h.funding ? h.funding.sources.map(s => s.direct ? `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} (have)` : `${fmt(s.fromPoints)} ${esc(programLabel(s.from))}→${esc(programLabel(s.targetProgram))}`).join(', ') : ''}</p></div><div class="right"><span class="pts">${fmt(h.totalPoints)} pts total</span><span class="subv">${fmt(h.nightlyPoints)}/night${h.cashValue ? ` · ${money(h.cashValue)} cash · ${h.cpp.toFixed(2)}¢/pt` : ''}</span></div></div>`).join('')
+    : '<div class="card empty"><strong>No recorded hotel awards match.</strong><div class="btnrow"><button class="btn primary" data-action="manual">Add a hotel award</button></div></div>';
+}
+
+$('results').addEventListener('click', async e => {
+  const action = e.target.dataset.action;
+  if (action === 'manual') showView('manual');
+  if (action === 'monitor') {
+    const q = state.lastQuery || currentQuery();
+    try {
+      const a = await api('/api/alerts', { method: 'POST', body: { ...q, title: `${q.destination} ${q.cabin} · ${q.travelers} pax` } });
+      state.alerts.unshift(a); renderAlerts(); renderKPIs(); toast('Trip monitor saved — you\'ll get a notification when matching space appears.');
+    } catch (err) { toast(err.message); }
+  }
+});
+
+// ---------- alerts ----------
+function renderAlerts() {
+  $('alertEmpty').style.display = state.alerts.length ? 'none' : 'block';
+  $('alerts').style.display = state.alerts.length ? 'block' : 'none';
+  $('alerts').innerHTML = state.alerts.map(a => {
+    const q = a.query || {};
+    const last = a.lastResult ? `${a.lastResult.matches} match(es) · checked ${new Date(a.lastCheckedAt).toLocaleString()}` : 'Not checked yet';
+    return `<div class="rowalert"><div><strong>${esc(a.title)}</strong>
+      <div class="muted" style="font-size:11px">${esc(q.origins)} → ${esc(q.destination)} · ${esc(q.cabin)} · ${esc(q.travelers)} pax · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d</div>
+      <div class="muted" style="font-size:11px">${esc(last)}${a.lastResult?.best ? ` — ${esc(a.lastResult.best)}` : ''}</div></div>
+      <div class="btnrow" style="margin:0"><button class="btn small" data-toggle="${esc(a.id)}" data-active="${a.active ? '1' : ''}">${a.active ? 'Pause' : 'Resume'}</button><button class="btn small" data-delete="${esc(a.id)}">Remove</button></div></div>`;
+  }).join('');
+}
+
+$('alerts').addEventListener('click', async e => {
+  const { toggle, delete: del, active } = e.target.dataset;
+  try {
+    if (del) { await api(`/api/alerts/${del}`, { method: 'DELETE', body: {} }); state.alerts = state.alerts.filter(a => a.id !== del); }
+    if (toggle) { await api(`/api/alerts/${toggle}`, { method: 'PATCH', body: { active: !active } }); const a = state.alerts.find(x => x.id === toggle); if (a) a.active = !active; }
+    renderAlerts(); renderKPIs();
+  } catch (err) { toast(err.message); }
+});
+
+$('runMonitor').onclick = async () => {
+  busy($('runMonitor'), true, 'Checking…');
+  try {
+    const r = await api('/api/monitor/run', { method: 'POST', body: {} });
+    state.alerts = await api('/api/alerts'); renderAlerts();
+    const fresh = r.results.filter(x => x.isNew).length;
+    toast(`Checked ${r.alertsChecked} alert(s)${fresh ? ` — ${fresh} with new space!` : ''}`);
+  } catch (e) { toast(e.message); } finally { busy($('runMonitor'), false); }
+};
+
+// ---------- history ----------
+async function loadHistory() {
+  const q = new URLSearchParams();
+  for (const [k, id] of [['program', 'histProgram'], ['origin', 'histOrigin'], ['destination', 'histDestination'], ['cabin', 'histCabin']]) if ($(id).value) q.set(k, $(id).value.trim());
+  const [h, s] = await Promise.all([api(`/api/history?${q}`), api('/api/history/sources')]);
+  $('historyTable').innerHTML = h.rows.map(r => {
+    const pts = r.pointsCommon ? fmt(r.pointsCommon) : (r.pointsMin || r.pointsMax ? `${fmt(r.pointsMin || r.pointsMax)}${r.pointsMax && r.pointsMin !== r.pointsMax ? `–${fmt(r.pointsMax)}` : ''}` : '—');
+    const url = safeUrl(r.sourceUrl);
+    return `<tr><td>${dateFmt(r.observedAt)}</td><td>${esc(programLabel(r.program))}</td><td>${r.origin && r.destination ? `${esc(r.origin)} → ${esc(r.destination)}${r.date ? ` · ${dateFmt(r.date)}` : ''}` : esc(r.market || (r.category ? `Category ${r.category}` : 'Benchmark'))}</td><td>${esc(r.cabin || r.roomType || '—')}</td><td>${pts}</td><td>${esc(r.sourceType)}</td><td>${url ? `<a href="${esc(url)}" target="_blank" rel="noreferrer">${esc((r.sourceTitle || 'Source').slice(0, 40))} ↗</a>` : '—'}</td></tr>`;
+  }).join('') || '<tr><td colspan="7">No matching history.</td></tr>';
+  $('historySources').innerHTML = `<strong>${fmt(h.count)} matching observation(s).</strong> ${s.sources.length} published benchmark source(s) are included; benchmarks are never treated as live availability.`;
+}
+$('refreshHistory').onclick = () => loadHistory().catch(e => toast(e.message));
+['histProgram', 'histOrigin', 'histDestination', 'histCabin'].forEach(id => $(id).addEventListener('change', () => loadHistory().catch(e => toast(e.message))));
+
+// ---------- manual entry ----------
+function renderProviders(list) {
+  $('providerList').innerHTML = list.map(p => `<div class="provider-card"><strong>${esc(p.name)}</strong><span>${esc(p.product)}</span><div class="btnrow">${desktop ? `<button class="btn small" data-open="${esc(p.id)}" data-url="${esc(p.homepage)}">Open in PointPilot ↗</button>` : ''}<a class="btn small" href="${esc(p.homepage)}" target="_blank" rel="noreferrer">Open in browser ↗</a></div></div>`).join('');
+}
+$('providerList').addEventListener('click', e => {
+  const { open, url } = e.target.dataset;
+  if (open && desktop) { desktop.openProvider(open, url); toast('Search normally in the new window. Ctrl+Shift+S saves the page.'); }
+});
+
+$('saveManualAward').onclick = async () => {
+  const direct = $('manualDirect').value;
+  const payload = {
+    program: $('manualProgram').value, origin: $('manualOrigin').value.trim().toUpperCase(), destination: $('manualDestination').value.trim().toUpperCase(),
+    date: $('manualDate').value, cabin: $('manualCabin').value, mileageCost: Number($('manualPoints').value || 0),
+    totalTaxes: $('manualTaxes').value === '' ? null : Number($('manualTaxes').value), cashValue: Number($('manualCash').value || 0) || null,
+    remainingSeats: Number($('manualSeats').value || 0) || null, direct: direct === '' ? null : direct === 'true'
+  };
+  try { await api('/api/manual-award', { method: 'POST', body: payload }); $('manualMessage').textContent = 'Saved. It will appear in searches for 14 days and is part of price history.'; toast('Award saved'); }
+  catch (e) { $('manualMessage').textContent = e.message; }
+};
+$('saveManualHotel').onclick = async () => {
+  const payload = { program: $('manualHotelProgram').value, name: $('manualHotelName').value.trim(), location: $('manualHotelLocation').value.trim(), checkIn: $('manualHotelDate').value, roomType: $('manualHotelRoomType').value, nightlyPoints: Number($('manualHotelPoints').value || 0), cashValue: Number($('manualHotelCash').value || 0) || null };
+  try { await api('/api/manual-hotel', { method: 'POST', body: payload }); $('manualHotelMessage').textContent = 'Saved.'; toast('Hotel award saved'); }
+  catch (e) { $('manualHotelMessage').textContent = e.message; }
+};
+
+// ---------- transfer partners ----------
+function renderPartners() {
+  const d = state.partners; if (!d) return;
+  const today = new Date().toISOString().slice(0, 10);
+  const bankName = id => (typeof d.banks?.[id] === 'object' ? d.banks[id].name : d.banks?.[id]) || programLabel(id);
+  const rows = [];
+  for (const [target, p] of Object.entries(d.programs || {})) for (const [bank, e] of Object.entries(p.transfers || {})) {
+    const bonusLive = e.bonusPct && (!e.bonusEnds || e.bonusEnds >= today);
+    rows.push(`<tr><td>${esc(p.name)}</td><td>${esc(bankName(bank))}</td><td>${esc(e.ratio[0])}:${esc(e.ratio[1])}</td><td>${e.days ? `${esc(e.days)}d` : 'Instant'}</td><td>${bonusLive ? `${Math.round(e.bonusPct * 100)}% until ${esc(e.bonusEnds || '?')}` : '—'}</td><td>${e.unverified ? '<span class="tag warn">UNVERIFIED</span>' : '<span class="tag">OK</span>'}</td></tr>`);
+  }
+  $('partnerTable').innerHTML = rows.sort().join('');
+  $('partnerMeta').textContent = `Data as of ${d.lastUpdated} (${d.status?.origin || 'bundled'}). ${d.note || ''}`;
+}
+$('refreshPartners').onclick = async () => {
+  busy($('refreshPartners'), true, 'Checking…');
+  try {
+    const r = await api('/api/transfer-partners/refresh', { method: 'POST', body: {} });
+    state.partners = await api('/api/transfer-partners'); renderPartners();
+    toast(r.ok ? (r.updated ? `Transfer data updated (${r.lastUpdated})` : 'Transfer data is already current') : `Couldn't refresh: ${r.error}`);
+  } finally { busy($('refreshPartners'), false); }
+};
+
+// ---------- settings ----------
+async function loadSettings() {
+  const s = await api('/api/settings');
+  $('apiStatus').textContent = s.hasSeatsAeroKey ? `Key saved (${s.seatsAeroKeyHint})` : 'No key';
+  $('setInterval').value = s.monitorIntervalMinutes;
+  $('setNotify').value = String(s.desktopNotifications);
+  $('setTray').value = String(s.closeToTray);
+  $('setLogin').value = String(s.launchAtLogin);
+  $('setWebhook').value = s.webhookUrl || '';
+}
+async function saveSettings(patch, message) {
+  try { await api('/api/settings', { method: 'PUT', body: patch }); await desktop?.settingsChanged?.(); await loadSettings(); await refreshHealth(); toast(message); }
+  catch (e) { toast(e.message); }
+}
+$('saveApiKey').onclick = () => { const k = $('apiKey').value.trim(); if (!k) return toast('Paste a key first'); $('apiKey').value = ''; saveSettings({ seatsAeroApiKey: k }, 'seats.aero key saved'); };
+$('clearApiKey').onclick = () => saveSettings({ seatsAeroApiKey: '' }, 'seats.aero key removed');
+$('saveSettings').onclick = () => saveSettings({
+  monitorIntervalMinutes: Number($('setInterval').value), desktopNotifications: $('setNotify').value === 'true',
+  closeToTray: $('setTray').value === 'true', launchAtLogin: $('setLogin').value === 'true', webhookUrl: $('setWebhook').value
+}, 'Settings saved');
+
+// ---------- updates ----------
+function renderUpdateStatus(u) {
+  const v = $('updateVersion'), m = $('updateMessage'), install = $('installUpdate');
+  install.hidden = u?.status !== 'downloaded';
+  const s = {
+    idle: [`v${u.version}`, 'PointPilot checks GitHub Releases every few hours and downloads updates in the background.'],
+    checking: ['Checking…', 'Looking for a newer release on GitHub.'],
+    available: [`Downloading ${u.version}`, 'A newer version was found and is downloading.'],
+    downloading: [`Downloading ${u.version || ''} ${u.percent || 0}%`, 'The update is downloading in the background.'],
+    downloaded: [`Ready: ${u.version}`, 'Restart now, or the update installs automatically when you quit.'],
+    current: [`Up to date · v${u.version || ''}`, 'You are on the latest release.'],
+    unavailable: ['Updater inactive', u.message],
+    error: ['Update check failed', u.message || 'Could not reach GitHub Releases.']
+  }[u?.status];
+  if (s) { v.textContent = s[0]; m.textContent = s[1]; }
+}
+desktop?.onUpdateStatus?.(renderUpdateStatus);
+$('checkUpdates').onclick = async () => { const r = await desktop?.checkForUpdates?.(); if (!desktop) toast('Updates apply to the installed desktop app.'); else if (r && !r.ok) renderUpdateStatus({ status: 'error', message: r.message }); };
+$('installUpdate').onclick = () => desktop?.installUpdate?.();
+
+// ---------- navigation ----------
+function showView(name) {
+  document.querySelectorAll('.nav').forEach(x => x.classList.toggle('active', x.dataset.view === name));
+  document.querySelectorAll('.view').forEach(x => x.classList.toggle('active', x.id === `view-${name}`));
+  if (name === 'history') loadHistory().catch(e => toast(e.message));
+}
+document.querySelectorAll('.nav').forEach(b => { b.onclick = () => showView(b.dataset.view); });
+desktop?.onNavigate?.(showView);
+
+document.querySelectorAll('button[data-product]').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('button[data-product]').forEach(x => x.classList.toggle('active', x === b));
+    state.product = b.dataset.product;
+    const hotels = state.product === 'hotels';
+    $('cabin').disabled = hotels; $('origins').disabled = hotels; $('directOnly').disabled = hotels;
+    $('dateFromLabel').textContent = hotels ? 'Check-in' : 'Departure date';
+    $('dateToLabel').textContent = hotels ? 'Check-out' : 'Return date (optional)';
+  };
+});
+
+$('searchBtn').onclick = runSearch;
+initDates();
+load();
