@@ -14,6 +14,7 @@
   <symbol id="i-bed" viewBox="0 0 24 24"><path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/></symbol>
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r="1.5"/></symbol>
   <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
 </svg>
 <div class="shell">
@@ -22,6 +23,7 @@
   <nav>
     <button class="nav active" data-view="search"><svg class="icon"><use href="#i-search"/></svg>Trip Optimizer</button>
     <button class="nav" data-view="wallet"><svg class="icon"><use href="#i-wallet"/></svg>My Points</button>
+    <button class="nav" data-view="deals"><svg class="icon"><use href="#i-tag"/></svg>Cash Deals</button>
     <button class="nav" data-view="alerts"><svg class="icon"><use href="#i-bell"/></svg>Alerts</button>
     <button class="nav" data-view="history"><svg class="icon"><use href="#i-trend"/></svg>Price History</button>
     <button class="nav" data-view="manual"><svg class="icon"><use href="#i-pencil"/></svg>Manual Entry</button>
@@ -35,7 +37,7 @@
 
 <section id="view-search" class="view active">
 <div class="kpis"><div class="card kpi"><span>Tracked points</span><b id="kpiTotal">0</b><small>all programs</small></div><div class="card kpi"><span>Flexible points</span><b id="kpiFlex">0</b><small>bank currencies</small></div><div class="card kpi"><span>Best option</span><b id="kpiScore">—</b><small id="kpiHint">run a search</small></div><div class="card kpi"><span>Active alerts</span><b id="kpiAlerts">0</b><small>saved monitors</small></div></div>
-<div class="card searchbox"><div class="cardhead"><div><h2>Plan a trip</h2><p>Leave the return date empty for one-way.</p></div><div class="seg"><button class="seg active" data-product="flights">Flights</button><button class="seg" data-product="hotels">Hotels</button></div></div>
+<div class="card searchbox"><div class="cardhead"><div><h2>Plan a trip</h2><p>Leave the return date empty for one-way.</p></div><div class="seg"><button class="seg active" data-product="flights">Flights</button><button class="seg" data-product="hotels">Hotels</button><button class="seg" data-product="cash">Cash fares</button></div></div>
 <div class="formgrid">
 <div><label for="destination">Destination</label><input id="destination" value="Thailand" placeholder="Thailand, Tokyo, BKK… (hotels: a city)"></div>
 <div><label for="origins" id="originsLabel">Departure airports</label><input id="origins" value="JFK,BOS,EWR" placeholder="JFK,BOS or New York"></div>
@@ -46,7 +48,7 @@
 <div><label for="flex">Date flexibility</label><select id="flex"><option value="0">Exact</option><option value="3" selected>± 3 days</option><option value="7">± 7 days</option><option value="14">± 14 days</option></select></div>
 <div><label for="rank">Rank by</label><select id="rank"><option value="overall" selected>Lowest effective cost</option><option value="points">Fewest points</option><option value="cpp">Best cents / point</option><option value="nonstop">Nonstop first</option></select></div>
 </div>
-<div class="chips"><label class="check"><input id="directOnly" type="checkbox"> Nonstop only</label><label class="check"><input id="keepFlexible" type="checkbox" checked> Preserve flexible points when possible</label></div>
+<div class="chips"><label class="check"><input id="directOnly" type="checkbox"> Nonstop only</label><label class="check" id="keepFlexibleWrap"><input id="keepFlexible" type="checkbox" checked> Preserve flexible points when possible</label><label class="check" id="useGoogleWrap" hidden><input id="useGoogle" type="checkbox"> Check live Google Flights price (uses 1 SerpApi search)</label></div>
 <div class="searchfoot"><span id="searchMessage">Ready.</span><button class="btn primary" id="searchBtn"><svg class="icon"><use href="#i-search"/></svg>Search &amp; optimize</button></div></div>
 <div class="card resultsbar"><div><h2>Opportunities</h2><p id="resultMeta">No search yet.</p></div></div><div id="results"></div>
 </section>
@@ -62,7 +64,17 @@
 <div><label for="prefNonstop">Prefer nonstop</label><select id="prefNonstop"><option value="false">No</option><option value="true">Yes</option></select></div>
 </div></div></section>
 
-<section id="view-alerts" class="view"><div class="viewhead"><div><h2>Deal alerts</h2><p>Saved trips and stays are re-checked in the background. You get a Windows notification when new matching space appears.</p></div><button class="btn primary" id="runMonitor">Check all now</button></div><div class="card" id="alerts"></div><div class="card empty" id="alertEmpty"><strong>No alerts yet</strong>Run a search and choose “Monitor this trip” or “Monitor this stay”.</div></section>
+<section id="view-deals" class="view"><div class="viewhead"><div><h2>Cash deals from your airports</h2><p>Cheapest recent fares from your home airports to anywhere, compared with what PointPilot has seen before. Powered by Travelpayouts; prices are per person and may be up to ~48 hours old.</p></div></div>
+<div class="stack">
+<div class="card searchbox"><div class="formgrid" style="margin-top:0">
+<div style="grid-column:span 2"><label for="dealAirports">Home airports</label><input id="dealAirports" placeholder="JFK,EWR,BOS"></div>
+<div><label for="dealMaxPrice">Max price per person (USD)</label><input id="dealMaxPrice" type="number" min="0" step="50" placeholder="Any"></div>
+<div><label for="dealMinDrop">Alert when at least</label><select id="dealMinDrop"><option value="15">15% below usual</option><option value="25" selected>25% below usual</option><option value="35">35% below usual</option><option value="50">50% below usual</option></select></div>
+</div><div class="searchfoot"><span id="dealMessage">Deals become more accurate as PointPilot builds price history (3+ days per route).</span><div class="btnrow" style="margin:0"><button class="btn" id="watchDeals"><svg class="icon"><use href="#i-bell"/></svg>Watch these airports</button><button class="btn primary" id="findDeals"><svg class="icon"><use href="#i-search"/></svg>Find deals</button></div></div></div>
+<div id="dealResults"></div>
+</div></section>
+
+<section id="view-alerts" class="view"><div class="viewhead"><div><h2>Alerts</h2><p>Award trips, hotel stays, cash fares and airport deal watches are re-checked in the background. You get a Windows notification when something new appears.</p></div><button class="btn primary" id="runMonitor">Check all now</button></div><div class="card" id="alerts"></div><div class="card empty" id="alertEmpty"><strong>No alerts yet</strong>Run a search and choose “Monitor this trip” or “Monitor this stay”.</div></section>
 
 <section id="view-history" class="view"><div class="viewhead"><div><h2>Historical award prices</h2><p>Published benchmarks plus every award price PointPilot has seen.</p></div><button class="btn" id="refreshHistory">Refresh</button></div><div class="stack"><div class="card searchbox"><div class="formgrid" style="margin-top:0"><div><label for="histProgram">Program</label><select id="histProgram"><option value="">All programs</option></select></div><div><label for="histOrigin">Origin</label><input id="histOrigin" placeholder="JFK"></div><div><label for="histDestination">Destination</label><input id="histDestination" placeholder="BKK"></div><div><label for="histCabin">Cabin</label><select id="histCabin"><option value="">All</option><option value="economy">Economy</option><option value="premium">Premium</option><option value="business">Business</option><option value="first">First</option></select></div></div></div><div class="card tablecard"><div class="tableScroll"><table><thead><tr><th>Observed</th><th>Program</th><th>Scope</th><th>Cabin</th><th>Points</th><th>Type</th><th>Source</th></tr></thead><tbody id="historyTable"></tbody></table></div></div><div class="note" id="historySources"></div></div></section>
 
@@ -80,6 +92,14 @@
 <div class="card searchbox"><div class="cardhead"><div><h3>Live award data — seats.aero</h3><p>A <a href="https://seats.aero" target="_blank" rel="noreferrer">seats.aero Pro</a> membership includes a personal API key (Settings → API) for non-commercial use. The same key powers live flight search (20+ airline programs) and live hotel search through rooms.aero (Hilton, Hyatt, IHG, Marriott, Choice, Wyndham, I Prefer), each with about 1,000 calls/day. The key is stored only on this PC.</p></div></div>
 <div class="formgrid"><div style="grid-column:span 2"><label for="apiKey">API key</label><input id="apiKey" type="password" autocomplete="off" placeholder="Paste your seats.aero Partner API key"></div><div><label>Status</label><b id="apiStatus" style="padding-top:8px">—</b></div><div><label>Calls today</label><b id="apiCalls" style="padding-top:8px">0</b></div></div>
 <div class="btnrow"><button class="btn primary small" id="saveApiKey">Save key</button><button class="btn small" id="clearApiKey">Remove key</button></div></div>
+<div class="card searchbox"><div class="cardhead"><div><h3>Cash fares — Travelpayouts &amp; Google Flights</h3><p>A free <a href="https://www.travelpayouts.com" target="_blank" rel="noreferrer">Travelpayouts</a> partner token (Profile → API token) powers cash price search, price alerts and the deals feed. An optional <a href="https://serpapi.com" target="_blank" rel="noreferrer">SerpApi</a> key (free: 250 searches/month) adds live Google Flights prices, Google's low/typical/high rating and business-class cash prices.</p></div></div>
+<div class="formgrid">
+<div style="grid-column:span 2"><label for="tpToken">Travelpayouts token</label><input id="tpToken" type="password" autocomplete="off" placeholder="Paste your Travelpayouts API token"></div>
+<div style="grid-column:span 2"><label for="serpKey">SerpApi key (optional)</label><input id="serpKey" type="password" autocomplete="off" placeholder="Paste your SerpApi key"></div>
+<div style="grid-column:span 2"><label>Status</label><b id="cashKeyStatus" style="padding-top:8px">—</b></div>
+<div style="grid-column:span 2"><label for="homeAirports">Home airports (for deals)</label><input id="homeAirports" placeholder="JFK,EWR,BOS"></div>
+</div>
+<div class="btnrow"><button class="btn primary small" id="saveCashKeys">Save</button><button class="btn small" id="clearTpToken">Remove Travelpayouts token</button><button class="btn small" id="clearSerpKey">Remove SerpApi key</button></div></div>
 <div class="card searchbox"><div class="cardhead"><h3>Alerts &amp; background behavior</h3></div><div class="formgrid">
 <div><label for="setInterval">Check alerts every (minutes)</label><input id="setInterval" type="number" min="15" max="1440"></div>
 <div><label for="setNotify">Windows notifications</label><select id="setNotify"><option value="true">On</option><option value="false">Off</option></select></div>

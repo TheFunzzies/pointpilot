@@ -12,6 +12,7 @@ import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, setNo
 import { loadUser, saveUser, exampleUser, publicSettings, updateSettings, getSettings, apiUsage } from './lib/settings.mjs';
 import { transferData, loadCachedReference, refreshReference, referenceStatus } from './lib/reference.mjs';
 import { PlaceError } from './lib/places.mjs';
+import { searchCash, dealsFromAirports, cashForItinerary } from './lib/cash.mjs';
 
 const VERSION = process.env.POINTPILOT_VERSION || '0.6.0';
 const MAX_BODY = 25 * 1024 * 1024;
@@ -79,7 +80,7 @@ function makeHandler(getPort) {
 
       if (m === 'GET' && p === '/api/health') {
         const [h, s, usage] = await Promise.all([loadHistory(), getSettings(), apiUsage()]);
-        return send(res, 200, { ok: true, version: VERSION, awardObservations: h.length, dataDir: dataDir(), liveData: s.seatsAeroApiKey ? 'seats.aero' : 'manual-only', apiCallsToday: usage.calls, roomsCallsToday: usage.roomsCalls, reference: referenceStatus() });
+        return send(res, 200, { ok: true, version: VERSION, awardObservations: h.length, dataDir: dataDir(), liveData: s.seatsAeroApiKey ? 'seats.aero' : 'manual-only', cashData: { travelpayouts: Boolean(s.travelpayoutsToken), google: Boolean(s.serpApiKey) }, apiCallsToday: usage.calls, roomsCallsToday: usage.roomsCalls, tpCallsToday: usage.tpCalls, serpCallsThisMonth: usage.serpCalls, reference: referenceStatus() });
       }
       if (m === 'GET' && p === '/api/user') return send(res, 200, await loadUser());
       if (m === 'GET' && p === '/api/user/example') return send(res, 200, exampleUser());
@@ -93,6 +94,9 @@ function makeHandler(getPort) {
 
       if (m === 'POST' && p === '/api/search/trip') return send(res, 200, await searchTrip(await body(req)));
       if (m === 'POST' && p === '/api/search/hotels') return send(res, 200, await searchHotels(await body(req)));
+      if (m === 'POST' && p === '/api/cash/search') return send(res, 200, await searchCash(await body(req)));
+      if (m === 'POST' && p === '/api/cash/deals') return send(res, 200, await dealsFromAirports(await body(req)));
+      if (m === 'POST' && p === '/api/cash/itinerary') return send(res, 200, await cashForItinerary(await body(req)));
 
       if (m === 'POST' && p === '/api/manual-award') {
         const row = normalizeFlightAward({ ...(await body(req)), dataSource: 'manual' });
@@ -133,7 +137,7 @@ function makeHandler(getPort) {
       const alertMatch = p.match(/^\/api\/alerts\/([a-z0-9]+)$/i);
       if (alertMatch && m === 'DELETE') { await deleteAlert(alertMatch[1]); return send(res, 200, { ok: true }); }
       if (alertMatch && m === 'PATCH') { const b = await body(req); await setAlertActive(alertMatch[1], b.active); return send(res, 200, { ok: true }); }
-      if (m === 'POST' && p === '/api/monitor/run') return send(res, 200, await runMonitor());
+      if (m === 'POST' && p === '/api/monitor/run') return send(res, 200, await runMonitor({ force: true }));
 
       return send(res, 404, { error: 'Not found' });
     } catch (e) {
