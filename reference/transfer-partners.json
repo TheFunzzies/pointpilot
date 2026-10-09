@@ -970,7 +970,7 @@
             "tpg"
           ],
           "bonusPct": 0.35,
-          "bonusEnds": "2026-10-15",
+          "bonusEnds": "2026-10-16",
           "bonusRolling": true
         },
         "marriott": {
@@ -2218,7 +2218,7 @@
             "tpg"
           ],
           "bonusPct": 0.2,
-          "bonusEnds": "2026-10-15",
+          "bonusEnds": "2026-10-16",
           "bonusRolling": true
         },
         "citi": {
@@ -2807,7 +2807,7 @@
     }
   },
   "verification": {
-    "checkedAt": "2026-10-08",
+    "checkedAt": "2026-10-09",
     "sources": {
       "roame": 217,
       "upgradedpoints": 142,
