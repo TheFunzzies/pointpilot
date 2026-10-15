@@ -970,7 +970,7 @@
             "tpg"
           ],
           "bonusPct": 0.35,
-          "bonusEnds": "2026-10-21",
+          "bonusEnds": "2026-10-22",
           "bonusRolling": true
         },
         "marriott": {
@@ -2218,7 +2218,7 @@
             "tpg"
           ],
           "bonusPct": 0.2,
-          "bonusEnds": "2026-10-21",
+          "bonusEnds": "2026-10-22",
           "bonusRolling": true
         },
         "citi": {
@@ -2360,7 +2360,8 @@
           "bonusEnds": "2026-10-31",
           "verifiedBy": [
             "roame",
-            "tpg"
+            "tpg",
+            "upgradedpoints"
           ]
         },
         "bilt": {
@@ -2807,7 +2808,7 @@
     }
   },
   "verification": {
-    "checkedAt": "2026-10-14",
+    "checkedAt": "2026-10-15",
     "sources": {
       "roame": 217,
       "upgradedpoints": 142,
