@@ -1,16 +1,17 @@
-# Transfer partner check — 2026-10-19
+# Transfer partner check — 2026-10-20
 
-Sources: Roame (217 routes), Upgraded Points (142 routes), The Points Guy (100 routes)
+Sources: Roame (217 routes), Upgraded Points (143 routes), The Points Guy (100 routes)
 
 ## Changes applied (0)
 - none
 
-## Disagreements to review (7)
+## Disagreements to review (8)
 - Only roame lists Marriott Bonvoy → Finnair Plus 3:1; not added
 - Only roame lists Citi ThankYou → Japan Airlines Mileage Bank 1:1; not added
 - Marriott Bonvoy → Air Canada Aeroplan: ours 3:1; roame 3:1, upgradedpoints 3:1.15
 - Marriott Bonvoy → EVA Air Infinity MileageLands: ours 3:1; roame 3:1; not listed by upgradedpoints
 - Citi ThankYou → Aeromexico Rewards: ours 1:1; upgradedpoints 1:1; not listed by roame, tpg
+- Only upgradedpoints lists Bilt Rewards → JetBlue TrueBlue 1:1; not added
 - Only upgradedpoints lists Bilt Rewards → Wyndham Rewards 1:1; not added
 - American Express Membership Rewards → Etihad Guest: ours 1:1; tpg 1:1; not listed by roame, upgradedpoints
 
