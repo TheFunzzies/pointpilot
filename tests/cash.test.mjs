@@ -75,25 +75,29 @@ test('cash search: date-window filtering, travelers, "usual price" from history,
   installFakeApis();
   await updateSettings({ travelpayoutsToken: 'tp_test', serpApiKey: 'serp_test' });
   // Price history from previous days: usual cheapest ≈ $1,200.
-  for (const [ago, price] of [[5, 1180], [4, 1220], [3, 1200]]) await recordFares([{ source: 'travelpayouts', origin: 'JFK', destination: 'BKK', departDate: DEP, returnDate: RET, price }], daysAgo(ago));
+  for (const [ago, price] of [[5, 1180], [4, 1220], [3, 1200]]) await recordFares([{ source: 'travelpayouts', origin: 'JFK', destination: 'BKK', departDate: DEP, returnDate: RET, price, pricing: { requestedAdults: 2, queriedAdults: 1, amount: price, currency: 'USD', amountBasis: 'per-adult', estimated: true, completeItinerary: true } }], daysAgo(ago));
   const r = await searchCash({ origins: 'JFK', destination: 'BKK', departDate: DEP, returnDate: RET, flexDays: 0, travelers: 2, useGoogle: true });
   assert.equal(r.fares.length, 2);                          // the fare returning 90 days out is outside the window
   const cheapest = r.fares[0];
   assert.equal(cheapest.price, 870);                         // Google live fare beats the cached $900
-  assert.equal(cheapest.total, 1740);
+  assert.equal(cheapest.total, null);
+  assert.equal(cheapest.oneAdultEstimate.amount, 1740);
+  assert.equal(cheapest.exactComparable, false);
   const tp = r.fares.find(f => f.source === 'travelpayouts');
   assert.equal(tp.usualPrice, 1200);
   assert.equal(tp.label, 'Lowest seen · 25% below usual');
   assert.equal(r.google.insights.level, 'low');
-  assert.equal((await apiUsage()).serpCalls, 2); // includes the direct adapter lookup in the previous test
+  assert.equal((await apiUsage()).serpCalls, 3); // includes group and single estimates, plus the direct adapter lookup in the previous test
 });
 
 test('points vs cash uses a cabin-aware Google price for business class', async () => {
   installFakeApis();
   const r = await cashForItinerary({ origin: 'JFK', destination: 'BKK', departDate: DEP, returnDate: RET, cabin: 'business', travelers: 2 });
   assert.equal(r.source, 'google');
-  assert.equal(r.perTraveler, 5200);
-  assert.equal(r.total, 10400);
+  assert.equal(r.perTraveler, null);
+  assert.equal(r.total, null);
+  assert.equal(r.oneAdultEstimate.amount, 10400);
+  assert.equal(r.pricing.amount, 5200);
 });
 
 test('cash price alert notifies once, then again only when the price drops further', async () => {

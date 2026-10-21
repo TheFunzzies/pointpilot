@@ -102,10 +102,12 @@ test('trip builder: positioning BOS→JFK must land before the award departs; co
   } finally { globalThis.fetch = realFetch; }
   await addStay({ name: 'Park Hyatt Bangkok', program: 'hyatt', city: 'Bangkok', checkIn: inDays(91), checkOut: inDays(94), nightlyPoints: 25000 });
   plan = await getTripPlan();
-  assert.equal(plan.summary.cashUsd, 2 * 56 + 2 * 129);       // award taxes + positioning fares, both travelers
+  assert.equal(plan.summary.cashUsd, 2 * 56);                 // known award taxes only; positioning amount basis is unconfirmed
+  assert.equal(plan.summary.cashPricingUncertain, true);
+  assert.ok(plan.summary.warnings.some(w => /basis unconfirmed/.test(w)));
   assert.deepEqual(plan.summary.pointsByProgram.map(p => [p.program, p.points]).sort(), [['aeroplan', 175000], ['hyatt', 75000]]);
   assert.deepEqual(plan.timeline.map(t => t.type), ['positioning', 'award', 'hotel']);
-  assert.ok(!plan.summary.warnings.some(w => /positioning/.test(w)));
+  assert.ok(!plan.summary.warnings.some(w => /add a positioning flight|positioning flight lands|flight home leaves/.test(w)));
 });
 
 test('deals: destination filter uses city codes; deals are tagged domestic or international', async () => {
