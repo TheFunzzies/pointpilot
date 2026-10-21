@@ -79,6 +79,13 @@ test('multi-day stopovers retain surface warnings without a tight-connection cla
   assert.ok(!r.risks.some(x => x.code === 'INSUFFICIENT_BUFFER'));
 });
 
+test('timestamps accept live six-digit fractions but reject more than nine', () => {
+  const six = award('JFK','LHR','2027-06-05',{ capturedAt:'2027-06-01T00:00:00.123456Z' });
+  assert.equal(normalizeSelectedAward(six).capturedAt, '2027-06-01T00:00:00.123456Z');
+  assert.equal(normalizeTripPlan(plan([six])).segments[0].award.capturedAt, '2027-06-01T00:00:00.123456Z');
+  assert.throws(() => normalizeSelectedAward({ ...six, capturedAt:'2027-06-01T00:00:00.1234567890Z' }), /timestamp/);
+});
+
 test('operated-flight identity, provenance and fee unknowns survive slimming', () => {
   const a = award('JFK','LHR','2027-06-05',{ capturedAt:'2027-06-01T00:00:00Z',sourceUpdatedAt:'2027-05-31T23:00:00Z',evidenceMethod:'live',availabilityId:'live:synthetic',taxesCurrency:'GBP',
     flight:{ id:'real', origin:'JFK', destination:'LHR', departUtc:'2027-06-05T10:00:00Z',arriveUtc:'2027-06-05T18:00:00Z',flightNumbers:['UA1'],segments:[{flightNumber:'UA1',origin:'JFK',destination:'LHR',departUtc:'2027-06-05T10:00:00Z',arriveUtc:'2027-06-05T18:00:00Z'}] } });

@@ -52,6 +52,8 @@ npm run dist      # build dist\PointPilot-Setup-<version>.exe
 
 `npm start` (and `npm run monitor`, which uses the same server) reads `.env` from the project root when one exists; copy `.env.example` to `.env` to change the port or data directory. The packaged desktop app ignores `.env`. Lint is enforced in CI.
 
+For testing, set `POINTPILOT_USER_DATA_DIR` to point the desktop app at a separate profile and data folder (e.g. `$env:POINTPILOT_USER_DATA_DIR="C:\temp\pointpilot-test"`).
+
 ### Layout
 
 ```

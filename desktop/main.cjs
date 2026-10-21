@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu, Tray, Notification, shell } = require('electron');
 const path = require('node:path');
+if (process.env.POINTPILOT_USER_DATA_DIR) app.setPath('userData', path.resolve(process.env.POINTPILOT_USER_DATA_DIR));
 const fsp = require('node:fs/promises');
 const { createArtifactHandlers } = require('./artifacts.cjs');
 
