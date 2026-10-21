@@ -20,7 +20,7 @@ const flight = (o, d, dep, arr, date) => ({ origin: o, destination: d, departUtc
 test('trip builder explains when no connecting flight is needed (award departs from home)', async () => {
   const out = { id: 'o', leg: 'Outbound', program: 'flyingblue', mileageCost: 115000, totalTaxes: 701, cabin: 'business', origin: 'BOS', destination: 'NRT', date: D, flight: flight('BOS', 'NRT', `${D}T20:55:00Z`, `${inDays(62)}T11:45:00Z`, D) };
   const back = { id: 'b', leg: 'Return', program: 'qatar', mileageCost: 200000, totalTaxes: null, taxesMissing: true, cabin: 'business', origin: 'NRT', destination: 'JFK', date: R, flight: flight('NRT', 'JFK', `${R}T21:55:00Z`, `${inDays(67)}T15:00:00Z`, R) };
-  await setFlights({ outbound: out, return: back, travelers: 2 });
+  await setFlights({ outbound: out, return: back, travelers: 2, origins: ['BOS', 'JFK'] });
   const plan = await updateTripSettings({ home: { origin: 'BOS', returnTo: 'BOS' } });
   assert.equal(plan.needs.outbound, null);
   assert.equal(plan.connections.outbound, 'home');           // shown as "✓ no connection needed"

@@ -53,6 +53,7 @@ test('rooms.aero search paginates, dedupes and reports auth errors', async () =>
 });
 
 test('hotel search end to end: live API rows, funding from Chase -> Hyatt, separate quota', async () => {
+  const before = await apiUsage();
   await updateSettings({ seatsAeroApiKey: 'pro_test' });
   const realFetch = globalThis.fetch;
   globalThis.fetch = async url => {
@@ -72,12 +73,12 @@ test('hotel search end to end: live API rows, funding from Chase -> Hyatt, separ
     assert.deepEqual(r.rows[0].funding.sources.map(s => [s.from, s.fromPoints]), [['amex', 58000]]);
     assert.ok(r.rows[0].effectiveCostUsd <= r.rows[1].effectiveCostUsd);
     assert.equal(r.rows.every(h => h.roomType === 'standard'), true);
-    assert.equal((await apiUsage()).roomsCalls, 1);
+    assert.equal((await apiUsage()).roomsCalls - before.roomsCalls, 1);
     assert.equal((await apiUsage()).calls, 0);
 
     // Same query within the refresh window is served from cache (no extra API call).
     await searchHotels({ destination: 'Bangkok', checkIn: CHECKIN, checkOut: inDays(93) });
-    assert.equal((await apiUsage()).roomsCalls, 1);
+    assert.equal((await apiUsage()).roomsCalls - before.roomsCalls, 1);
   } finally {
     globalThis.fetch = realFetch;
   }
