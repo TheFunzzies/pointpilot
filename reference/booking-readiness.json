@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "transfers": [
+    {
+      "from": "amex",
+      "to": "hilton",
+      "typicalMinHours": 0,
+      "typicalMaxHours": 24,
+      "sourceUrl": "https://global.americanexpress.com/rewards/transfer?partner=5629f189e4b0b3d3bd79cc4f",
+      "verifiedAt": "2026-10-20T00:00:00Z"
+    }
+  ]
+}
