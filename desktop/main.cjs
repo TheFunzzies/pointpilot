@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu, Tray, Notification, shell } = require('electron');
 const path = require('node:path');
 const fsp = require('node:fs/promises');
+const { createArtifactHandlers } = require('./artifacts.cjs');
 
 let mainWindow = null;
 let captureWindow = null;
@@ -190,6 +191,10 @@ ipcMain.handle('app-info', () => ({ version: app.getVersion(), dataDir: dataDir(
 ipcMain.handle('check-for-updates', () => checkForUpdates());
 ipcMain.handle('install-update', () => { if (!autoUpdater) return { ok: false }; isQuitting = true; autoUpdater.quitAndInstall(false, true); return { ok: true }; });
 ipcMain.handle('settings-changed', () => applySettings());
+// Backups and diagnostics bundles: fixed kinds, native dialogs, bounded JSON, trusted sender only (see artifacts.cjs).
+const artifacts = createArtifactHandlers({ dialog, getMainWindow: () => mainWindow, getPort: () => serverPort, defaultDirectory: () => app.getPath('documents') });
+ipcMain.handle('save-artifact', (event, request) => artifacts.save(event, request));
+ipcMain.handle('open-backup', event => artifacts.openBackup(event));
 
 // ---------- startup ----------
 app.whenReady().then(async () => {

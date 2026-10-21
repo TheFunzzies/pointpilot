@@ -9,10 +9,11 @@ import { programId, programKind, listPrograms } from './lib/programs.mjs';
 import { loadHistory, recordAwards, routeHistoryStats, getSources } from './lib/history.mjs';
 import { saveAwards, normalizeFlightAward, normalizeHotelAward } from './lib/awards.mjs';
 import { searchTrip, searchHotels, evaluateSelection, expandAwards } from './lib/search.mjs';
-import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, setNotifier } from './lib/monitor.mjs';
+import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, setNotifier, withMonitorPaused } from './lib/monitor.mjs';
 import { loadUser, saveUser, exampleUser, publicSettings, updateSettings, getSettings, apiUsage } from './lib/settings.mjs';
 import { transferData, loadCachedReference, refreshReference, referenceStatus } from './lib/reference.mjs';
 import { PlaceError } from './lib/places.mjs';
+import { ApiError } from './lib/errors.mjs';
 import { searchCash, dealsFromAirports, cashForItinerary } from './lib/cash.mjs';
 import { getTripsCached } from './lib/flights.mjs';
 import { getPlan, addStay, removeStay, clearPlan } from './lib/stayplan.mjs';
@@ -20,10 +21,17 @@ import { resolveSeatMaps } from './lib/seatmaps.mjs';
 import { enrichHotels } from './lib/hotelinfo.mjs';
 import { getTripPlan, updateTripSettings, setFlights, clearTrip, searchPositioning, removeFlight, setPositioning } from './lib/tripplan.mjs';
 import { loadCachedCabins, refreshCabins, productCatalog } from './lib/cabins.mjs';
+import { recoverTransactions } from './lib/store-transaction.mjs';
+import { createRoutes as createBackupRoutes } from './lib/backup-routes.mjs';
+import { createRoutes as createItineraryRoutes } from './lib/itinerary-routes.mjs';
+import { createRoutes as createReadinessRoutes } from './lib/readiness-routes.mjs';
+import { createRoutes as createDiagnosticsRoutes } from './lib/diagnostics-routes.mjs';
 
 try { if (!process.versions.electron) process.loadEnvFile?.(); } catch (e) { if (e.code !== 'ENOENT') throw e; }
 const VERSION = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8')).version;
 const MAX_BODY = 25 * 1024 * 1024;
+const FEATURE_MAX_BODY = 1024 * 1024;
+const BACKUP_PREVIEW_MAX_BODY = 19 * 1024 * 1024; // an 18 MiB envelope plus the JSON wrapper
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
 const SECURITY_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
@@ -36,17 +44,36 @@ function send(res, code, payload, type = 'application/json') {
   res.end(type === 'application/json' ? JSON.stringify(payload) : payload);
 }
 
-async function body(req) {
+async function readBody(req, limit) {
+  const declared = Number(req.headers['content-length']);
+  if (Number.isFinite(declared) && declared > limit) throw Object.assign(new Error('Request too large'), { status: 413, code: 'BODY_TOO_LARGE' });
   let size = 0; const chunks = [];
   for await (const c of req) {
     size += c.length;
-    if (size > MAX_BODY) throw Object.assign(new Error('Request too large'), { status: 413 });
+    if (size > limit) throw Object.assign(new Error('Request too large'), { status: 413, code: 'BODY_TOO_LARGE' });
     chunks.push(c);
   }
   if (!size) return {};
   try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
   catch { throw Object.assign(new Error('Invalid JSON body'), { status: 400 }); }
 }
+
+// A request body can only be read once. Feature routes are offered the request before the legacy routes,
+// so the parsed body is remembered and handed to whichever handler asks for it next.
+const parsedBodies = new WeakMap();
+function body(req, limit = MAX_BODY) {
+  if (!parsedBodies.has(req)) parsedBodies.set(req, readBody(req, limit));
+  return parsedBodies.get(req);
+}
+
+/** Feature packages (backup, itinerary, readiness, diagnostics) register route factories here. */
+function createFeatureHandlers() {
+  const deps = { ApiError, now: () => Date.now(), version: VERSION, withMonitorPaused };
+  return [createBackupRoutes(deps), createItineraryRoutes(), createReadinessRoutes(), createDiagnosticsRoutes(deps)];
+}
+const FEATURE_PREFIX = /^[/]api[/](backup|diagnostics|booking-readiness)([/]|$)|^[/]api[/]trip-plan[/](itinerary|segments[/])/;
+const isFeaturePath = (method, p) => FEATURE_PREFIX.test(p) || (method === 'POST' && (p === '/api/search/trip' || p === '/api/trip/evaluate'));
+const featureBodyLimit = (method, p) => (p === '/api/backup/preview' ? BACKUP_PREVIEW_MAX_BODY : p === '/api/search/trip' || p === '/api/trip/evaluate' ? MAX_BODY : FEATURE_MAX_BODY);
 
 /**
  * The server only listens on 127.0.0.1, but any web page open in the user's browser can still
@@ -83,7 +110,30 @@ function validateManual(input, kind, dateField, pointsField) {
   for (const field of ['totalTaxes', 'cashValue', 'remainingSeats']) if (input[field] != null && input[field] !== '') parseFiniteNumber(input[field], { min: 0, max: Number.MAX_SAFE_INTEGER, name: field, integer: field === 'remainingSeats' });
 }
 
-function makeHandler(getPort) {
+/**
+ * Data stays locked until an interrupted restore has been rolled back. A failed recovery is retried on every
+ * request (and by the monitor timer) and nothing reads or writes user data until it succeeds.
+ */
+function createRecoveryGate() {
+  let ok = false, run = null;
+  const waiting = [];
+  const attempt = async () => {
+    try {
+      const r = await recoverTransactions();
+      if (r.recovered) console.warn('[backup] an interrupted restore was rolled back:', r.rolledBack.join(', '));
+      ok = true;
+      for (const callback of waiting.splice(0)) callback();
+    } catch (e) { console.error('[backup] restore recovery failed; data is locked until it succeeds:', e.code || e.message); }
+    finally { run = null; }
+    return ok;
+  };
+  return { get ok() { return ok; }, ensure: () => (ok ? Promise.resolve(true) : (run ||= attempt())), whenRecovered: callback => (ok ? callback() : waiting.push(callback)) };
+}
+const RECOVERY_LOCKED = 'PointPilot could not finish undoing an interrupted restore, so your data is locked to protect it. Close anything that is using the PointPilot data folder, then try again or restart PointPilot.';
+let activeGate = null;
+
+function makeHandler(getPort, gate = createRecoveryGate()) {
+  const featureHandlers = createFeatureHandlers();
   return async function handle(req, res) {
     const port = getPort();
     const refusal = rejectForeign(req, port);
@@ -95,6 +145,15 @@ function makeHandler(getPort) {
       const m = req.method;
       const q = Object.fromEntries(u.searchParams);
       if (!p.startsWith('/api/')) return m === 'GET' ? await serveStatic(res, p) : send(res, 404, { error: 'Not found' });
+      if (!(await gate.ensure())) return send(res, 503, { error: RECOVERY_LOCKED, code: 'RECOVERY_FAILED' }); // nothing touches data until recovery has succeeded
+
+      if (isFeaturePath(m, p)) {
+        const ctx = Object.freeze({ method: m, path: p, query: q, params: Object.freeze({}), body: m === 'GET' || m === 'HEAD' ? {} : await body(req, featureBodyLimit(m, p)) });
+        for (const handler of featureHandlers) {
+          const result = await handler(ctx);
+          if (result) return send(res, result.status, result.payload);
+        }
+      }
 
       if (m === 'GET' && p === '/api/health') {
         const [h, s, usage] = await Promise.all([loadHistory(), getSettings(), apiUsage()]);
@@ -206,11 +265,23 @@ async function scheduleMonitor() {
   monitorTimer.unref?.();
 }
 
-export { runMonitor, setNotifier, getSettings };
+/** Same as the monitor's runMonitor, but refuses to touch data while a failed restore recovery is outstanding. */
+function guardedRunMonitor(options) {
+  if (activeGate && !activeGate.ok) return Promise.reject(Object.assign(new Error(RECOVERY_LOCKED), { status: 503, code: 'RECOVERY_FAILED' }));
+  return runMonitor(options);
+}
+function guardedGetSettings() {
+  if (activeGate && !activeGate.ok) return Promise.reject(Object.assign(new Error(RECOVERY_LOCKED), { status: 503, code: 'RECOVERY_FAILED' }));
+  return getSettings();
+}
+export { guardedRunMonitor as runMonitor, setNotifier, guardedGetSettings as getSettings };
 
 export function startServer({ port = Number(process.env.PORT || 3000), onReady, monitor = true } = {}) {
   let actualPort = port;
-  const handler = makeHandler(() => actualPort);
+  const gate = createRecoveryGate();
+  activeGate = gate;
+  const recovered = gate.ensure();
+  const handler = makeHandler(() => actualPort, gate);
   const server = http.createServer((req, res) => {
     Promise.resolve(handler(req, res)).catch(e => {
       console.error('[request]', e);
@@ -220,6 +291,7 @@ export function startServer({ port = Number(process.env.PORT || 3000), onReady, 
   });
   server.listen(port, '127.0.0.1', async () => {
     actualPort = server.address().port;
+    await recovered;
     await loadCachedReference().catch(e => console.warn('[reference]', e.message));
     await loadCachedCabins().catch(e => console.warn('[cabins]', e.message));
     console.log(`PointPilot ${VERSION} running at http://127.0.0.1:${actualPort} (data: ${dataDir()})`);
@@ -228,7 +300,7 @@ export function startServer({ port = Number(process.env.PORT || 3000), onReady, 
     const refreshAll = () => { refreshReference().then(r => r.updated && console.log('[reference] transfer partners updated to', r.lastUpdated)); refreshCabins(); };
     refreshAll();
     setInterval(refreshAll, 12 * 3600 * 1000).unref();
-    if (monitor) scheduleMonitor();
+    if (monitor) gate.whenRecovered(scheduleMonitor); // the monitor only starts once data is safe to use
   });
   server.on('close', () => clearTimeout(monitorTimer));
   return server;
@@ -236,6 +308,7 @@ export function startServer({ port = Number(process.env.PORT || 3000), onReady, 
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   if (process.argv.includes('--monitor-once')) {
+    await recoverTransactions();
     await loadCachedReference();
     console.log(JSON.stringify(await runMonitor(), null, 2));
   } else startServer();

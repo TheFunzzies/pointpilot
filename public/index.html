@@ -41,6 +41,14 @@
 <section id="view-search" class="view active">
 <div class="kpis"><div class="card kpi"><span>Tracked points</span><b id="kpiTotal">0</b><small>all programs</small></div><div class="card kpi"><span>Flexible points</span><b id="kpiFlex">0</b><small>bank currencies</small></div><div class="card kpi"><span>Best option</span><b id="kpiScore">—</b><small id="kpiHint">run a search</small></div><div class="card kpi"><span>Active alerts</span><b id="kpiAlerts">0</b><small>saved monitors</small></div></div>
 <div class="card searchbox"><div class="cardhead"><div><h2>Plan a trip</h2><p>Leave the return date empty for one-way.</p></div><div class="seg"><button class="seg active" data-product="flights">Flights</button><button class="seg" data-product="hotels">Hotels</button><button class="seg" data-product="cash">Cash fares</button></div></div>
+<fieldset class="fk-triptype" id="tripTypeWrap"><legend class="fk-sr">Trip type</legend>
+<label class="check"><input type="radio" name="tripType" value="one-way"> One way</label>
+<label class="check"><input type="radio" name="tripType" value="round-trip" checked> Round trip</label>
+<label class="check"><input type="radio" name="tripType" value="open-jaw"> Open jaw</label>
+<label class="check"><input type="radio" name="tripType" value="multi-city"> Multi-city</label>
+</fieldset>
+<div id="itineraryRoot" hidden></div>
+<div id="classicSearch">
 <div class="formgrid">
 <div><label for="destination" id="destinationLabel">Destination</label><input id="destination" value="Thailand" placeholder="Thailand, Tokyo, BKK… (hotels: a city)"></div>
 <div><label for="origins" id="originsLabel">Departure airports</label><input id="origins" value="JFK,BOS,EWR" placeholder="JFK,BOS or New York"></div>
@@ -52,14 +60,23 @@
 <div><label for="rank">Rank by</label><select id="rank"><option value="overall" selected>Lowest effective cost</option><option value="points">Fewest points</option><option value="cpp">Best cents / point</option><option value="nonstop">Nonstop first</option><option value="seat">Best seat (business/first)</option><option value="duration">Shortest travel time</option></select></div>
 </div>
 <div class="chips"><label class="check" id="productWrap" title="Find flights that feature a specific business or first class seat">Seat product <select id="productHunt" style="margin-left:6px;max-width:320px"><option value="">Any seat</option></select></label><label class="check"><input id="directOnly" type="checkbox"> Nonstop only</label><label class="check" id="keepFlexibleWrap"><input id="keepFlexible" type="checkbox" checked> Preserve flexible points when possible</label><label class="check" id="useGoogleWrap" hidden><input id="useGoogle" type="checkbox"> Check live Google Flights price (uses 1 SerpApi search)</label></div>
+<fieldset class="fk-rooms" id="roomsWrap" hidden><legend>Rooms</legend>
+<p class="muted fk-help">Say who sleeps in which room; PointPilot never splits your party for you. Limits are 4 rooms, 1 to 8 adults and up to 6 children per room. They are input limits, not hotel capacity claims. With more than one room, points are an estimate: one room's observed award × the number of rooms.</p>
+<div id="roomsList"></div>
+<div class="btnrow"><button type="button" class="btn small" id="addRoom">Add a room</button><label class="check"><input type="checkbox" id="cashOffers"> Also look up cash offers for this occupancy (one SerpApi search per room)</label></div>
+<div class="fk-status error" id="roomsError" role="alert"></div></fieldset>
 <div class="recents" id="recents" hidden></div>
-<div class="searchfoot"><span id="searchMessage">Ready.</span><button class="btn primary" id="searchBtn"><svg class="icon"><use href="#i-search"/></svg>Search &amp; optimize</button></div></div>
+<div class="searchfoot"><span id="searchMessage">Ready.</span><button class="btn primary" id="searchBtn"><svg class="icon"><use href="#i-search"/></svg>Search &amp; optimize</button></div>
+</div></div>
 <div id="stayPlan" hidden></div>
-<div class="card resultsbar"><div><h2>Opportunities</h2><p id="resultMeta">No search yet.</p></div></div><div id="results"></div>
+<div id="stayReadinessSlot"></div>
+<div class="card resultsbar" id="resultsBar"><div><h2>Opportunities</h2><p id="resultMeta">No search yet.</p></div></div><div id="results"></div>
 </section>
 
 <section id="view-builder" class="view">
 <div class="viewhead"><div><h2>Trip Builder</h2><p>Your award flights, hotels and the flights between home and the award airports, assembled into one trip with one combined points and cash total.</p></div><button class="btn ghost" id="clearTrip">Clear flights</button></div>
+<div id="tbReadinessSlot"></div>
+<div id="readinessRoot" hidden></div>
 <div class="card searchbox"><div class="formgrid" style="margin-top:0">
 <div><label for="tbHome">Home airport (start)</label><input id="tbHome" maxlength="3" placeholder="BOS"></div>
 <div><label for="tbReturnTo">Return home to</label><input id="tbReturnTo" maxlength="3" placeholder="BOS"></div>
@@ -71,6 +88,7 @@
 
 <section id="view-wallet" class="view">
 <div class="viewhead"><div><h2>My points</h2><p>Add every bank, airline and hotel balance you hold. Your value per point (¢) decides which points get spent first.</p></div><span class="save-state" id="walletState"></span></div>
+<p class="muted fk-walletlink">Moving to another PC, or want a safety copy? <button type="button" class="btn small ghost" id="gotoBackup">Back up or restore your points</button></p>
 <div class="wallet-summary"><div class="card kpi"><span>Total points &amp; miles</span><b id="wTotal">0</b><small id="wPrograms">0 programs</small></div><div class="card kpi"><span>Estimated value</span><b id="wValue">$0</b><small>at your ¢/pt values</small></div><div class="card kpi"><span>Flexible bank points</span><b id="wFlex">0</b><small>transferable to partners</small></div></div>
 <div class="wallet-grid" id="walletGroups"></div>
 <div class="card searchbox" style="margin-top:14px"><div class="cardhead"><div><h3>Optimizer preferences</h3><p>Saved automatically.</p></div></div><div class="formgrid">
@@ -108,6 +126,8 @@
 
 <section id="view-system" class="view"><div class="viewhead"><div><h2>Data &amp; system</h2><p>Live data source, alerts, updates and where your data is stored.</p></div></div>
 <div class="stack">
+<div class="card searchbox" id="backupCard"><div class="cardhead"><div><h3 id="backupHeading" tabindex="-1">Backup &amp; restore</h3><p>Move your wallet, preferences, settings, saved trip and stays, and alert definitions to another installation in one encrypted file. API keys and your webhook address are left out unless you choose to include them.</p></div></div><div id="backupRoot"></div></div>
+<div class="card searchbox" id="diagnosticsCard"><div class="cardhead"><div><h3 id="diagnosticsHeading">Diagnostics</h3><p>Save a redacted support bundle that explains failing searches and alerts. It is stored on this computer and never sent anywhere automatically.</p></div></div><div id="diagnosticsRoot"></div></div>
 <div class="card searchbox"><div class="cardhead"><div><h3>Live award data — seats.aero</h3><p>A <a href="https://seats.aero" target="_blank" rel="noreferrer">seats.aero Pro</a> membership includes a personal API key (Settings → API) for non-commercial use. The same key powers live flight search (20+ airline programs) and live hotel search through rooms.aero (Hilton, Hyatt, IHG, Marriott, Choice, Wyndham, I Prefer), each with about 1,000 calls/day. The key is stored only on this PC.</p></div></div>
 <div class="formgrid"><div class="span-2"><label for="apiKey">API key</label><input id="apiKey" type="password" autocomplete="off" placeholder="Paste your seats.aero Partner API key"></div><div><label>Status</label><b id="apiStatus" style="padding-top:8px">—</b></div><div><label>Calls today</label><b id="apiCalls" style="padding-top:8px">0</b></div></div>
 <div class="btnrow"><button class="btn primary small" id="saveApiKey">Save key</button><button class="btn small" id="clearApiKey">Remove key</button></div></div>
@@ -132,4 +152,4 @@
 <div class="card sys"><h3>Local data</h3><b>Private on this PC</b><p id="sysDataDir">—</p></div>
 <div class="card sys update-card"><h3>Software updates</h3><b id="updateVersion">—</b><p id="updateMessage">PointPilot downloads updates from GitHub Releases automatically.</p><div class="btnrow"><button class="btn small" id="checkUpdates">Check now</button><button class="btn small primary" id="installUpdate" hidden>Restart &amp; install</button></div></div>
 </div></div></section>
-</main></div><div id="toast" class="toast" role="status"></div><script src="/helpers.js"></script><script src="/app.js"></script></body></html>
+</main></div><div id="toast" class="toast" role="status"></div><script src="/helpers.js"></script><script src="/feature-kit.js"></script><script src="/itinerary-ui.js"></script><script src="/readiness-ui.js"></script><script src="/backup-ui.js"></script><script src="/diagnostics-ui.js"></script><script src="/app.js"></script></body></html>

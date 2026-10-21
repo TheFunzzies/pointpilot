@@ -10,7 +10,7 @@ const fmt = n => new Intl.NumberFormat('en-US').format(Math.round(Number(n) || 0
 const money = n => (n == null || !Number.isFinite(Number(n)) ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(n)));
 const dateFmt = x => (x ? new Date(`${String(x).slice(0, 10)}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
 const programLabel = id => state.programs.find(p => p.id === id)?.name || id;
-const { createGuard, paginate, pairAddability, nonstopFilter, expandBody, alertCheckState, summarizeRun, truncationNotice } = window.PPHelpers;
+const { createGuard, paginate, pairAddability, nonstopFilter, expandBody, alertCheckState, summarizeRun, truncationNotice, tripEnds, stayProvenance, fareQuote, comparisonQuote, isExactComparable, buildRooms, plainText, roomSummary, buildProgramEvidence, ROOM_LIMITS, DEFAULT_ROOM } = window.PPHelpers;
 const searchGuard = createGuard();
 const isAbort = e => e?.name === 'AbortError';
 const safeUrl = u => (/^https:\/\//i.test(String(u || '')) ? u : null);
@@ -257,6 +257,9 @@ async function runSearch() {
   busy($('searchBtn'), true, 'Searching…');
   try {
     if (product === 'hotels') {
+      const roomCheck = buildRooms(roomsState.rows);
+      $('roomsError').textContent = roomCheck.ok ? '' : roomCheck.error;
+      if (!roomCheck.ok) { msg.textContent = roomCheck.error; return; }
       msg.textContent = 'Searching hotel award space…';
       const q = currentHotelQuery();
       const r = await api('/api/search/hotels', { method: 'POST', body: q, signal });
@@ -731,10 +734,115 @@ async function upgradeSeatMaps(root) {
 }
 
 function currentHotelQuery() {
-  return {
+  const q = {
     destination: $('destination').value.trim(), checkIn: $('dateFrom').value, checkOut: $('dateTo').value || null,
     flexDays: Number($('flex').value), roomType: $('cabin').value, rank: $('rank').value, preserveFlexible: $('keepFlexible').checked
   };
+  // One room for two adults is the long-standing default and sends nothing extra. Anything else is explicit.
+  const built = buildRooms(roomsState.rows);
+  const cashOffers = $('cashOffers').checked;
+  if (built.ok && (!built.isDefault || cashOffers)) q.rooms = built.rooms;
+  if (cashOffers) { q.cashOffers = true; q.currency = 'USD'; }
+  return q;
+}
+
+// ---------- rooms (explicit allocation; never split automatically) ----------
+const roomsState = { rows: [{ ...DEFAULT_ROOM }] };
+function renderRooms() {
+  const n = roomsState.rows.length;
+  $('roomsList').innerHTML = roomsState.rows.map((r, i) => `<div class="fk-roomrow" role="group" aria-label="Room ${i + 1}"><strong>Room ${i + 1}</strong>
+    <div><label for="roomAdults${i}">Adults</label><select id="roomAdults${i}" data-room="${i}" data-room-field="adults">${Array.from({ length: ROOM_LIMITS.adults }, (_, k) => `<option${Number(r.adults) === k + 1 ? ' selected' : ''}>${k + 1}</option>`).join('')}</select></div>
+    <div><label for="roomKids${i}">Children's ages</label><input id="roomKids${i}" data-room="${i}" data-room-field="childrenText" value="${esc(r.childrenText)}" placeholder="none, or e.g. 7, 3" autocomplete="off"></div>
+    <div><label for="roomType${i}">Room type</label><select id="roomType${i}" data-room="${i}" data-room-field="roomType">${[['standard', 'Standard'], ['suite', 'Suite'], ['any', 'Any room']].map(([v, l]) => `<option value="${v}"${r.roomType === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+    <button type="button" class="btn small ghost" data-room-remove="${i}" aria-label="Remove room ${i + 1}"${n < 2 ? ' disabled' : ''}>Remove</button></div>`).join('');
+  $('addRoom').disabled = n >= ROOM_LIMITS.rooms;
+  const built = buildRooms(roomsState.rows);
+  $('roomsError').textContent = built.ok ? '' : built.error;
+}
+$('roomsList').addEventListener('input', e => {
+  const f = e.target.dataset?.roomField;
+  if (!f) return;
+  roomsState.rows[Number(e.target.dataset.room)][f] = e.target.value;
+  const built = buildRooms(roomsState.rows);
+  $('roomsError').textContent = built.ok ? '' : built.error;
+});
+$('roomsList').addEventListener('click', e => {
+  const b = e.target.closest?.('[data-room-remove]');
+  if (!b || roomsState.rows.length < 2) return;
+  roomsState.rows.splice(Number(b.dataset.roomRemove), 1);
+  renderRooms();
+  $('addRoom').focus();
+});
+$('addRoom').onclick = () => {
+  if (roomsState.rows.length >= ROOM_LIMITS.rooms) return;
+  roomsState.rows.push({ ...DEFAULT_ROOM, roomType: roomsState.rows.at(-1).roomType });
+  renderRooms();
+  $(`roomAdults${roomsState.rows.length - 1}`).focus();
+};
+renderRooms();
+
+/** One cash offer's money, in the offer's own currency. */
+function cashAmount(v, currency) {
+  if (v == null || !Number.isFinite(Number(v))) return null;
+  try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD', maximumFractionDigits: 0 }).format(Number(v)); }
+  catch { return `${Math.round(Number(v))} ${esc(currency || '')}`; }
+}
+
+/** Observed award, estimate for several rooms, what is unknown, optional cash offers, and the user-entered details form. */
+function roomBlock(h, i) {
+  const rs = roomSummary(h, fmt);
+  const lines = rs.lines.map(l => `<p class="fk-roomline"><span class="muted">${esc(l.label)}</span> <strong>${esc(l.value)}</strong>${l.estimated ? ' <span class="tag warn">ESTIMATE</span>' : ''}</p>`).join('');
+  const badges = rs.badges.length ? `<p>${rs.badges.map(b => `<span class="tag muted">${esc(b)}</span>`).join(' ')}</p>` : '';
+  let offers = '';
+  if (Array.isArray(h.cashOffers) && h.cashOffers.length) {
+    offers = `<div class="note fk-cash" role="group" aria-label="Cash offer for requested occupancy"><strong>Cash offer for requested occupancy</strong> <span class="muted">Google Hotels, cash only. Its taxes and cancellation terms do not apply to your award booking.</span><ul>${h.cashOffers.slice(0, 4).map(o => {
+      const before = cashAmount(o.totalBeforeTaxes, o.currency), after = cashAmount(o.totalAfterTaxes, o.currency);
+      return `<li>${o.roomType ? `${esc(plainText(o.roomType))}: ` : ''}${before ? `${esc(before)} before taxes` : 'price unknown'} · ${after ? `${esc(after)} after taxes` : 'after-tax total unknown'} · ${o.freeCancellation === true ? 'free cancellation offered' : o.freeCancellation === false ? 'no free cancellation' : 'cancellation unknown'}${o.rawPolicyText ? `<div class="muted">${esc(plainText(o.rawPolicyText))}</div>` : ''}</li>`;
+    }).join('')}</ul></div>`;
+  } else if (state.lastHotelQuery?.cashOffers) offers = '<p class="muted fk-help">No cash offer was found for this occupancy.</p>';
+  const form = `<details class="fk-evidence-form"><summary>Add details you confirmed with the program (user entered)</summary>
+    <div class="formgrid fk-grid">
+      <div class="span-2"><label for="ev${i}-source">Where you confirmed it</label><input id="ev${i}-source" maxlength="120" placeholder="e.g. Hyatt agent chat"></div>
+      <div><label for="ev${i}-date">Date confirmed</label><input id="ev${i}-date" type="date"></div>
+      <div><label for="ev${i}-roomCount">Rooms confirmed</label><input id="ev${i}-roomCount" type="number" min="1" max="${ROOM_LIMITS.rooms}"></div>
+      <div><label for="ev${i}-taxes">Taxes (total)</label><input id="ev${i}-taxes" type="number" min="0" step="0.01"></div>
+      <div><label for="ev${i}-resortFee">Resort fee</label><input id="ev${i}-resortFee" type="number" min="0" step="0.01"></div>
+      <div><label for="ev${i}-currency">Currency</label><input id="ev${i}-currency" maxlength="3" value="USD"></div>
+      <div class="span-2"><label for="ev${i}-cancellation">Cancellation terms (as stated)</label><input id="ev${i}-cancellation" maxlength="500"></div>
+      <div class="fk-checkcell"><label class="check"><input type="checkbox" id="ev${i}-waived"> Resort fee waived</label></div>
+      <div class="fk-checkcell"><label class="check"><input type="checkbox" id="ev${i}-occupancy"> They confirmed this room allocation</label></div>
+    </div><p class="muted fk-help">Saved with the stay as <strong>user entered</strong>. PointPilot does not check it, and it says nothing about current availability.</p></details>`;
+  return `${lines}${badges}${offers}${form}`;
+}
+
+/** Read the optional user-entered details for hotel card i. */
+function readEvidenceForm(i, rooms) {
+  const v = id => $(`ev${i}-${id}`);
+  if (!v('source')) return { ok: true, evidence: null };
+  return buildProgramEvidence({
+    source: v('source').value, date: v('date').value, roomCount: v('roomCount').value, taxes: v('taxes').value, resortFee: v('resortFee').value,
+    currency: v('currency').value, cancellation: v('cancellation').value, resortFeeWaived: v('waived').checked, occupancyConfirmed: v('occupancy').checked
+  }, rooms);
+}
+
+/** Small occupancy / user-entered summary for a saved stay. */
+function stayOccupancy(x) {
+  const parts = [];
+  const R = x.rooms?.length || 1;
+  if (R > 1) parts.push(`${R} rooms · points are an estimate · room inventory unknown · occupancy unverified`);
+  if (x.feesMissing === true && !(x.programEvidence?.taxes || x.programEvidence?.resortFee)) parts.push('Award taxes and resort fees unknown');
+  const ev = x.programEvidence;
+  if (ev) {
+    const bits = [];
+    if (ev.roomCount) bits.push(`${ev.roomCount.value} room${ev.roomCount.value === 1 ? '' : 's'} confirmed`);
+    if (ev.occupancy) bits.push('room allocation confirmed');
+    if (ev.taxes) bits.push(`taxes ${cashAmount(ev.taxes.amount, ev.taxes.currency) || 'unknown'}`);
+    if (ev.resortFee) bits.push(ev.resortFee.waived ? 'resort fee waived' : `resort fee ${cashAmount(ev.resortFee.amount, ev.resortFee.currency) || 'unknown'}`);
+    if (ev.cancellation) bits.push(`cancellation: ${plainText(ev.cancellation.text)}`);
+    const first = Object.values(ev).find(e => e && e.source);
+    parts.push(`<span class="tag muted">user entered</span> ${esc(bits.join(' · '))}${first ? ` (${esc(first.source)}, ${esc(first.date)})` : ''}`);
+  }
+  return parts.length ? `<small class="fk-occ">${parts.map(p => (p.startsWith('<') ? p : esc(p))).join('<br>')}</small>` : '';
 }
 
 function hotelTag(h) {
@@ -766,9 +874,10 @@ function hotelCard(h, i) {
     ${q.stars || q.rating || q.awards ? `<p class="quality">${[q.stars, q.rating, q.awards].filter(Boolean).join(' · ')}</p>` : ''}
     <p>${esc(h.location)} · ${esc(h.programName)} · ${esc(h.roomType)} · ${dateFmt(h.checkIn)} → ${dateFmt(addDays(h.checkIn, h.nights))} · ${h.nights} night(s)</p>
     <p>${fundingText(h.funding) || 'Your remaining balances and transfer partners can\'t cover this stay.'}</p>
+    ${roomBlock(h, i)}
     <p class="links">Reviews &amp; awards: <a href="${esc(L.google)}" target="_blank" rel="noreferrer">Google</a> · <a href="${esc(L.tripadvisor)}" target="_blank" rel="noreferrer">TripAdvisor</a> · <a href="${esc(L.forbes)}" target="_blank" rel="noreferrer">Forbes Travel Guide</a> · <a href="${esc(L.michelin)}" target="_blank" rel="noreferrer">MICHELIN Guide</a>${h.info ? '' : ` · <button class="btn small ghost" data-action="hotel-info-one" data-i="${i}">Get star rating</button>`}</p>
     <div class="btnrow" style="margin-top:6px"><button class="btn small primary" data-action="add-stay" data-i="${i}"><svg class="icon"><use href="#i-plus"/></svg>Add to stay plan</button>${link ? `<a class="btn small" href="${esc(link)}" target="_blank" rel="noreferrer">View / book ↗</a>` : ''}</div>
-  </div><div class="right"><span class="pts">${fmt(h.totalPoints)} pts</span><span class="subv">${fmt(h.nightlyPoints)}/night${h.cashUsd ? ` · cash ${money(h.cashUsd)} · ${h.cpp.toFixed(2)}¢/pt` : ''}</span>${h.effectiveCostUsd != null ? `<span class="subv">${money(h.effectiveCostUsd)} in points value</span>` : ''}</div></div>`;
+  </div><div class="right"><span class="pts">${fmt(h.totalPoints)} pts</span>${h.roomEstimate?.rooms > 1 ? `<span class="subv fk-estimate">${esc(h.roomEstimateLabel || `Estimated points for ${h.roomEstimate.rooms} rooms`)}</span>` : ''}<span class="subv">${fmt(h.nightlyPoints)}/night${h.cashUsd ? ` · cash ${money(h.cashUsd)} · ${h.cpp.toFixed(2)}¢/pt` : ''}</span>${h.effectiveCostUsd != null ? `<span class="subv">${money(h.effectiveCostUsd)} in points value</span>` : ''}</div></div>`;
 }
 
 /** Load star class + Google rating for the hotels shown (one SerpApi search per program per city). */
@@ -842,12 +951,21 @@ function renderHotels(r) {
 // ---------- stay planner ----------
 async function addStayFromResult(i) {
   const h = state.hotelRows?.[i]; if (!h) return;
+  const rooms = state.lastHotelQuery?.rooms || null;
+  const ev = readEvidenceForm(i, rooms || [{ adults: 2, childrenAges: [], roomType: h.roomType === 'suite' ? 'suite' : 'standard' }]);
+  if (!ev.ok) return toast(ev.error);
   try {
-    const plan = await api('/api/stay-plan/stays', { method: 'POST', body: {
+    const body = {
       name: h.name, hotelId: h.hotelId, program: h.program, city: h.city, location: h.location, category: h.category, roomType: h.roomType,
       checkIn: h.checkIn, checkOut: addDays(h.checkIn, h.nights), nightlyPoints: h.nightlyPoints, totalPoints: h.totalPoints, cashPerNight: h.cashValue,
       bookingUrl: h.bookingUrl, dataSource: h.dataSource, estimated: h.estimated
-    } });
+    };
+    // Exact provenance travels with the stay (A.md / B.md / O2.md): readiness and backups rely on it. Unknown stays unknown.
+    Object.assign(body, stayProvenance(h));
+    // Occupancy is only sent when it is not the long-standing default, so ordinary one-room stays are saved exactly as before.
+    if (rooms) Object.assign(body, { rooms, occupancySchemaVersion: 1, inventoryStatus: 'unknown', occupancyStatus: 'unverified' });
+    if (ev.evidence) Object.assign(body, { occupancySchemaVersion: 1, programEvidence: ev.evidence });
+    const plan = await api('/api/stay-plan/stays', { method: 'POST', body });
     renderStayPlan(plan);
     // Set up the next leg: check-in = this check-out, same length of stay.
     const next = plan.summary.nextCheckIn;
@@ -862,13 +980,15 @@ async function addStayFromResult(i) {
 function renderStayPlan(plan) {
   const el = $('stayPlan');
   state.plan = plan;
+  const stayKey = (plan?.stays || []).map(x => x.id).join(',');
+  if (stayKey !== state.stayKey) { if (state.stayKey !== undefined) features.readiness?.invalidate(); state.stayKey = stayKey; }
   if (!plan?.stays.length || state.product !== 'hotels') { el.hidden = true; return; }
   const s = plan.summary;
   const fundingPath = s.funding ? s.funding.sources.map(x => `<span class="node">${x.direct ? `${fmt(x.fromPoints)} ${esc(programLabel(x.from))} (have)` : `${fmt(x.fromPoints)} ${esc(programLabel(x.from))} → ${fmt(x.targetPoints)} ${esc(programLabel(x.targetProgram))}${x.bonusPct ? ` (+${Math.round(x.bonusPct * 100)}%)` : ''}`}</span>`).join('') : '';
   el.hidden = false;
-  el.innerHTML = `<div class="card plan"><div class="cardhead"><div><div class="eyebrow">Stay plan</div><h3>${s.stays} hotel${s.stays > 1 ? 's' : ''} · ${s.nights} night${s.nights > 1 ? 's' : ''} · ${dateFmt(s.start)} → ${dateFmt(s.end)}</h3></div><button class="btn small ghost" data-plan="clear">Clear plan</button></div>
+  el.innerHTML = `<div class="card plan"><div class="cardhead"><div><div class="eyebrow">Stay plan</div><h3>${s.stays} hotel${s.stays > 1 ? 's' : ''} · ${s.nights} night${s.nights > 1 ? 's' : ''} · ${dateFmt(s.start)} → ${dateFmt(s.end)}</h3></div><div class="btnrow" style="margin:0"><button class="btn small" data-readiness="stay">Check booking readiness</button><button class="btn small ghost" data-plan="clear">Clear plan</button></div></div>
     <div class="plan-stays">${plan.stays.map((x, i) => `<div class="plan-stay"><span class="num">${i + 1}</span>
-      <div><strong>${esc(x.name)}</strong> ${x.category ? `<span class="cat">${esc(x.programName.replace(/^World of /, ''))} Cat ${esc(x.category)}</span>` : ''}<small>${esc(x.city || x.location)} · ${dateFmt(x.checkIn)} → ${dateFmt(x.checkOut)} · ${x.nights} night(s) · ${esc(x.roomType)}${x.bookingUrl ? ` · <a href="${esc(x.bookingUrl)}" target="_blank" rel="noreferrer">book ↗</a>` : ''}</small></div>
+      <div><strong>${esc(x.name)}</strong> ${x.category ? `<span class="cat">${esc(x.programName.replace(/^World of /, ''))} Cat ${esc(x.category)}</span>` : ''}<small>${esc(x.city || x.location)} · ${dateFmt(x.checkIn)} → ${dateFmt(x.checkOut)} · ${x.nights} night(s) · ${esc(x.roomType)}${x.bookingUrl ? ` · <a href="${esc(x.bookingUrl)}" target="_blank" rel="noreferrer">book ↗</a>` : ''}</small>${stayOccupancy(x)}</div>
       <div class="pts">${fmt(x.totalPoints)} ${esc(x.programName.replace(/^World of /, ''))}<small>${x.cashUsd ? `${money(x.cashUsd)} cash` : ''}</small></div>
       <button class="btn ghost icon-only" data-plan="remove" data-id="${esc(x.id)}" title="Remove"><svg class="icon"><use href="#i-x"/></svg></button></div>`).join('')}</div>
     <div class="metrics" style="margin-top:12px">
@@ -899,6 +1019,12 @@ function dealTag(f) {
   return `<span class="tag muted">${esc(f.label)}</span>`;
 }
 
+/** Price block for a cash fare: group prices with an unconfirmed basis are labelled, never presented as exact. */
+function quoteHtml(f, travelers) {
+  const q = fareQuote(f, travelers, money);
+  return `<span class="pts">${money(q.price)}</span>${q.caption ? `<span class="subv">${esc(q.caption)}</span>` : ''}${q.label ? `<span class="subv fk-estimate">${esc(q.label)}</span>` : ''}${q.oneAdult ? `<span class="subv fk-estimate">${esc(q.oneAdult.label)}: ${esc(q.oneAdult.amountText)}</span>` : ''}`;
+}
+
 function fareCard(f, travelers) {
   const link = safeUrl(f.link);
   const stops = f.stops == null ? '' : f.stops === 0 ? 'nonstop' : `${f.stops} stop${f.stops > 1 ? 's' : ''}`;
@@ -907,26 +1033,29 @@ function fareCard(f, travelers) {
     <p>${esc(f.origin)} → ${esc(f.destination)} · ${dateFmt(f.departDate)}${f.returnDate ? ` – ${dateFmt(f.returnDate)}` : ' · one-way'}${stops ? ` · ${stops}` : ''}${f.airline || f.airlines ? ` · ${esc(f.airline || f.airlines)}` : ''}</p>
     ${f.usualPrice ? `<p>Usual price ≈ ${money(f.usualPrice)} (seen on ${f.baselineDays} days)</p>` : ''}
     ${link ? `<p><a href="${esc(link)}" target="_blank" rel="noreferrer">View on Aviasales ↗</a></p>` : ''}
-  </div><div class="right"><span class="pts">${money(f.price)}</span><span class="subv">per person${travelers > 1 ? ` · ${money(f.total)} for ${travelers}` : ''}</span></div></div>`;
+  </div><div class="right">${quoteHtml(f, travelers)}</div></div>`;
 }
 
 function renderCash(r) {
   const fares = r.fares || [];
   const t = r.query.travelers;
   $('resultMeta').textContent = `${fmt(fares.length)} cash fare(s) · ${r.query.cabin} · ${t} traveler${t > 1 ? 's' : ''}`;
+  const q0 = fares[0] ? fareQuote(fares[0], t, money) : null;
   $('kpiScore').textContent = fares[0] ? money(fares[0].price) : '—';
-  $('kpiHint').textContent = fares[0] ? 'cheapest per person' : 'no fares found';
+  $('kpiHint').textContent = !fares[0] ? 'no fares found' : q0.exact ? 'cheapest per person' : 'cheapest, basis unconfirmed';
   let google = '';
   if (r.google) {
     const i = r.google.insights;
     const g0 = r.google.fares[0];
-    google = `<div class="card reco"><div class="cardhead"><div><div class="eyebrow">Live Google Flights · ${esc(r.query.cabin)}</div><h3>${g0 ? `${money(g0.price)} per person` : 'No live fares found'}${g0 && t > 1 ? ` · ${money(g0.total)} total` : ''}</h3></div>${safeUrl(r.google.url) ? `<a class="btn small" href="${esc(r.google.url)}" target="_blank" rel="noreferrer">Open in Google Flights ↗</a>` : ''}</div>
+    const gq = g0 ? fareQuote(g0, t, money) : null;
+    google = `<div class="card reco"><div class="cardhead"><div><div class="eyebrow">Live Google Flights · ${esc(r.query.cabin)}</div><h3>${g0 ? (gq.exact ? `${money(g0.price)} per person` : `${money(g0.price)} · ${esc(gq.label)}`) : 'No live fares found'}${g0 && gq.exact && t > 1 ? ` · ${money(g0.total)} total` : ''}</h3>${gq?.oneAdult ? `<p class="fk-estimate">${esc(gq.oneAdult.label)}: ${esc(gq.oneAdult.amountText)}</p>` : ''}</div>${safeUrl(r.google.url) ? `<a class="btn small" href="${esc(r.google.url)}" target="_blank" rel="noreferrer">Open in Google Flights ↗</a>` : ''}</div>
       ${i?.level ? `<div class="note"><strong>${esc(LEVEL_TEXT[i.level] || i.level)}.</strong>${i.typicalRange ? ` Typical: ${money(i.typicalRange[0])}–${money(i.typicalRange[1])}.` : ''}</div>` : ''}
-      ${r.google.fares.length ? `<div class="result-list">${r.google.fares.slice(0, 5).map(f => `<div class="result card"><div><h4>${esc(f.airlines)}</h4><p>${esc(f.origin)} → ${esc(f.destination)} · ${f.stops === 0 ? 'nonstop' : `${f.stops} stop(s)`}${f.durationMin ? ` · ${Math.floor(f.durationMin / 60)}h ${f.durationMin % 60}m` : ''}</p></div><div class="right"><span class="pts">${money(f.price)}</span><span class="subv">per person</span></div></div>`).join('')}</div>` : ''}
+      ${i?.level && t > 1 ? '<div class="note" role="note">For a group search this rating is context only: Google\'s price unit is unconfirmed, so it is not an exact benchmark.</div>' : ''}
+      ${r.google.fares.length ? `<div class="result-list">${r.google.fares.slice(0, 5).map(f => `<div class="result card"><div><h4>${esc(f.airlines)}</h4><p>${esc(f.origin)} → ${esc(f.destination)} · ${f.stops === 0 ? 'nonstop' : `${f.stops} stop(s)`}${f.durationMin ? ` · ${Math.floor(f.durationMin / 60)}h ${f.durationMin % 60}m` : ''}</p></div><div class="right">${quoteHtml(f, t)}</div></div>`).join('')}</div>` : ''}
     </div>`;
   }
   const alertForm = `<div class="card searchbox" style="margin-top:12px"><div class="cardhead"><div><h3>Set a price alert</h3><p>PointPilot checks this route in the background and notifies you when the price drops below your target or well below its usual price.</p></div></div>
-    <div class="btnrow"><input id="cashTarget" class="inputnum" type="number" min="0" step="10" placeholder="Target $ / person" value="${fares[0] ? Math.max(0, Math.round(fares[0].price * 0.85 / 10) * 10) : ''}">
+    <div class="btnrow"><input id="cashTarget" class="inputnum" type="number" min="0" step="10" placeholder="Target $ / person" value="${fares[0] && q0.exact ? Math.max(0, Math.round(fares[0].price * 0.85 / 10) * 10) : ''}">
     <select id="cashDealPct"><option value="0">Only my target</option><option value="15">or 15% below usual</option><option value="20" selected>or 20% below usual</option><option value="30">or 30% below usual</option></select>
     <button class="btn primary" data-action="cash-alert"><svg class="icon"><use href="#i-bell"/></svg>Create price alert</button>
     <a class="btn" href="${esc(r.googleFlightsUrl)}" target="_blank" rel="noreferrer">Open in Google Flights ↗</a></div></div>`;
@@ -935,7 +1064,7 @@ function renderCash(r) {
     : r.google ? ''
     : notConfigured ? '<div class="card empty"><strong>Connect a cash fare source</strong>Add a free Travelpayouts token (and optionally a SerpApi key) under <em>Data &amp; System</em> to search cash fares and get price alerts.</div>'
     : '<div class="card empty"><strong>No recent fares found for these dates.</strong>Aviasales may not have cached prices for this route yet. Try ± more days, nearby airports, or a live Google check.</div>';
-  const econRef = r.economyReference?.length ? `<div class="note"><strong>Economy fares for reference</strong> (recent Aviasales):<br>${r.economyReference.map(f => `${esc(f.origin)} → ${esc(f.destination)} ${dateFmt(f.departDate)}${f.returnDate ? ` – ${dateFmt(f.returnDate)}` : ''}: ${money(f.price)}`).join('<br>')}</div>` : '';
+  const econRef = r.economyReference?.length ? `<div class="note"><strong>Economy fares for reference</strong> (recent Aviasales):<br>${r.economyReference.map(f => `${esc(f.origin)} → ${esc(f.destination)} ${dateFmt(f.departDate)}${f.returnDate ? ` – ${dateFmt(f.returnDate)}` : ''}: ${money(f.price)}${f.pricingLabel && t > 1 ? ` (${esc(f.pricingLabel)})` : ''}`).join('<br>')}</div>` : '';
   const googleBanner = `<div class="card searchbox" style="margin-bottom:12px"><div class="cardhead"><div><h3>See every flight on Google Flights</h3><p>${esc(r.query.origins.join(', '))} → ${esc(r.query.destinations.join(', '))} · ${esc(r.query.cabin)} · ${dateFmt(r.query.out.start)}${r.query.back ? ` – ${dateFmt(r.query.back.end)}` : ''}, prefilled.</p></div><a class="btn primary" href="${esc(r.googleFlightsUrl)}" target="_blank" rel="noreferrer">Open Google Flights ↗</a></div></div>`;
   $('results').innerHTML = googleBanner + warningsBox(r.dataStatus.warnings) + truncatedNotice(r) + google + list + econRef + alertForm;
 }
@@ -950,6 +1079,12 @@ async function compareCash() {
     // The selection may have changed while we waited; never paint an old comparison onto a new trip.
     if (state.bestTrip !== t || !$('valueMetric') || $('cashCompare') !== box) return;
     if (!r.available) { box.innerHTML = `<div class="note">${esc(r.reason || 'No cash price found for these dates.')} <a href="${esc(r.url)}" target="_blank" rel="noreferrer">Check Google Flights ↗</a></div>`; return; }
+    if (!isExactComparable(r)) {
+      // A group price with an unconfirmed basis is shown as returned; savings and cents-per-point are not computed from it.
+      const gq = comparisonQuote({ ...r, exactComparable: false }, t.travelers, money);
+      box.innerHTML = `<div class="warnbox"><strong>Cash price returned: ${gq.price == null ? '—' : money(gq.price)}${gq.caption ? ` ${esc(gq.caption)}` : ''} (${esc(r.cabin)}).</strong> <span class="fk-estimate">${esc(gq.label)}</span>${gq.oneAdult ? `<br><span class="fk-estimate">${esc(gq.oneAdult.label)}: ${esc(gq.oneAdult.amountText)}</span>` : ''}<br>Cents per point and savings are not calculated, because this group price is not an exact comparison. <a href="${esc(r.url)}" target="_blank" rel="noreferrer">Check Google Flights ↗</a></div>`;
+      return;
+    }
     const cpp = ((r.total - t.taxesUsd) / t.totalSourcePoints) * 100;
     const avgCpp = t.pointsCostUsd / t.totalSourcePoints * 100;
     // Show the result in the Value box of the recommendation.
@@ -1276,10 +1411,11 @@ function cashFareTimes(f) {
 }
 
 function positioningSlot(p, dir) {
-  const need = p.needs[dir];
+  const flights = tripEnds(p); // multi-city plans have no legacy `flights`: the first and last canonical legs play those roles
+  const need = p.needs?.[dir];
   if (!need) {
     // Say why there's no connecting flight instead of silently leaving the step out.
-    const award = p.flights[dir];
+    const award = flights[dir];
     const state_ = p.connections?.[dir];
     if (!award || state_ === 'no-flight') return '';
     const airport = dir === 'outbound' ? award.origin : award.destination;
@@ -1300,7 +1436,7 @@ function positioningSlot(p, dir) {
       <span class="pos-time">${kind === 'award' ? `${t12(o.flight.depart?.time)} → ${t12(o.flight.arrive?.time)}` : cashFareTimes(o)}</span>
       <span class="pos-meta">${kind === 'award' ? `${esc(o.programName)} award · ${esc(o.flight.flightNumbers.join(' / '))} · ${dur(o.flight.totalDurationMin)}` : `${esc(o.airlines || o.airline || '')} ${esc(o.flightNumbers || o.flightNumber || '')} · ${o.stops === 0 ? 'nonstop' : `${o.stops ?? '?'} stop(s)`}${o.durationMin ? ` · ${dur(o.durationMin)}` : ''}`}</span>
       <span>${o.fits === true ? '<span class="tag">FITS</span>' : o.fits === false ? '<span class="tag warn">TOO TIGHT</span>' : '<span class="tag muted">TIME ?</span>'}</span>
-      <span class="pos-price">${kind === 'award' ? `${fmt(o.mileageCost)} pts` : money(o.price)}</span>
+      <span class="pos-price">${kind === 'award' ? `${fmt(o.mileageCost)} pts` : money(o.price)}${kind === 'cash' && o.pricingLabel ? `<small class="fk-estimate">${esc(o.pricingLabel)}</small>` : ''}</span>
       <button class="btn small primary" data-tb="pick" data-dir="${dir}" data-kind="${kind}" data-i="${kind === 'award' ? s.awards.indexOf(o) : s.cash.indexOf(o)}">Use</button></div>`;
   const shown = tb.showAll?.[dir] ? 99 : 6;
   const results = s ? `<div style="margin-top:10px">${warningsBox(s.dataStatus.warnings)}
@@ -1320,8 +1456,9 @@ function positioningSlot(p, dir) {
 
 function renderBuilder(p) {
   tb.plan = p;
+  if (p.planHash && p.planHash !== tb.lastHash) { if (tb.lastHash) features.readiness?.invalidate(); tb.lastHash = p.planHash; }
   for (const [id, v] of [['tbHome', p.home.origin], ['tbReturnTo', p.home.returnTo], ['tbBufferOut', p.buffers.outboundHours], ['tbBufferBack', p.buffers.returnHours]]) if (document.activeElement !== $(id)) $(id).value = v ?? '';
-  const out = p.flights.outbound, ret = p.flights.return;
+  const out = p.flights?.outbound, ret = p.flights?.return;
   const awardItem = (o, dir) => o ? `<div class="tl-item"><div class="tl-dot"><svg class="icon"><use href="#i-plane"/></svg></div><div class="card tl-card">
       <h4>${dir === 'outbound' ? 'Outbound' : 'Return'} award · ${esc(o.programName)} ${seatChip(o.flight?.product)}</h4><p>${legDesc(o)}</p>
       <p>${fmt(o.mileageCost)} pts ${taxText(o)} per person × ${p.travelers} · ${esc(o.cabin)}${o.taxesMissing ? ' · <span class="flag">TAXES NOT REPORTED</span>' : ''}</p>
@@ -1329,24 +1466,34 @@ function renderBuilder(p) {
     : `<div class="tl-item"><div class="tl-dot todo"><svg class="icon"><use href="#i-plane"/></svg></div><div class="card tl-card"><h4>${dir === 'outbound' ? 'Outbound' : 'Return'} award flight</h4><p>Not chosen yet. Search in the Trip Optimizer, pick flights, then "Add to Trip Builder".</p><div class="btnrow" style="margin-top:4px"><button class="btn small" data-tb="goto" data-view="search">Open Trip Optimizer</button></div></div></div>`;
   const hotels = p.stays.length ? p.stays.map(s => `<div class="tl-item"><div class="tl-dot"><svg class="icon"><use href="#i-bed"/></svg></div><div class="card tl-card">
       <h4>${esc(s.name)} ${s.category ? `<span class="cat">${esc(s.programName.replace(/^World of /, ''))} Cat ${esc(s.category)}</span>` : ''}</h4>
-      <p>${esc(s.city || s.location)} · ${dateFmt(s.checkIn)} → ${dateFmt(s.checkOut)} · ${s.nights} night(s) · ${fmt(s.totalPoints)} ${esc(s.programName)}</p></div></div>`).join('')
+      <p>${esc(s.city || s.location)} · ${dateFmt(s.checkIn)} → ${dateFmt(s.checkOut)} · ${s.nights} night(s) · ${fmt(s.totalPoints)} ${esc(s.programName)}</p>${stayOccupancy(s) ? `<p>${stayOccupancy(s)}</p>` : ''}</div></div>`).join('')
     : `<div class="tl-item"><div class="tl-dot todo"><svg class="icon"><use href="#i-bed"/></svg></div><div class="card tl-card"><h4>Hotels (optional)</h4><p>Build stays in the Trip Optimizer's Hotels tab with "Add to stay plan"; they appear here automatically.</p><div class="btnrow" style="margin-top:4px"><button class="btn small" data-tb="goto" data-view="search" data-product="hotels">Find hotels</button></div></div></div>`;
-  $('tbTimeline').innerHTML = positioningSlot(p, 'outbound') + awardItem(out, 'outbound') + hotels + awardItem(ret, 'return') + positioningSlot(p, 'return');
+  const multi = (p.mode === 'open-jaw' || p.mode === 'multi-city') && window.PPFeatures?.itinerary;
+  $('tbTimeline').innerHTML = multi
+    ? positioningSlot(p, 'outbound') + window.PPFeatures.itinerary.timelineHtml(p, esc, safeUrl, { skipPositioning: true }) + positioningSlot(p, 'return')
+    : positioningSlot(p, 'outbound') + awardItem(out, 'outbound') + hotels + awardItem(ret, 'return') + positioningSlot(p, 'return');
   const s = p.summary;
   const path = s.funding ? s.funding.sources.map(x => `<span class="node">${x.direct ? `${fmt(x.fromPoints)} ${esc(programLabel(x.from))} (have)` : `${fmt(x.fromPoints)} ${esc(programLabel(x.from))} → ${fmt(x.targetPoints)} ${esc(programLabel(x.targetProgram))}`}</span>`).join('') : '';
   $('tbSummary').innerHTML = `<div class="card plan" style="margin-top:0"><div class="eyebrow">Whole trip · ${p.travelers} traveler${p.travelers > 1 ? 's' : ''}</div>
     <h3 style="margin:4px 0 0">${fmt(s.totalPoints)} points + ${money(s.cashUsd)} cash</h3>
     <div class="note" style="margin-top:10px">${s.pointsByProgram.map(x => `${fmt(x.points)} ${esc(x.programName)}`).join('<br>') || 'Nothing added yet.'}</div>
-    <p class="muted" style="font-size:12.5px;margin:8px 0 0">Cash = award taxes + positioning fares (all travelers). Hotel points are for one room.</p>
-    ${s.affordable === false ? '<div class="warnbox">Your current balances and transfer partners can\'t cover the whole trip.</div>' : ''}
+    <p class="muted" style="font-size:12.5px;margin:8px 0 0">Cash = award taxes + positioning fares (all travelers). Hotel points are for the rooms you requested; for more than one room they are an estimate.</p>
+    ${s.cashPricingUncertain ? '<div class="warnbox" role="note">The cash total is incomplete: some group positioning fares have an unconfirmed price basis and are left out of it.</div>' : ''}
+    ${s.fundingStatus === 'search-limited' ? '<div class="warnbox">No funding plan was found within the supported search. This does not prove the trip is impossible.</div>' : s.affordable === false ? '<div class="warnbox">Your current balances and transfer partners can\'t cover the whole trip.</div>' : ''}
     ${path ? `<div class="path">${path}</div>` : ''}
-    ${warningsBox(s.warnings)}</div>`;
+    ${warningsBox(s.warnings)}
+    <div class="btnrow"><button type="button" class="btn" data-readiness="trip">Check booking readiness</button></div></div>`;
 }
 
 $('view-builder').addEventListener('click', async e => {
   const b = e.target.closest('[data-tb]'); if (!b) return;
   const dir = b.dataset.dir;
   try {
+    if (b.dataset.tb === 'remove-segment') {
+      await api(`/api/trip-plan/segments/${encodeURIComponent(b.dataset.id)}`, { method: 'DELETE', body: { expectedRevision: tb.plan.revision } });
+      features.readiness?.invalidate();
+      return loadBuilder();
+    }
     if (b.dataset.tb === 'goto') { showView(b.dataset.view); if (b.dataset.product) document.querySelector(`button[data-product="${b.dataset.product}"]`)?.click(); return; }
     if (b.dataset.tb === 'remove-flight') return renderBuilder(await api(`/api/trip-plan/flights/${dir}`, { method: 'DELETE', body: {} }));
     if (b.dataset.tb === 'unpick') { tb.search[dir] = null; return renderBuilder(await api(`/api/trip-plan/positioning/${dir}`, { method: 'DELETE', body: {} })); }
@@ -1396,6 +1543,7 @@ function showView(name) {
   document.querySelectorAll('.view').forEach(x => x.classList.toggle('active', x.id === `view-${name}`));
   if (name === 'history') loadHistory().catch(e => toast(e.message));
   if (name === 'builder') loadBuilder();
+  if (name === 'system') { features.diagnostics?.refresh(); features.backup?.refresh(); }
 }
 document.querySelectorAll('.nav').forEach(b => { b.onclick = () => showView(b.dataset.view); });
 desktop?.onNavigate?.(showView);
@@ -1465,8 +1613,70 @@ $('recents').addEventListener('click', e => {
   runSearch();
 });
 document.querySelector('#view-search .searchbox').addEventListener('keydown', e => {
+  if (e.target.closest('#itineraryRoot')) return; // the open-jaw / multi-city screen handles its own keys
   if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); if (!$('searchBtn').disabled) runSearch(); }
 });
+
+// ---------- feature screens (itinerary, readiness, backup, diagnostics) ----------
+const features = {};
+let tripType = 'round-trip';
+
+/** One way / Round trip use the classic form; Open jaw / Multi-city swap in the itinerary screen. */
+function applyTripType() {
+  const flights = state.product === 'flights';
+  const itinerary = flights && (tripType === 'open-jaw' || tripType === 'multi-city');
+  $('tripTypeWrap').hidden = !flights;
+  $('roomsWrap').hidden = state.product !== 'hotels';
+  $('classicSearch').hidden = itinerary;
+  $('itineraryRoot').hidden = !itinerary;
+  $('resultsBar').hidden = itinerary;
+  $('results').hidden = itinerary;
+  if (itinerary) { cancelSearch(); features.itinerary.setMode(tripType); }
+  const oneWay = flights && tripType === 'one-way';
+  $('dateTo').disabled = oneWay;
+  if (oneWay) $('dateTo').value = '';
+  else if (flights && !itinerary && !$('dateTo').value && $('dateFrom').value) $('dateTo').value = addDays($('dateFrom').value, 12);
+}
+document.querySelectorAll('input[name="tripType"]').forEach(r => r.addEventListener('change', () => { if (r.checked) { tripType = r.value; applyTripType(); } }));
+document.querySelectorAll('button[data-product]').forEach(b => b.addEventListener('click', applyTripType));
+
+/** The saved trip or stays changed (or a restore finished): refresh what shows them and retire stale readiness. */
+function onPlanChanged(detail) {
+  if (detail && detail.readinessOnly) return;
+  features.readiness?.invalidate();
+  loadBuilder();
+  api('/api/stay-plan').then(renderStayPlan).catch(() => {});
+  if (detail && detail.segments) { toast('Itinerary saved to your Trip Builder.'); showView('builder'); }
+}
+
+/** After a restore every view that shows restored data is reloaded from the server. */
+async function onDataRestored() {
+  const [user, alerts] = await Promise.all([api('/api/user'), api('/api/alerts')]);
+  state.user = user; state.alerts = alerts;
+  renderWallet(); renderAlerts(); renderKPIs();
+  await Promise.all([loadSettings(), refreshHealth()]).catch(() => {});
+  features.diagnostics?.refresh();
+}
+
+function openReadiness(scope, trigger) {
+  const slot = $(scope === 'stay' ? 'stayReadinessSlot' : 'tbReadinessSlot');
+  slot.appendChild($('readinessRoot'));
+  features.readiness.open(scope, trigger);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest?.('[data-readiness]');
+  if (b) openReadiness(b.dataset.readiness, b);
+});
+$('gotoBackup').onclick = () => { showView('system'); $('backupCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('backupHeading').focus(); };
+
+if (window.PPFeatures) {
+  const deps = { api, esc, safeUrl, createGuard, onPlanChanged, desktop, navigate: showView, onDataRestored };
+  features.itinerary = window.PPFeatures.itinerary.mount({ root: $('itineraryRoot'), ...deps });
+  features.readiness = window.PPFeatures.readiness.mount({ root: $('readinessRoot'), ...deps });
+  features.backup = window.PPFeatures.backup.mount({ root: $('backupRoot'), ...deps });
+  features.diagnostics = window.PPFeatures.diagnostics.mount({ root: $('diagnosticsRoot'), ...deps });
+}
+applyTripType();
 renderRecents();
 initDates();
 load();

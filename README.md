@@ -27,6 +27,16 @@ Then open **Data & System** and paste your seats.aero API key (seats.aero → Se
 
 To correct a transfer ratio or add a bonus for every user: edit `reference/transfer-partners.json`, bump `lastUpdated`, and merge to `main`. CI validates the file, and installed apps pick it up within 12 hours. No release is needed.
 
+## Backup, restore and diagnostics
+
+**Data & system → Backup & restore** writes one encrypted `.ppbackup` file (scrypt + AES-256-GCM, Node's built-in crypto only) holding your wallet, preferences, non-secret settings, the saved trip and stays, and alert *definitions*. API keys and the webhook address are left out unless you tick *Include API keys and webhook destination*. The password needs at least 12 characters and cannot be recovered. To restore, choose the file, enter the password and review exactly what would change: **Merge** keeps what you have (and never adds balances together), **Replace** makes the selected categories match the backup. Imported alerts start turned off, and saved keys are only overwritten if you opt in. A restore writes all five data files together with a journal; if PointPilot stops part-way, the next start rolls back to the previous data.
+
+**Data & system → Diagnostics** previews and saves a redacted support bundle (request timings and outcomes, source freshness, attempted-request counters, anonymous alert status). It never contains keys, webhook addresses, wallet values, routes, dates or alert titles, and it is only ever saved to a file you choose.
+
+In the desktop app the file dialogs are native and restricted (fixed file types, size limits, no paths exposed to the page); in a browser the same screens download and upload files.
+
+**Group prices and several hotel rooms are estimates, and are labelled that way.** For more than one traveler, Google Flights' price unit is unconfirmed, so it is shown as returned ("Price returned for N adults — basis unconfirmed"), kept out of savings and cents-per-point, and set beside a separate "one-adult price × N — estimated" figure. Travelpayouts has no passenger count, so its group figure is always that estimate. For hotels you enter each room's adults and children's ages yourself (up to 4 rooms); with more than one room the points are "Estimated points for R rooms" (one room's observed award × R), room inventory is shown as unknown and occupancy as unverified, and fees PointPilot does not know stay unknown rather than $0. Details you confirmed with a program can be saved with a stay and are marked "user entered". Optional cash offers for a room's occupancy come from Google Hotels and are cash only; they never validate an award.
+
 ## Develop
 
 Requires Node.js 22.12+.
@@ -51,7 +61,8 @@ lib/transfers.mjs     ratio / bonus / increment math
 lib/search.mjs        gather awards, pair legs, rank trips
 lib/seatsaero.mjs     seats.aero Partner API adapter
 lib/monitor.mjs       alerts
-lib/store.mjs         atomic, serialized JSON storage
+lib/store.mjs         atomic, serialized JSON storage (+ store-transaction.mjs: all-or-nothing restore)
+lib/backup*.mjs       encrypted backup envelope, payload schema, merge/replace planner, routes
 reference/            bundled data (transfer partners, destinations, history seed)
 desktop/              Electron shell (tray, notifications, auto-update)
 ```
