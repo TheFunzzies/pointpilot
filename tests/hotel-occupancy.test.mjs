@@ -133,4 +133,3 @@ test('cash property and actual room type must match the selected hotel location 
   } });
   assert.deepEqual(standardForSuite, [], 'standard offer must not be labeled as a suite');
 });
-

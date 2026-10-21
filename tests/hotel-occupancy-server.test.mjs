@@ -31,4 +31,3 @@ test('hotel search HTTP accepts explicit room allocations and rejects out-of-bou
   assert.deepEqual(valid.payload.query.rooms.map(r => [r.adults, r.childrenAges.length, r.roomType]), [[2, 1, 'standard'], [1, 0, 'suite']]);
   assert.equal((await call({ destination: 'Bangkok', checkIn: '2027-06-01', rooms: Array(5).fill({ adults: 1, childrenAges: [] }) })).status, 400);
 });
-
