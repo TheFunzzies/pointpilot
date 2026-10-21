@@ -3,8 +3,9 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PUBLIC_DIR, dataDir, dataFile } from './lib/paths.mjs';
-import { listProviders, providerUrlAllowed } from './lib/providers.mjs';
-import { listPrograms } from './lib/programs.mjs';
+import { listProviders } from './lib/providers.mjs';
+import { assertCalendarDate, parseFiniteNumber } from './lib/validate.mjs';
+import { programId, programKind, listPrograms } from './lib/programs.mjs';
 import { loadHistory, recordAwards, routeHistoryStats, getSources } from './lib/history.mjs';
 import { saveAwards, normalizeFlightAward, normalizeHotelAward } from './lib/awards.mjs';
 import { searchTrip, searchHotels, evaluateSelection, expandAwards } from './lib/search.mjs';
@@ -19,9 +20,9 @@ import { resolveSeatMaps } from './lib/seatmaps.mjs';
 import { enrichHotels } from './lib/hotelinfo.mjs';
 import { getTripPlan, updateTripSettings, setFlights, clearTrip, searchPositioning, removeFlight, setPositioning } from './lib/tripplan.mjs';
 import { loadCachedCabins, refreshCabins, productCatalog } from './lib/cabins.mjs';
-import { recordApiCalls } from './lib/settings.mjs';
 
-const VERSION = process.env.POINTPILOT_VERSION || '0.6.0';
+try { if (!process.versions.electron) process.loadEnvFile?.(); } catch (e) { if (e.code !== 'ENOENT') throw e; }
+const VERSION = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8')).version;
 const MAX_BODY = 25 * 1024 * 1024;
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon' };
 const SECURITY_HEADERS = {
@@ -64,7 +65,7 @@ function rejectForeign(req, port) {
 }
 
 async function serveStatic(res, pathname) {
-  const rel = pathname === '/' ? 'index.html' : decodeURIComponent(pathname).replace(/^\/+/, '');
+  const rel = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
   let file = path.resolve(PUBLIC_DIR, rel);
   if (!file.startsWith(PUBLIC_DIR + path.sep)) return send(res, 403, { error: 'Forbidden' });
   let content;
@@ -73,17 +74,27 @@ async function serveStatic(res, pathname) {
   send(res, 200, content, MIME[path.extname(file)] || 'application/octet-stream');
 }
 
+function validateManual(input, kind, dateField, pointsField) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw Object.assign(new Error('Manual entry must be an object.'), { status: 400 });
+  const code = programId(input.program);
+  if (!code || programKind(code) !== kind) throw Object.assign(new Error('Choose a known ' + kind + ' loyalty program.'), { status: 400 });
+  assertCalendarDate(input[dateField], dateField);
+  parseFiniteNumber(input[pointsField], { min: 1, max: Number.MAX_SAFE_INTEGER, integer: true, name: pointsField });
+  for (const field of ['totalTaxes', 'cashValue', 'remainingSeats']) if (input[field] != null && input[field] !== '') parseFiniteNumber(input[field], { min: 0, max: Number.MAX_SAFE_INTEGER, name: field, integer: field === 'remainingSeats' });
+}
+
 function makeHandler(getPort) {
   return async function handle(req, res) {
     const port = getPort();
     const refusal = rejectForeign(req, port);
     if (refusal) return send(res, 403, { error: refusal });
-    const u = new URL(req.url, `http://127.0.0.1:${port}`);
-    const p = u.pathname;
-    const m = req.method;
-    const q = Object.fromEntries(u.searchParams);
     try {
-      if (!p.startsWith('/api/')) return m === 'GET' ? serveStatic(res, p) : send(res, 404, { error: 'Not found' });
+      decodeURIComponent(req.url); // Reject malformed escapes in paths and queries.
+      const u = new URL(req.url, `http://127.0.0.1:${port}`);
+      const p = decodeURIComponent(u.pathname);
+      const m = req.method;
+      const q = Object.fromEntries(u.searchParams);
+      if (!p.startsWith('/api/')) return m === 'GET' ? await serveStatic(res, p) : send(res, 404, { error: 'Not found' });
 
       if (m === 'GET' && p === '/api/health') {
         const [h, s, usage] = await Promise.all([loadHistory(), getSettings(), apiUsage()]);
@@ -122,14 +133,16 @@ function makeHandler(getPort) {
       if (m === 'GET' && p === '/api/award/trips') {
         if (!q.id) return send(res, 400, { error: 'Missing availability id' });
         const s = await getSettings();
-        return send(res, 200, await getTripsCached({ apiKey: s.seatsAeroApiKey, availabilityId: q.id, cabin: q.cabin }, n => recordApiCalls(n, 'seats')));
+        return send(res, 200, await getTripsCached({ apiKey: s.seatsAeroApiKey, availabilityId: q.id, cabin: q.cabin }));
       }
       if (m === 'POST' && p === '/api/cash/search') return send(res, 200, await searchCash(await body(req)));
       if (m === 'POST' && p === '/api/cash/deals') return send(res, 200, await dealsFromAirports(await body(req)));
       if (m === 'POST' && p === '/api/cash/itinerary') return send(res, 200, await cashForItinerary(await body(req)));
 
       if (m === 'POST' && p === '/api/manual-award') {
-        const row = normalizeFlightAward({ ...(await body(req)), dataSource: 'manual' });
+        const input = await body(req);
+        validateManual(input, 'airline', 'date', 'mileageCost');
+        const row = normalizeFlightAward({ ...input, dataSource: 'manual' });
         if (!/^[A-Z]{3}$/.test(row.origin) || !/^[A-Z]{3}$/.test(row.destination)) return send(res, 400, { error: 'Origin and destination must be 3-letter airport codes.' });
         if (!row.date || !(row.mileageCost > 0) || !row.program) return send(res, 400, { error: 'Program, date and points are required.' });
         await saveAwards([row]);
@@ -137,7 +150,9 @@ function makeHandler(getPort) {
         return send(res, 201, { ok: true, row });
       }
       if (m === 'POST' && p === '/api/manual-hotel') {
-        const row = normalizeHotelAward({ ...(await body(req)), dataSource: 'manual' });
+        const input = await body(req);
+        validateManual(input, 'hotel', 'checkIn', 'nightlyPoints');
+        const row = normalizeHotelAward({ ...input, dataSource: 'manual' });
         if (!row.name || !row.checkIn || !(row.nightlyPoints > 0) || !row.program) return send(res, 400, { error: 'Program, hotel, check-in and points/night are required.' });
         await saveAwards([row]);
         await recordAwards([row], { sourceType: 'manual_entry', sourceId: 'manual-entry' });
@@ -171,7 +186,7 @@ function makeHandler(getPort) {
 
       return send(res, 404, { error: 'Not found' });
     } catch (e) {
-      const status = e instanceof PlaceError ? 400 : e.status || 500;
+      const status = e instanceof PlaceError || e instanceof URIError || e.code === 'ERR_INVALID_URL' ? 400 : e.status || 500;
       if (status >= 500) console.error(e);
       return send(res, status, { error: e.message, code: e.code || null });
     }
@@ -195,7 +210,14 @@ export { runMonitor, setNotifier, getSettings };
 
 export function startServer({ port = Number(process.env.PORT || 3000), onReady, monitor = true } = {}) {
   let actualPort = port;
-  const server = http.createServer(makeHandler(() => actualPort));
+  const handler = makeHandler(() => actualPort);
+  const server = http.createServer((req, res) => {
+    Promise.resolve(handler(req, res)).catch(e => {
+      console.error('[request]', e);
+      if (!res.headersSent) send(res, 500, { error: 'Request failed' });
+      else res.destroy();
+    });
+  });
   server.listen(port, '127.0.0.1', async () => {
     actualPort = server.address().port;
     await loadCachedReference().catch(e => console.warn('[reference]', e.message));

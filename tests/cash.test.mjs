@@ -85,7 +85,7 @@ test('cash search: date-window filtering, travelers, "usual price" from history,
   assert.equal(tp.usualPrice, 1200);
   assert.equal(tp.label, 'Lowest seen · 25% below usual');
   assert.equal(r.google.insights.level, 'low');
-  assert.equal((await apiUsage()).serpCalls, 1);
+  assert.equal((await apiUsage()).serpCalls, 2); // includes the direct adapter lookup in the previous test
 });
 
 test('points vs cash uses a cabin-aware Google price for business class', async () => {
