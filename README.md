@@ -72,7 +72,7 @@ desktop/              Electron shell (tray, notifications, auto-update)
 ## Release
 
 1. Bump `version` in `package.json`, then run `npm install` so the lockfile picks up the new version. Commit both.
-2. Tag and push: `git tag v0.14.0 && git push origin v0.14.0` (use the version from `package.json`).
+2. Tag and push: `git tag v0.15.0 && git push origin v0.15.0` (use the version from `package.json`).
 3. The **Release** workflow tests, builds and publishes the installer, blockmap and `latest.yml`. Installed apps update themselves from there. Windows builds are currently unsigned, so SmartScreen can warn about the downloaded installer.
 
 The release fails early if the tag doesn't match `package.json`, or if the lockfile is missing.
