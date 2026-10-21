@@ -34,10 +34,13 @@ Requires Node.js 22.12+.
 ```powershell
 npm ci
 npm test          # unit + API tests
-npm start         # web UI at http://127.0.0.1:3000 (data in .\data)
+npm run lint      # ESLint (flat config)
+npm start         # web UI at http://127.0.0.1:3000 (data in .\data; loads .env when present)
 npm run desktop   # run the Electron app
 npm run dist      # build dist\PointPilot-Setup-<version>.exe
 ```
+
+`npm start` (and `npm run monitor`, which uses the same server) reads `.env` from the project root when one exists; copy `.env.example` to `.env` to change the port or data directory. The packaged desktop app ignores `.env`. Lint is enforced in CI.
 
 ### Layout
 
@@ -56,8 +59,8 @@ desktop/              Electron shell (tray, notifications, auto-update)
 ## Release
 
 1. Bump `version` in `package.json`, then run `npm install` so the lockfile picks up the new version. Commit both.
-2. Tag and push: `git tag v0.6.1 && git push origin v0.6.1`.
-3. The **Release** workflow tests, builds and publishes the installer, blockmap and `latest.yml`. Installed apps update themselves from there.
+2. Tag and push: `git tag v0.14.0 && git push origin v0.14.0` (use the version from `package.json`).
+3. The **Release** workflow tests, builds and publishes the installer, blockmap and `latest.yml`. Installed apps update themselves from there. Windows builds are currently unsigned, so SmartScreen can warn about the downloaded installer.
 
 The release fails early if the tag doesn't match `package.json`, or if the lockfile is missing.
 

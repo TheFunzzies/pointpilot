@@ -215,4 +215,4 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', () => { if (!tray) app.quit(); });
-app.on('before-quit', () => { isQuitting = true; try { server?.close(); } catch {} });
+app.on('before-quit', () => { isQuitting = true; try { server?.close(); } catch { /* Continue quitting if the server is already closed. */ } });

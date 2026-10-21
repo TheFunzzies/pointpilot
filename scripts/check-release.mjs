@@ -10,7 +10,7 @@ if (pub?.provider !== 'github' || pub.owner !== 'TheFunzzies' || pub.repo !== 'p
 if (!lock || !lock.packages?.['node_modules/electron-updater']) fail('package-lock.json is missing or incomplete — run `npm install` and commit it');
 if (lock.version !== pkg.version) fail(`package-lock.json version ${lock.version} != package.json ${pkg.version}`);
 
-// GITHUB_REF_NAME is the pushed tag, e.g. v0.6.0. electron-updater compares the release
+// GITHUB_REF_NAME is the pushed tag, e.g. v1.2.3. electron-updater compares the release
 // version with the installed app version, so they must match exactly.
 const tag = process.env.GITHUB_REF_NAME;
 if (tag && tag !== `v${pkg.version}`) fail(`tag ${tag} does not match package.json version v${pkg.version}`);

@@ -1,6 +1,6 @@
 name: Release
 
-# Push a tag like v0.6.0 (matching package.json "version") to build the Windows installer and
+# Push a tag like v1.2.3 (matching package.json "version") to build the Windows installer and
 # publish it as a GitHub Release. Installed copies of PointPilot pick it up automatically.
 on:
   push:

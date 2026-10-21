@@ -36,7 +36,7 @@ if (process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '
   const hotels = parseMichelinKeys(await r.text());
   if (hotels.length < 800) { console.error(`Only ${hotels.length} hotels parsed; page layout may have changed. Keeping the existing file.`); process.exit(0); }
   let prev = null;
-  try { prev = JSON.parse(readFileSync(FILE, 'utf8')); } catch {}
+  try { prev = JSON.parse(readFileSync(FILE, 'utf8')); } catch { /* Generate fresh data if the previous file cannot be read. */ }
   const out = { schemaVersion: 1, lastUpdated: new Date().toISOString().slice(0, 10), source: SOURCE, note: 'MICHELIN Keys (1–3) from the MICHELIN Guide, via AwardTravel\'s compiled list (covers about half of all Key hotels, weighted to the top tiers). A hotel without a badge may still hold a Key. Matched to hotels by name and city.', hotels };
   if (prev && JSON.stringify(prev.hotels) === JSON.stringify(hotels)) { console.log(`No change (${hotels.length} hotels).`); process.exit(0); }
   writeFileSync(FILE, `${JSON.stringify(out)}\n`);
