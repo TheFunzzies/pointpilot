@@ -2,8 +2,8 @@
   "schemaVersion": 2,
   "source": "Roame Transfer Partners Cheat Sheet",
   "sourceUrl": "https://roame.travel/transfer-partners-cheat-sheet",
-  "lastUpdated": "2026-10-06",
-  "note": "Ratios seeded from the Roame snapshot of 2026-10-04. Routes marked \"unverified\" were added in v0.6 from long-standing public partner lists and should be confirmed on Roame. Bonuses stop applying automatically after bonusEnds. Always verify before moving points — transfers are irreversible.",
+  "lastUpdated": "2026-10-20",
+  "note": "Partner-specific chunk bonuses apply only where eligible. Rolling offers require same-day source confirmation; bonusEnds is reserved for authoritative expiry dates. Always verify before moving points — transfers are irreversible.",
   "banks": {
     "amex": {
       "name": "American Express Membership Rewards",
@@ -38,11 +38,7 @@
     "marriott": {
       "name": "Marriott Bonvoy",
       "minTransfer": 3000,
-      "increment": 3000,
-      "airlineChunkBonus": {
-        "every": 60000,
-        "bonus": 5000
-      }
+      "increment": 3000
     },
     "hyatt": {
       "name": "World of Hyatt",
@@ -102,7 +98,8 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": false
         },
         "hyatt": {
           "ratio": [
@@ -152,7 +149,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "ihg": {
           "ratio": [
@@ -259,7 +260,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -385,7 +390,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -517,7 +526,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -640,7 +653,11 @@
             3,
             1
           ],
-          "days": 0
+          "days": 0,
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "ihg": {
           "ratio": [
@@ -749,7 +766,8 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": false
         },
         "ihg": {
           "ratio": [
@@ -866,7 +884,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -970,7 +992,6 @@
             "tpg"
           ],
           "bonusPct": 0.35,
-          "bonusEnds": "2026-10-27",
           "bonusRolling": true
         },
         "marriott": {
@@ -982,7 +1003,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -1088,7 +1113,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "ramp": {
           "ratio": [
@@ -1178,7 +1207,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -1306,7 +1339,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -1433,7 +1470,8 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": false
         },
         "hyatt": {
           "ratio": [
@@ -1493,7 +1531,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -1567,7 +1609,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "choice": {
           "ratio": [
@@ -1627,7 +1673,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "bilt": {
           "ratio": [
@@ -1733,7 +1783,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -1833,7 +1887,11 @@
             1
           ],
           "days": 2,
-          "unverified": true
+          "unverified": true,
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         }
       }
     },
@@ -1862,7 +1920,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -1922,7 +1984,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "capitalone": {
           "ratio": [
@@ -2006,7 +2072,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "bilt": {
           "ratio": [
@@ -2102,7 +2172,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "bilt": {
           "ratio": [
@@ -2166,7 +2240,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "bilt": {
           "ratio": [
@@ -2218,7 +2296,6 @@
             "tpg"
           ],
           "bonusPct": 0.2,
-          "bonusEnds": "2026-10-27",
           "bonusRolling": true
         },
         "citi": {
@@ -2250,7 +2327,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "hyatt": {
           "ratio": [
@@ -2665,7 +2746,11 @@
           "verifiedBy": [
             "roame",
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         },
         "ihg": {
           "ratio": [
@@ -2751,7 +2836,11 @@
           "days": 0,
           "verifiedBy": [
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         }
       }
     },
@@ -2767,7 +2856,11 @@
           "days": 0,
           "verifiedBy": [
             "upgradedpoints"
-          ]
+          ],
+          "chunkBonus": {
+            "every": 60000,
+            "bonus": 5000
+          }
         }
       }
     }
@@ -2814,5 +2907,8 @@
       "upgradedpoints": 143,
       "tpg": 100
     }
-  }
+  },
+  "updatedAt": "2026-10-20T22:37:22.287Z",
+  "revision": 1,
+  "contentHash": "9c3017262f3f00f5388552f8c4fe83aaa8c653a281e7cd0c6a63e3d52816ba74"
 }

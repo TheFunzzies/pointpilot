@@ -64,7 +64,8 @@ test('consensus: verify, correct, add, live bonus, flag unlisted routes', () => 
   assert.equal(t.amex.unverified, undefined);                      // verified by both
   assert.deepEqual(t.amex.verifiedBy, ['roame', 'upgradedpoints']);
   assert.equal(t.amex.bonusPct, 0.2);                              // live bonus from Roame
-  assert.equal(t.amex.bonusEnds, '2026-10-13');                    // rolling: re-confirmed daily
+  assert.equal(t.amex.bonusEnds, undefined);                       // no invented expiry for rolling offers
+  assert.equal(t.amex.bonusLastConfirmedAt, '2026-10-06T00:00:00.000Z');
   assert.deepEqual(t.chase.ratio, [1, 1]);                         // corrected from 2:1
   assert.deepEqual(data.programs.united.transfers.hyatt.ratio, [5, 2]); // only Roame covers Hyatt → accepted
   assert.deepEqual(data.programs.united.transfers.citi.ratio, [1, 1]);  // added (2 sources)

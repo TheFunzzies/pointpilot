@@ -9,7 +9,8 @@ import { validateTransferData } from '../lib/reference.mjs';
 const FILE = new URL('../reference/transfer-partners.json', import.meta.url);
 const REPORT = new URL('../reference/transfer-check.md', import.meta.url);
 const write = process.argv.includes('--write');
-const today = new Date().toISOString().slice(0, 10);
+const checkedAt = new Date().toISOString();
+const today = checkedAt.slice(0, 10);
 
 async function get(url) {
   const r = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; PointPilot transfer check; +https://github.com/TheFunzzies/pointpilot)' }, signal: AbortSignal.timeout(45000) });
@@ -34,7 +35,7 @@ if (Object.keys(bySource).length < 2) {
   console.error('Fewer than two sources available; nothing applied.', errors);
   process.exit(write ? 0 : 1);
 }
-const { data, changes, conflicts } = reconcile(current, bySource, { today, valuations });
+const { data, changes, conflicts } = reconcile(current, bySource, { today, checkedAt, valuations });
 const problem = validateTransferData(data);
 if (problem) { console.error('Reconciled data failed validation:', problem); process.exit(1); }
 
@@ -48,5 +49,5 @@ const report = [
 console.log(report);
 if (write) {
   writeFileSync(REPORT, report);
-  if (changes.length || JSON.stringify(data.verification) !== JSON.stringify(current.verification)) writeFileSync(FILE, `${JSON.stringify(data, null, 2)}\n`);
+  if (JSON.stringify(data) !== JSON.stringify(current)) writeFileSync(FILE, `${JSON.stringify(data, null, 2)}\n`);
 }
