@@ -9,7 +9,7 @@ const { mapHotelResult, searchRoomsAero } = await import('../lib/roomsaero.mjs')
 const { updateSettings, apiUsage, saveUser, exampleUser } = await import('../lib/settings.mjs');
 await saveUser(exampleUser());
 const { searchHotels } = await import('../lib/search.mjs');
-const { createAlert, runMonitor, setNotifier } = await import('../lib/monitor.mjs');
+const { createAlert, listAlerts, deleteAlert, runMonitor, setNotifier } = await import('../lib/monitor.mjs');
 
 const inDays = n => { const d = new Date(); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const CHECKIN = inDays(90);
@@ -94,4 +94,23 @@ test('hotel alerts notify when a stay under the points limit appears', async () 
   assert.match(notes[0].body, /Park Hyatt Bangkok/);
   const again = await runMonitor();
   assert.equal(again.results.find(x => x.title.includes('Bangkok')).isNew, false); // no repeat notification
+});
+
+test('hotel monitor persists and applies room allocations and requested room type', async () => {
+  const notes = [];
+  setNotifier(n => notes.push(n));
+  await saveUser({ balances: [{ code: 'hyatt', balance: 1000000 }] });
+  const alert = await createAlert({ kind: 'hotel', destination: 'Bangkok', checkIn: CHECKIN, checkOut: inDays(93), roomType: 'suite', rooms: [
+    { adults: 2, childrenAges: [7], roomType: 'suite' },
+    { adults: 1, childrenAges: [], roomType: 'suite' }
+  ], maxPointsPerNight: 100000 });
+  const saved = (await listAlerts()).find(a => a.id === alert.id);
+  assert.equal(saved.query.roomType, 'suite');
+  assert.deepEqual(saved.query.rooms, alert.query.rooms);
+  const run = await runMonitor();
+  const result = run.results.find(row => row.id === alert.id);
+  assert.equal(result.status, 'ok');
+  assert.match(result.best, /suite/i);
+  assert.match(result.best, /Estimated points for 2 rooms/);
+  await deleteAlert(alert.id);
 });
