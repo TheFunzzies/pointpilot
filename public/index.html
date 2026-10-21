@@ -109,14 +109,14 @@
 <section id="view-system" class="view"><div class="viewhead"><div><h2>Data &amp; system</h2><p>Live data source, alerts, updates and where your data is stored.</p></div></div>
 <div class="stack">
 <div class="card searchbox"><div class="cardhead"><div><h3>Live award data — seats.aero</h3><p>A <a href="https://seats.aero" target="_blank" rel="noreferrer">seats.aero Pro</a> membership includes a personal API key (Settings → API) for non-commercial use. The same key powers live flight search (20+ airline programs) and live hotel search through rooms.aero (Hilton, Hyatt, IHG, Marriott, Choice, Wyndham, I Prefer), each with about 1,000 calls/day. The key is stored only on this PC.</p></div></div>
-<div class="formgrid"><div style="grid-column:span 2"><label for="apiKey">API key</label><input id="apiKey" type="password" autocomplete="off" placeholder="Paste your seats.aero Partner API key"></div><div><label>Status</label><b id="apiStatus" style="padding-top:8px">—</b></div><div><label>Calls today</label><b id="apiCalls" style="padding-top:8px">0</b></div></div>
+<div class="formgrid"><div class="span-2"><label for="apiKey">API key</label><input id="apiKey" type="password" autocomplete="off" placeholder="Paste your seats.aero Partner API key"></div><div><label>Status</label><b id="apiStatus" style="padding-top:8px">—</b></div><div><label>Calls today</label><b id="apiCalls" style="padding-top:8px">0</b></div></div>
 <div class="btnrow"><button class="btn primary small" id="saveApiKey">Save key</button><button class="btn small" id="clearApiKey">Remove key</button></div></div>
 <div class="card searchbox"><div class="cardhead"><div><h3>Cash fares — Travelpayouts &amp; Google Flights</h3><p>A free <a href="https://www.travelpayouts.com" target="_blank" rel="noreferrer">Travelpayouts</a> partner token (Profile → API token) powers cash price search, price alerts and the deals feed. An optional <a href="https://serpapi.com" target="_blank" rel="noreferrer">SerpApi</a> key (free: 250 searches/month) adds live Google Flights prices, Google's low/typical/high rating and business-class cash prices.</p></div></div>
 <div class="formgrid">
-<div style="grid-column:span 2"><label for="tpToken">Travelpayouts token</label><input id="tpToken" type="password" autocomplete="off" placeholder="Paste your Travelpayouts API token"></div>
-<div style="grid-column:span 2"><label for="serpKey">SerpApi key (optional)</label><input id="serpKey" type="password" autocomplete="off" placeholder="Paste your SerpApi key"></div>
-<div style="grid-column:span 2"><label>Status</label><b id="cashKeyStatus" style="padding-top:8px">—</b></div>
-<div style="grid-column:span 2"><label for="homeAirports">Home airports (for deals)</label><input id="homeAirports" placeholder="JFK,EWR,BOS"></div>
+<div class="span-2"><label for="tpToken">Travelpayouts token</label><input id="tpToken" type="password" autocomplete="off" placeholder="Paste your Travelpayouts API token"></div>
+<div class="span-2"><label for="serpKey">SerpApi key (optional)</label><input id="serpKey" type="password" autocomplete="off" placeholder="Paste your SerpApi key"></div>
+<div class="span-2"><label>Status</label><b id="cashKeyStatus" style="padding-top:8px">—</b></div>
+<div class="span-2"><label for="homeAirports">Home airports (for deals)</label><input id="homeAirports" placeholder="JFK,EWR,BOS"></div>
 </div>
 <div class="btnrow"><button class="btn primary small" id="saveCashKeys">Save</button><button class="btn small" id="clearTpToken">Remove Travelpayouts token</button><button class="btn small" id="clearSerpKey">Remove SerpApi key</button></div></div>
 <div class="card searchbox"><div class="cardhead"><h3>Alerts &amp; background behavior</h3></div><div class="formgrid">
@@ -124,7 +124,7 @@
 <div><label for="setNotify">Windows notifications</label><select id="setNotify"><option value="true">On</option><option value="false">Off</option></select></div>
 <div><label for="setTray">Closing the window</label><select id="setTray"><option value="true">Keeps running in tray</option><option value="false">Quits PointPilot</option></select></div>
 <div><label for="setLogin">Start with Windows</label><select id="setLogin"><option value="false">No</option><option value="true">Yes</option></select></div>
-<div style="grid-column:span 4"><label for="setWebhook">Optional webhook (Slack/Discord, https://…)</label><input id="setWebhook" placeholder="https://hooks.slack.com/…"></div></div>
+<div class="span-4"><label for="setWebhook">Optional webhook (Slack/Discord, https://…)</label><input id="setWebhook" placeholder="https://hooks.slack.com/…"></div></div>
 <div class="btnrow"><button class="btn primary small" id="saveSettings">Save settings</button></div></div>
 <div class="systemgrid">
 <div class="card sys"><h3>Historical database</h3><b id="sysHistory">—</b><p>Published benchmarks + every price PointPilot sees.</p></div>
@@ -132,4 +132,4 @@
 <div class="card sys"><h3>Local data</h3><b>Private on this PC</b><p id="sysDataDir">—</p></div>
 <div class="card sys update-card"><h3>Software updates</h3><b id="updateVersion">—</b><p id="updateMessage">PointPilot downloads updates from GitHub Releases automatically.</p><div class="btnrow"><button class="btn small" id="checkUpdates">Check now</button><button class="btn small primary" id="installUpdate" hidden>Restart &amp; install</button></div></div>
 </div></div></section>
-</main></div><div id="toast" class="toast" role="status"></div><script src="/app.js"></script></body></html>
+</main></div><div id="toast" class="toast" role="status"></div><script src="/helpers.js"></script><script src="/app.js"></script></body></html>

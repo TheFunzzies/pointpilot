@@ -10,24 +10,41 @@ const fmt = n => new Intl.NumberFormat('en-US').format(Math.round(Number(n) || 0
 const money = n => (n == null || !Number.isFinite(Number(n)) ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(n)));
 const dateFmt = x => (x ? new Date(`${String(x).slice(0, 10)}T00:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '—');
 const programLabel = id => state.programs.find(p => p.id === id)?.name || id;
+const { createGuard, paginate, pairAddability, nonstopFilter, expandBody, alertCheckState, summarizeRun, truncationNotice } = window.PPHelpers;
+const searchGuard = createGuard();
+const isAbort = e => e?.name === 'AbortError';
 const safeUrl = u => (/^https:\/\//i.test(String(u || '')) ? u : null);
+
+/** Re-render while keeping keyboard focus on the same control (identified by id or data attributes). */
+function focusSelector(el) {
+  if (!el || el === document.body) return null;
+  if (el.id) return `#${CSS.escape(el.id)}`;
+  const keys = ['action', 'leg', 'day', 'id', 'city'].filter(k => el.dataset?.[k] != null);
+  return keys.length && el.dataset.action ? `${el.tagName.toLowerCase()}${keys.map(k => `[data-${k}="${CSS.escape(el.dataset[k])}"]`).join('')}` : null;
+}
+function keepFocus(fn) {
+  const sel = focusSelector(document.activeElement);
+  const result = fn();
+  if (sel) document.querySelector(sel)?.focus({ preventScroll: true });
+  return result;
+}
 
 let toastTimer;
 function toast(text) { const t = $('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 3200); }
 
-async function api(path, { method = 'GET', body } = {}) {
-  const r = await fetch(path, { method, headers: body !== undefined ? { 'content-type': 'application/json' } : {}, body: body !== undefined ? JSON.stringify(body) : undefined });
+async function api(path, { method = 'GET', body, signal } = {}) {
+  const r = await fetch(path, { method, headers: body !== undefined ? { 'content-type': 'application/json' } : {}, body: body !== undefined ? JSON.stringify(body) : undefined, signal });
   const text = await r.text();
   let payload = {};
   try { payload = text ? JSON.parse(text) : {}; } catch { /* non-JSON */ }
-  if (!r.ok) throw new Error(payload.error || `HTTP ${r.status}`);
+  if (!r.ok) { const err = new Error(payload.error || `HTTP ${r.status}`); err.status = r.status; err.code = payload.code; throw err; }
   return payload;
 }
 
 function busy(button, on, label) {
   if (!button) return;
-  if (on) { button._html = button.innerHTML; button.textContent = label || 'Working…'; button.disabled = true; }
-  else { if (button._html != null) button.innerHTML = button._html; button.disabled = false; }
+  if (on) { if (!button._busy) button._html = button.innerHTML; button._busy = true; button.textContent = label || 'Working…'; button.disabled = true; }
+  else { if (button._html != null) button.innerHTML = button._html; button._busy = false; button.disabled = false; }
 }
 
 // ---------- boot ----------
@@ -223,47 +240,60 @@ function currentQuery() {
   };
 }
 
+/** Abort any search in flight and restore the Search button (used when the product changes). */
+function cancelSearch() {
+  if ($('searchBtn').disabled) $('searchMessage').textContent = 'Previous search cancelled.';
+  searchGuard.cancel();
+  busy($('searchBtn'), false);
+}
+
 async function runSearch() {
   const msg = $('searchMessage');
+  // A newer search supersedes the one in flight; its response is ignored and its request aborted.
+  const token = searchGuard.next();
+  const { signal } = token;
+  const product = state.product;
+  const live = () => searchGuard.isCurrent(token);
   busy($('searchBtn'), true, 'Searching…');
   try {
-    if (state.product === 'hotels') {
+    if (product === 'hotels') {
       msg.textContent = 'Searching hotel award space…';
       const q = currentHotelQuery();
+      const r = await api('/api/search/hotels', { method: 'POST', body: q, signal });
+      if (!live()) return;
       state.lastHotelQuery = q;
-      const r = await api('/api/search/hotels', { method: 'POST', body: q });
       renderHotels(r); saveRecent();
       const src = { fetched: 'live rooms.aero data', 'recent-cache': 'rooms.aero data from the last hour', 'not-configured': 'manually entered hotels only', error: 'the local cache (rooms.aero failed)' }[r.dataStatus.api] || 'local data';
       msg.textContent = `${r.rows.length} hotel award(s) in ${r.query.destination} for ${r.nights} night(s), using ${src}.`;
       return;
     }
-    if (state.product === 'cash') {
+    if (product === 'cash') {
       msg.textContent = $('useGoogle').checked ? 'Checking cached fares and live Google Flights…' : 'Checking recent cash fares…';
       const q = { ...currentQuery(), useGoogle: $('useGoogle').checked };
+      const r = await api('/api/cash/search', { method: 'POST', body: q, signal });
+      if (!live()) return;
       state.lastCashQuery = q;
-      const r = await api('/api/cash/search', { method: 'POST', body: q });
       renderCash(r); saveRecent();
       msg.textContent = `${r.fares.length} fare(s) for ${r.query.origins.join(', ')} → ${r.query.destinations.join(', ')}${r.google ? ' · Google Flights checked' : ''}.`;
       return;
     }
     msg.textContent = 'Searching award space and optimizing against your points…';
     const q = currentQuery();
+    const r = await api('/api/search/trip', { method: 'POST', body: q, signal });
+    if (!live()) return;
     state.lastQuery = q;
-    const r = await api('/api/search/trip', { method: 'POST', body: q });
     renderFlightResults(r); saveRecent();
     const src = { fetched: 'live seats.aero data', 'recent-cache': 'seats.aero data from the last hour', 'not-configured': 'manually entered awards only', error: 'the local cache (seats.aero failed)', skipped: 'local data' }[r.dataStatus.api] || 'local data';
     msg.textContent = `Searched ${r.query.origins.join(', ')} → ${r.query.destinations.join(', ')} using ${src}.`;
   } catch (e) {
+    if (isAbort(e) || !live()) return;
     msg.textContent = `Search failed: ${e.message}`;
-  } finally { busy($('searchBtn'), false); }
+  } finally { if (live()) busy($('searchBtn'), false); }
 }
 
-function legLine(l) {
-  const bits = [`${esc(l.origin)} → ${esc(l.destination)}`, dateFmt(l.date), `${fmt(l.pointsPerTraveler)} pts/person`];
-  if (l.totalTaxes != null) bits.push(`${money(l.totalTaxes)} taxes/person`); else bits.push('taxes unknown');
-  if (l.direct === true) bits.push('nonstop'); else if (l.direct === false) bits.push('connecting');
-  if (l.airlines) bits.push(esc(l.airlines));
-  return bits.join(' · ');
+function truncatedNotice(r) {
+  const text = truncationNotice(r);
+  return text ? `<div class="note" role="note">${esc(text)}</div>` : '';
 }
 
 function sourceTag(l) {
@@ -287,7 +317,7 @@ function renderFlightResults(r) {
   $('resultMeta').textContent = `${fmt(r.outbound?.length || 0)} outbound · ${fmt(r.return?.length || 0)} return flight options${trips.length ? ` · recommended pair selected` : ''}`;
   const monitorBtn = '<button class="btn" data-action="monitor">🔔 Monitor this trip</button>';
   const manualBtn = '<button class="btn" data-action="manual">Add an award manually</button>';
-  const apiWarn = warningsBox(r.dataStatus.warnings);
+  const apiWarn = warningsBox(r.dataStatus.warnings) + truncatedNotice(r);
   if (!r.outbound?.length || (r.query.back && !r.return?.length)) {
     $('kpiScore').textContent = '—'; $('kpiHint').textContent = 'no fundable option';
     const why = {
@@ -300,6 +330,9 @@ function renderFlightResults(r) {
     return;
   }
   award.r = r;
+  award.seq += 1;
+  state.bestTrip = null;
+  award.pair = null;
   award.sel = { Outbound: r.recommended?.ids[0] || r.outbound[0]?.id || null, Return: r.recommended?.ids[1] || null };
   award.recIds = new Set(r.recommended?.ids || []);
   award.show = { Outbound: 25, Return: 25 };
@@ -310,7 +343,7 @@ function renderFlightResults(r) {
   const programs = [...new Set([...r.outbound, ...r.return].map(o => o.program))];
   const hunt = r.query.product;
   const cabinProducts = (state.products || []).filter(p => p.cabin === r.query.cabin);
-  $('results').innerHTML = warningsBox(r.dataStatus.warnings) + productHuntBanner(r) + `<div id="awSummary"></div>
+  $('results').innerHTML = warningsBox(r.dataStatus.warnings) + truncatedNotice(r) + productHuntBanner(r) + `<div id="awSummary"></div>
     <div class="card filters" id="awFilters">
       <div><label for="fMaxPts">Max points / person</label><input id="fMaxPts" type="number" min="0" step="5000" placeholder="Any" style="width:120px"></div>
       <div><label for="fMaxHours">Max travel time</label><select id="fMaxHours"><option value="">Any</option><option value="10">10h</option><option value="14">14h</option><option value="18">18h</option><option value="22">22h</option><option value="26">26h</option><option value="32">32h</option></select></div>
@@ -329,6 +362,7 @@ function renderFlightResults(r) {
   // Load the individual flights for the recommended days right away so times show immediately.
   (async () => {
     for (const leg of ['Outbound', 'Return']) if (award.day[leg]) await ensureExpanded(leg, award.day[leg]);
+    if (award.r !== r) return;
     renderColumns();
     renderAwardSummary();
   })();
@@ -380,6 +414,15 @@ function filteredOptions(leg) {
   return out.sort(cmp);
 }
 
+/** Choose a flight: clears the stale evaluation so nothing can act on the previous pair. */
+function selectOption(leg, id) {
+  if (award.sel[leg] === id) return;
+  award.sel[leg] = id;
+  state.bestTrip = null;
+  award.pair = null;
+  renderColumns(); renderAwardSummary();
+}
+
 function returnConflict(o) {
   const out = optById(award.sel.Outbound);
   if (!out) return null;
@@ -392,16 +435,17 @@ function optCard(o, leg) {
   const conflict = leg === 'Return' ? returnConflict(o) : null;
   const stopsTxt = f ? (f.stops === 0 ? 'Nonstop' : `${f.stops} stop${f.stops > 1 ? 's' : ''} · ${f.layovers.map(l => `${esc(l.airport)} ${dur(l.durationMin)}`).join(', ')}`) : (o.direct === true ? 'Nonstop' : '');
   const open = award.open.has(o.id);
+  const rid = `opt-${leg}-${o.id}`;
   return `<div class="opt${selected ? ' selected' : ''}${conflict ? ' dim' : ''}" data-select="${esc(o.id)}" data-leg="${leg}">
     ${selected ? '<span class="check">✓ SELECTED</span>' : rec ? '<span class="check" style="background:var(--green)">RECOMMENDED</span>' : ''}
-    <div class="row1"><div><div class="times">${f ? `${t12(f.depart?.time)} → ${t12(f.arrive?.time)}${plusDays(f.arriveDayOffset)}` : esc(dayLabel(o.date))}</div>
-      <div class="meta">${f ? `${esc(dayLabel(f.depart?.date))} · ${dur(f.totalDurationMin)} · ${stopsTxt}` : `${esc(o.origin)} → ${esc(o.destination)}${stopsTxt ? ` · ${stopsTxt}` : ''} · flight times not available`}</div></div>
+    <div class="row1"><div class="opt-pick"><input type="radio" class="opt-radio" name="sel-${leg}" id="${esc(rid)}" value="${esc(o.id)}" data-leg="${leg}"${selected ? ' checked' : ''}${conflict ? ` aria-describedby="${esc(rid)}-c"` : ''}><label for="${esc(rid)}"><div class="times">${f ? `${t12(f.depart?.time)} → ${t12(f.arrive?.time)}${plusDays(f.arriveDayOffset)}` : esc(dayLabel(o.date))}</div>
+      <div class="meta">${f ? `${esc(dayLabel(f.depart?.date))} · ${dur(f.totalDurationMin)} · ${stopsTxt}` : `${esc(o.origin)} → ${esc(o.destination)}${stopsTxt ? ` · ${stopsTxt}` : ''} · flight times not available`}</div></label></div>
       <div class="pts">${fmt(o.mileageCost)}<div class="meta" style="font-weight:500">${taxText(o)} / person</div></div></div>
     <div class="meta2">${seatChip(f?.product)} ${f?.product?.aircraft ? `<span>${esc(f.product.aircraft)}</span>` : ''}<span>${esc(o.programName)}</span>${f ? `<span>${esc(f.airlines.join(', '))} ${esc(f.flightNumbers.join(' / '))}</span>` : (o.airlines ? `<span>${esc(o.airlines)}</span>` : '')}${o.remainingSeats ? `<span>${o.remainingSeats} seat(s)</span>` : ''}${o.history ? `<span class="history-badge" style="margin:0">${esc(o.history.label)}</span>` : ''}${sourceTag(o)}
       ${f || o.availabilityId ? `<button class="btn small ghost" data-action="opt-details" data-id="${esc(o.id)}">${open ? 'Hide details' : 'Flight details'}</button>` : ''}</div>
     ${award.r?.query.product && optHasProduct(o, award.r.query.product) ? `<div class="meta2"><span class="flag good">✓ ${esc(award.r.query.product.product)} on this flight</span></div>` : ''}
     ${flagsFor(o, leg) ? `<div class="meta2">${flagsFor(o, leg)}</div>` : ''}
-    ${conflict ? `<div class="meta" style="color:var(--amber)">${esc(conflict)}</div>` : ''}
+    ${conflict ? `<div class="meta" id="${esc(rid)}-c" style="color:var(--amber)">${esc(conflict)}</div>` : ''}
     ${open ? `<div class="details">${f ? renderTrip({ ...f, mileageCost: o.mileageCost, taxes: o.totalTaxes }) : `<div class="trips" data-load-trips="${esc(o.availabilityId)}" data-cabin="${esc(o.cabin)}"></div>`}</div>` : ''}
   </div>`;
 }
@@ -446,12 +490,17 @@ function flagsFor(o, leg) {
 /** Replace award-level rows for a day with one option per flight (seats.aero trips, cached). */
 async function ensureExpanded(leg, day) {
   award.loading ||= new Set();
+  const result = award.r;
   const need = legList(leg).filter(o => dayKey(o) === day && !o.flight && o.availabilityId && !award.loading.has(o.id));
   if (!need.length) return;
   need.forEach(o => award.loading.add(o.id));
+  // The expansion must honor the original search: send the nonstop constraint and re-apply it here.
+  const directOnly = Boolean(result.query.directOnly);
   try {
-    const r = await api('/api/award/expand', { method: 'POST', body: { awards: need, leg, travelers: award.r.query.travelers } });
+    const r = await api('/api/award/expand', { method: 'POST', body: expandBody({ awards: need, leg, travelers: result.query.travelers, directOnly }) });
+    if (award.r !== result) return; // a newer search replaced these results while we waited
     const ids = new Set(need.map(o => o.id));
+    r.options = nonstopFilter(r.options, directOnly);
     setLegList(leg, [...legList(leg).filter(o => !ids.has(o.id)), ...r.options]);
     // If the selection/recommendation was an award (not a flight), pick its cheapest flight.
     const resolve = id => {
@@ -462,10 +511,11 @@ async function ensureExpanded(leg, day) {
     if (award.sel[leg]) award.sel[leg] = resolve(award.sel[leg]);
     award.recIds = new Set([...award.recIds].map(resolve));
     if (r.dataStatus.warnings.length) toast(r.dataStatus.warnings[0]);
-  } catch (e) { need.forEach(o => award.loading.delete(o.id)); toast(e.message); }
+  } catch (e) { need.forEach(o => award.loading.delete(o.id)); if (award.r === result) toast(e.message); }
 }
 
-function renderColumns() {
+const renderColumns = () => keepFocus(renderColumnsInner);
+function renderColumnsInner() {
   for (const leg of ['Outbound', 'Return']) {
     const col = $(`awCol-${leg}`);
     if (!col) continue;
@@ -487,7 +537,7 @@ function renderColumns() {
       const programs = new Set(opts.map(o => o.program)).size;
       const hunt = award.r.query.product;
       const productHits = hunt ? opts.filter(o => optHasProduct(o, hunt)).length : 0;
-      return `<button class="day${d === open ? ' open' : ''}" data-action="open-day" data-leg="${leg}" data-day="${esc(d)}">
+      return `<button class="day${d === open ? ' open' : ''}" id="day-${leg}-${esc(d)}" aria-pressed="${d === open}" data-action="open-day" data-leg="${leg}" data-day="${esc(d)}">
         ${sel && dayKey(sel) === d ? '<span class="has-sel">✓</span>' : ''}<b>${esc(dayLabel(d))}</b>
         <span class="rng">${lo === hi ? fmt(lo) : `${kpts(lo)}–${kpts(hi)}`} pts</span>
         <small>${known ? `${opts.length} flight${opts.length > 1 ? 's' : ''}` : `${programs} program${programs > 1 ? 's' : ''}`}${best >= 3 ? ` · ${'★'.repeat(best - 2)}` : ''}${known && matches < opts.length ? ` · ${matches} match` : ''}</small>
@@ -517,7 +567,7 @@ function renderColumns() {
       <div class="days${calendar ? ' calendar' : ''}">${dayCards}</div>
       <div class="daylist-head"><strong>${esc(dayLabel(open))}: choose one flight</strong><span class="muted">${list.length} shown${hidden ? ` · ${hidden} hidden by filters` : ''}</span></div>
       ${loading ? '<div class="card empty">Loading every flight for this day…</div>' : ''}
-      ${pinned}<div class="opts">${list.slice(0, award.show[leg]).map(o => optCard(o, leg)).join('') || (loading ? '' : '<div class="card empty">No flights match these filters on this day.</div>')}</div>
+      ${pinned}<div class="opts" role="radiogroup" aria-label="${leg} flights on ${esc(dayLabel(open))}">${list.slice(0, award.show[leg]).map(o => optCard(o, leg)).join('') || (loading ? '' : '<div class="card empty">No flights match these filters on this day.</div>')}</div>
       ${list.length > award.show[leg] ? `<button class="btn small more" data-action="more" data-leg="${leg}">Show ${Math.min(25, list.length - award.show[leg])} more</button>` : ''}`;
     col.querySelectorAll('[data-load-trips]').forEach(el => loadTrips(el, el.dataset.loadTrips, el.dataset.cabin));
     upgradeSeatMaps(col);
@@ -525,10 +575,12 @@ function renderColumns() {
 }
 
 async function openDay(leg, day) {
+  const result = award.r;
   award.day[leg] = day;
   award.show[leg] = 25;
   renderColumns();
   await ensureExpanded(leg, day);
+  if (award.r !== result) return;
   renderColumns();
   renderAwardSummary();
 }
@@ -547,11 +599,14 @@ async function renderAwardSummary() {
   const hasReturn = Boolean(award.r.query.back);
   const isRec = award.recIds.size && [...award.recIds].every(id => id === award.sel.Outbound || id === award.sel.Return);
   const box = $('awSummary');
-  box.innerHTML = `<div class="card summary-card"><div class="cardhead"><div><div class="eyebrow">Your trip${isRec ? ' · recommended' : ''}</div><h3 id="awHeadline">${out ? 'Calculating…' : 'Choose your flights'}</h3></div>
+  state.bestTrip = null;
+  const clientConflict = hasReturn && back ? returnConflict(back) : null;
+  award.pair = pairAddability({ clientConflict });
+  keepFocus(() => { box.innerHTML = `<div class="card summary-card"><div class="cardhead"><div><div class="eyebrow">Your trip${isRec ? ' · recommended' : ''}</div><h3 id="awHeadline">${out ? 'Calculating…' : 'Choose your flights'}</h3></div>
       ${!isRec && award.recIds.size ? '<button class="btn small" data-action="reset-rec">Back to recommended</button>' : ''}</div>
     <div class="summary-legs">${summaryLeg(out, 'Outbound')}${hasReturn ? summaryLeg(back, 'Return') : ''}</div>
     <div id="awFunding"></div><div id="cashCompare"></div>
-    <div class="btnrow"><button class="btn primary" data-action="add-builder"${out ? '' : ' disabled'}><svg class="icon"><use href="#i-map"/></svg>Add to Trip Builder</button><button class="btn" data-action="compare-cash"${out ? '' : ' disabled'}><svg class="icon"><use href="#i-tag"/></svg>Compare with cash price</button><button class="btn" data-action="monitor-open"><svg class="icon"><use href="#i-bell"/></svg>Set an alert</button></div>
+    <div class="btnrow"><button class="btn primary" id="awAddBuilder" data-action="add-builder"${out && award.pair.ok ? '' : ' disabled'}${award.pair.ok ? '' : ` title="${esc(award.pair.reason)}"`}><svg class="icon"><use href="#i-map"/></svg>Add to Trip Builder</button><button class="btn" data-action="compare-cash" disabled><svg class="icon"><use href="#i-tag"/></svg>Compare with cash price</button><button class="btn" data-action="monitor-open"><svg class="icon"><use href="#i-bell"/></svg>Set an alert</button></div>
     <div id="awAlertPanel" class="note" hidden>
       <strong>Alert me when…</strong>
       <div class="btnrow" style="margin-top:8px">
@@ -564,29 +619,50 @@ async function renderAwardSummary() {
         <button class="btn primary small" data-action="monitor-create">Create alert</button>
       </div>
       <p class="muted" style="margin:6px 0 0;font-size:12px">Checked in the background (Data &amp; System → alert interval); you get a Windows notification when it matches or the price drops.</p>
-    </div></div>`;
+    </div></div>`; });
   if (!out) return;
+  if (!award.pair.ok) $('awFunding').innerHTML = `<div class="warnbox" role="alert">${esc(award.pair.reason)}</div>`;
   const seq = ++award.seq;
   const legs = [out, ...(hasReturn && back ? [back] : [])];
   try {
-    const r = await api('/api/trip/evaluate', { method: 'POST', body: { legs, travelers: award.r.query.travelers, preserveFlexible: $('keepFlexible').checked } });
+    const r = await api('/api/trip/evaluate', { method: 'POST', body: { legs, origins: award.r.query.origins, destinations: award.r.query.destinations, travelers: award.r.query.travelers, preserveFlexible: $('keepFlexible').checked } });
     if (seq !== award.seq) return;
+    // Backend verdict (DOM-4): valid === false blocks the pair; absent means older backend, rely on the client check.
+    award.pair = pairAddability({ valid: r.valid, invalidReason: r.invalidReason, clientConflict });
+    const addBtn = $('awAddBuilder');
+    if (addBtn) { addBtn.disabled = !award.pair.ok; addBtn.title = award.pair.ok ? '' : award.pair.reason; }
+    if (!award.pair.ok) { $('awHeadline').textContent = 'These flights cannot be combined'; $('awFunding').innerHTML = `<div class="warnbox" role="alert">${esc(award.pair.reason)}</div>`; state.bestTrip = null; return; }
     if (!r.affordable) { $('awHeadline').textContent = 'Not affordable with your points'; $('awFunding').innerHTML = `<div class="warnbox">${esc(r.reason)}</div>`; state.bestTrip = null; return; }
     const t = r.trip;
     state.bestTrip = t;
+    const cmp = document.querySelector('[data-action="compare-cash"]'); if (cmp) cmp.disabled = false;
     $('awHeadline').textContent = `${fmt(t.totalSourcePoints)} points + ${money(t.taxesUsd)} for ${t.travelers} traveler${t.travelers > 1 ? 's' : ''}${hasReturn && !back ? ' (outbound only so far)' : ''}`;
     $('kpiScore').textContent = money(t.effectiveCostUsd);
     $('kpiHint').textContent = `${fmt(t.totalSourcePoints)} pts + ${money(t.taxesUsd)}`;
     const path = t.sources.map(s => `<span class="node">${s.direct ? `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} (have)` : `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} → ${fmt(s.targetPoints)} ${esc(programLabel(s.targetProgram))}${s.bonusPct ? ` (+${Math.round(s.bonusPct * 100)}%)` : ''}`}</span>`).join('');
     $('awFunding').innerHTML = `<div class="metrics" style="margin-top:12px"><div class="metric"><span>Award points needed</span><b>${fmt(t.totalTargetPoints)}</b></div><div class="metric"><span>Taxes &amp; fees${t.taxesEstimated ? ' (incl. estimate)' : ''}</span><b>${t.taxesEstimated ? '≈' : ''}${money(t.taxesUsd)}</b></div><div class="metric"><span>Effective cost</span><b>${money(t.effectiveCostUsd)}</b></div><div class="metric"><span id="valueMetricLabel">Value</span><b class="positive" id="valueMetric">${t.cpp ? `${t.cpp.toFixed(2)}¢/pt` : 'compare with cash ↓'}</b></div></div>
       <div class="path">${path}</div>${warningsBox(t.warnings)}`;
-  } catch (e) { if (seq === award.seq) $('awFunding').innerHTML = `<div class="warnbox">${esc(e.message)}</div>`; }
+  } catch (e) {
+    if (seq !== award.seq || isAbort(e)) return;
+    // A 400 (INVALID_INPUT) means the backend rejected this pair: show its reason and block adding it.
+    if (e.status === 400 || e.code === 'INVALID_INPUT') {
+      award.pair = pairAddability({ valid: false, invalidReason: e.message });
+      const addBtn = $('awAddBuilder');
+      if (addBtn) { addBtn.disabled = true; addBtn.title = e.message; }
+      $('awHeadline').textContent = 'These flights cannot be combined';
+      state.bestTrip = null;
+      $('awFunding').innerHTML = `<div class="warnbox" role="alert">${esc(e.message)}</div>`;
+      return;
+    }
+    $('awFunding').innerHTML = `<div class="warnbox">${esc(e.message)}</div>`;
+  }
 }
 
 async function addSelectionToBuilder() {
+  if (award.pair && !award.pair.ok) return toast(award.pair.reason);
   const out = optById(award.sel.Outbound), back = award.r.query.back ? optById(award.sel.Return) : null;
   try {
-    await api('/api/trip-plan/flights', { method: 'PUT', body: { outbound: out, return: back, travelers: award.r.query.travelers, cabin: award.r.query.cabin } });
+    await api('/api/trip-plan/flights', { method: 'PUT', body: { outbound: out, return: back, origins: award.r.query.origins, destinations: award.r.query.destinations, travelers: award.r.query.travelers, cabin: award.r.query.cabin } });
     toast('Flights added to your Trip Builder.');
     showView('builder');
   } catch (e) { toast(e.message); }
@@ -714,13 +790,15 @@ async function loadHotelInfo(rows, mode = 'program') {
 function addDays(iso, n) { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
 
 function renderHotels(r) {
-  if (state.lastHotels !== r) { state.lastHotels = r; state.hotelRows = r.rows || []; }
+  if (state.lastHotels !== r) { state.lastHotels = r; state.hotelRows = r.rows || []; state.hotelShow = {}; }
   const minStars = Number(state.hotelMinStars || 0);
   const allRows = state.hotelRows;
   // Filtering keeps original indexes so "Add to stay plan" still points at the right hotel.
   const rows = allRows;
   const visible = h => !minStars || (h.info?.stars || 0) >= minStars;
-  $('resultMeta').textContent = `${fmt(rows.length)} hotel award(s) in ${r.query.cities.join(', ')} · ${r.nights} night(s) · ${r.query.roomType === 'any' ? 'any room' : r.query.roomType}`;
+  const HOTEL_PAGE = 20;
+  state.hotelShow ||= {};
+  $('resultMeta').textContent = `${fmt(rows.filter(visible).length)} hotel award(s) in ${r.query.cities.join(', ')} · ${r.nights} night(s) · ${r.query.roomType === 'any' ? 'any room' : r.query.roomType}`;
   const best = rows.find(h => h.affordable);
   $('kpiScore').textContent = best ? `${fmt(best.totalPoints)} pts` : '—';
   $('kpiHint').textContent = best ? `${best.name}` : 'no affordable stay';
@@ -733,7 +811,10 @@ function renderHotels(r) {
     const groups = r.query.cities.map(city => {
       const list = rows.map((h, i) => ({ h, i })).filter(x => x.h.city === city && visible(x.h));
       if (!list.length) return `<div class="city-head"><h3>${esc(city)}</h3><span class="muted">${minStars ? `No ${minStars}-star+ hotels with known ratings` : 'No award space found'}</span></div>`;
-      return `${r.cities.length > 1 ? `<div class="city-head"><h3>${esc(city)}</h3><span class="muted">${list.length} option(s)</span></div>` : ''}<div class="result-list">${list.slice(0, 20).map(x => hotelCard(x.h, x.i)).join('')}</div>`;
+      const page = paginate(list, state.hotelShow[city] || HOTEL_PAGE, HOTEL_PAGE);
+      const counts = `Showing ${fmt(page.shown)} of ${fmt(page.total)} option(s)`;
+      return `${r.cities.length > 1 ? `<div class="city-head"><h3>${esc(city)}</h3><span class="muted">${counts}</span></div>` : ''}<div class="result-list">${page.items.map(x => hotelCard(x.h, x.i)).join('')}</div>
+        ${r.cities.length > 1 && !page.remaining ? '' : `<div class="count-note" role="status">${r.cities.length > 1 ? '' : `${counts}. `}${page.remaining ? `<button class="btn small" data-action="hotel-more" data-city="${esc(city)}">Show ${fmt(page.nextStep)} more</button>` : ''}</div>`}`;
     }).join('');
     const monitorBtn = '<input id="hotelAlertMax" class="inputnum" type="number" min="0" step="1000" placeholder="Max pts/night" title="Optional: only alert at or below this many points per night"><button class="btn" data-action="monitor-hotel"><svg class="icon"><use href="#i-bell"/></svg>Monitor these stays</button>';
     const unknown = allRows.filter(h => !h.info).length;
@@ -742,9 +823,15 @@ function renderHotels(r) {
       <div><label for="hotelMinStars">Hotel class</label><select id="hotelMinStars"><option value="0">Any</option><option value="3"${minStars === 3 ? ' selected' : ''}>3-star+</option><option value="4"${minStars === 4 ? ' selected' : ''}>4-star+</option><option value="5"${minStars === 5 ? ' selected' : ''}>5-star only</option></select></div>
       ${unknown ? `<div><button class="btn small" data-action="hotel-info-all">Load star ratings &amp; reviews</button><span class="muted" style="font-size:12px;margin-left:6px">about ${programsByCity} SerpApi search${programsByCity === 1 ? '' : 'es'}, cached 60 days</span></div>` : '<div class="muted" style="font-size:12.5px">Ratings loaded (Google)</div>'}
       <div class="muted" style="font-size:12px">🔑 = MICHELIN Key hotel</div></div>`;
-    const planNote = r.dataStatus.planNote ? `<div class="note">Payments below use what's left <strong>after the ${r.dataStatus.planNote.stays} stay${r.dataStatus.planNote.stays > 1 ? 's' : ''} already in your stay plan</strong> (${r.dataStatus.planNote.committed.map(c => `${fmt(c.points)} ${esc(programLabel(c.from))}`).join(', ')} committed).</div>` : '';
-    $('results').innerHTML = warningsBox(r.dataStatus.warnings) + planNote + toolbar + compare + groups + `<div class="btnrow">${monitorBtn}</div>`;
-    $('hotelMinStars').onchange = e => { state.hotelMinStars = Number(e.target.value); renderHotels(r); };
+    const pn = r.dataStatus.planNote;
+    const planUnfunded = Boolean(pn?.unfunded || r.unfunded);
+    const stayWord = pn ? `${pn.stays} stay${pn.stays > 1 ? 's' : ''}` : '';
+    // unfunded: the existing plan can't be paid for, so there is no "what's left" to claim.
+    const planNote = !pn ? ''
+      : planUnfunded ? `<div class="warnbox" role="alert"><strong>Your stay plan (${stayWord}) is not fully fundable with your current balances.</strong> The payments below are calculated against your full balances, so they may overlap points the plan already needs. Fix the plan first or treat these as estimates.</div>`
+      : `<div class="note">Payments below use what's left <strong>after the ${stayWord} already in your stay plan</strong> (${(pn.committed || []).map(c => `${fmt(c.points)} ${esc(programLabel(c.from))}`).join(', ')} committed).</div>`;
+    $('results').innerHTML = warningsBox(r.dataStatus.warnings) + truncatedNotice(r) + planNote + toolbar + compare + groups + `<div class="btnrow">${monitorBtn}</div>`;
+    $('hotelMinStars').onchange = e => { state.hotelMinStars = Number(e.target.value); state.hotelShow = {}; keepFocus(() => renderHotels(r)); };
     return;
   }
   const monitorBtn = '<input id="hotelAlertMax" class="inputnum" type="number" min="0" step="1000" placeholder="Max pts/night" title="Optional: only alert at or below this many points per night"><button class="btn" data-action="monitor-hotel"><svg class="icon"><use href="#i-bell"/></svg>Monitor these stays</button>';
@@ -758,7 +845,7 @@ async function addStayFromResult(i) {
   try {
     const plan = await api('/api/stay-plan/stays', { method: 'POST', body: {
       name: h.name, hotelId: h.hotelId, program: h.program, city: h.city, location: h.location, category: h.category, roomType: h.roomType,
-      checkIn: h.checkIn, checkOut: addDays(h.checkIn, h.nights), nightlyPoints: h.nightlyPoints, cashPerNight: h.cashValue,
+      checkIn: h.checkIn, checkOut: addDays(h.checkIn, h.nights), nightlyPoints: h.nightlyPoints, totalPoints: h.totalPoints, cashPerNight: h.cashValue,
       bookingUrl: h.bookingUrl, dataSource: h.dataSource, estimated: h.estimated
     } });
     renderStayPlan(plan);
@@ -789,7 +876,7 @@ function renderStayPlan(plan) {
       <div class="metric"><span>By program</span><b style="font-size:13px">${s.pointsByProgram.map(p => `${fmt(p.points)} ${esc(p.programName.replace(/^World of /, ''))}`).join(' · ')}</b></div>
       <div class="metric"><span>Cash price</span><b>${s.cashUsd ? money(s.cashUsd) : '—'}</b></div>
       <div class="metric"><span>Value</span><b class="positive">${s.cpp ? `${s.cpp.toFixed(2)}¢/pt` : '—'}</b></div></div>
-    ${s.funding ? `<div class="path">${fundingPath}</div>` : '<div class="warnbox">Your current balances and transfer partners can\'t cover the whole plan.</div>'}
+    ${s.funding && !(plan.unfunded ?? s.unfunded) ? `<div class="path">${fundingPath}</div>` : '<div class="warnbox" role="alert">This plan is not fully fundable: your current balances and transfer partners can\'t cover the whole plan.</div>'}
     ${warningsBox(s.warnings)}
     <div class="note">Next stay starts <strong>${dateFmt(s.nextCheckIn)}</strong>. Enter the next city above and search; dates are already set.</div></div>`;
 }
@@ -850,7 +937,7 @@ function renderCash(r) {
     : '<div class="card empty"><strong>No recent fares found for these dates.</strong>Aviasales may not have cached prices for this route yet. Try ± more days, nearby airports, or a live Google check.</div>';
   const econRef = r.economyReference?.length ? `<div class="note"><strong>Economy fares for reference</strong> (recent Aviasales):<br>${r.economyReference.map(f => `${esc(f.origin)} → ${esc(f.destination)} ${dateFmt(f.departDate)}${f.returnDate ? ` – ${dateFmt(f.returnDate)}` : ''}: ${money(f.price)}`).join('<br>')}</div>` : '';
   const googleBanner = `<div class="card searchbox" style="margin-bottom:12px"><div class="cardhead"><div><h3>See every flight on Google Flights</h3><p>${esc(r.query.origins.join(', '))} → ${esc(r.query.destinations.join(', '))} · ${esc(r.query.cabin)} · ${dateFmt(r.query.out.start)}${r.query.back ? ` – ${dateFmt(r.query.back.end)}` : ''}, prefilled.</p></div><a class="btn primary" href="${esc(r.googleFlightsUrl)}" target="_blank" rel="noreferrer">Open Google Flights ↗</a></div></div>`;
-  $('results').innerHTML = googleBanner + warningsBox(r.dataStatus.warnings) + google + list + econRef + alertForm;
+  $('results').innerHTML = googleBanner + warningsBox(r.dataStatus.warnings) + truncatedNotice(r) + google + list + econRef + alertForm;
 }
 
 async function compareCash() {
@@ -860,6 +947,8 @@ async function compareCash() {
   box.innerHTML = '<div class="note">Looking up the cash price…</div>';
   try {
     const r = await api('/api/cash/itinerary', { method: 'POST', body: { origin: out.origin, destination: out.destination, departDate: out.date, returnDate: back?.date || null, cabin: out.cabin, travelers: t.travelers } });
+    // The selection may have changed while we waited; never paint an old comparison onto a new trip.
+    if (state.bestTrip !== t || !$('valueMetric') || $('cashCompare') !== box) return;
     if (!r.available) { box.innerHTML = `<div class="note">${esc(r.reason || 'No cash price found for these dates.')} <a href="${esc(r.url)}" target="_blank" rel="noreferrer">Check Google Flights ↗</a></div>`; return; }
     const cpp = ((r.total - t.taxesUsd) / t.totalSourcePoints) * 100;
     const avgCpp = t.pointsCostUsd / t.totalSourcePoints * 100;
@@ -872,26 +961,32 @@ async function compareCash() {
       : cpp >= avgCpp ? `Points win: you get ${cpp.toFixed(2)}¢ per point, above the ${avgCpp.toFixed(2)}¢ you value them at.`
       : `Consider paying cash: points only get ${cpp.toFixed(2)}¢ each, below the ${avgCpp.toFixed(2)}¢ you value them at.`;
     box.innerHTML = `<div class="${cpp >= avgCpp ? 'note' : 'warnbox'}"><strong>Cash price: ${money(r.perTraveler)} per person (${money(r.total)} total, ${esc(r.cabin)}, ${r.source === 'google' ? 'live Google Flights' : 'recent Aviasales fare'}).</strong><br>${esc(verdict)}${r.insights?.level ? ` Google rates current prices as <strong>${esc(r.insights.level)}</strong>.` : ''} <a href="${esc(r.url)}" target="_blank" rel="noreferrer">Open in Google Flights ↗</a></div>`;
-  } catch (e) { box.innerHTML = `<div class="warnbox">${esc(e.message)}</div>`; }
+  } catch (e) { if (state.bestTrip === t && $('cashCompare') === box) box.innerHTML = `<div class="warnbox">${esc(e.message)}</div>`; }
 }
+
+// Keyboard and screen-reader selection goes through the native radio inputs.
+$('results').addEventListener('change', e => {
+  const radio = e.target.closest?.('input.opt-radio');
+  if (radio?.checked) selectOption(radio.dataset.leg, radio.value);
+});
 
 $('results').addEventListener('click', async e => {
   const btn = e.target.closest('[data-action]');
   const action = btn?.dataset.action;
   // Award picker: clicking a flight card selects it (links, buttons and details don't).
   const card = e.target.closest('.opt[data-select]');
-  if (card && !btn && !e.target.closest('a, .details')) {
-    award.sel[card.dataset.leg] = card.dataset.select;
+  if (card && !btn && !e.target.closest('a, .details, input, label')) {
     // A new outbound can invalidate the chosen return; keep it but it will be flagged.
-    renderColumns(); renderAwardSummary();
+    selectOption(card.dataset.leg, card.dataset.select);
     return;
   }
   if (action === 'open-day') { openDay(btn.dataset.leg, btn.dataset.day); return; }
   if (action === 'opt-details') { const id = btn.dataset.id; award.open.has(id) ? award.open.delete(id) : award.open.add(id); renderColumns(); return; }
   if (action === 'more') { award.show[btn.dataset.leg] += 25; renderColumns(); return; }
-  if (action === 'reset-rec') { const ids = award.r.recommended?.ids || []; award.sel = { Outbound: ids[0] || null, Return: ids[1] || null }; renderColumns(); renderAwardSummary(); return; }
+  if (action === 'reset-rec') { const ids = award.r.recommended?.ids || []; award.sel = { Outbound: ids[0] || null, Return: ids[1] || null }; state.bestTrip = null; renderColumns(); renderAwardSummary(); return; }
   if (action === 'clear-filters') { ['fMaxPts', 'fMaxHours', 'fStops', 'fDepart', 'fSeat', 'fProgram', 'fProduct'].forEach(id => { $(id).value = ''; }); renderColumns(); return; }
   if (action === 'add-builder') { addSelectionToBuilder(); return; }
+  if (action === 'hotel-more') { const c = btn.dataset.city; state.hotelShow[c] = (state.hotelShow[c] || 20) + 20; keepFocus(() => renderHotels(state.lastHotels)); return; }
   if (action === 'hotel-info-all') { busy(btn, true, 'Loading…'); loadHotelInfo(state.hotelRows.filter(h => !h.info)).catch(err => { toast(err.message); renderHotels(state.lastHotels); }); return; }
   if (action === 'hotel-info-one') { const h = state.hotelRows[Number(btn.dataset.i)]; busy(btn, true, '…'); loadHotelInfo([h], 'single').catch(err => { toast(err.message); renderHotels(state.lastHotels); }); return; }
   if (action === 'product-alert') {
@@ -960,7 +1055,11 @@ function renderAlerts() {
   $('alerts').style.display = state.alerts.length ? 'block' : 'none';
   $('alerts').innerHTML = state.alerts.map(a => {
     const q = a.query || {};
-    const last = a.lastResult ? `${a.lastResult.matches} match(es) · checked ${new Date(a.lastCheckedAt).toLocaleString()}` : 'Not checked yet';
+    const check = alertCheckState(a, state.runErrors?.[a.id]);
+    const when = ts => (ts ? new Date(ts).toLocaleString() : 'unknown time');
+    const okText = a.lastResult ? `${a.lastResult.matches} match(es) · checked ${when(a.lastCheckedAt)}` : 'Not checked yet';
+    // A failed check is not a "no match": show it distinctly and keep the last good result for context.
+    const last = check.kind === 'error' ? `Check failed ${when(check.at)}: ${check.error}${a.lastResult ? ` · last successful: ${okText}` : ''}` : okText;
     const desc = {
       hotel: () => `<span class="tag brand">HOTEL</span> ${esc(q.destination)} · ${esc(q.roomType)} room · ${dateFmt(q.checkIn)}${q.checkOut ? ` – ${dateFmt(q.checkOut)}` : ''} ± ${esc(q.flexDays)}d${q.maxPointsPerNight ? ` · ≤ ${fmt(q.maxPointsPerNight)} pts/night` : ''}`,
       cash: () => `<span class="tag brand">CASH FARE</span> ${esc(q.origins)} → ${esc(q.destination)} · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d${a.targetPrice ? ` · target ${money(a.targetPrice)}` : ''}${a.dealPct ? ` · or ${esc(a.dealPct)}% below usual` : ''}${a.lastNotifiedPrice ? ` · last alert ${money(a.lastNotifiedPrice)}` : ''}`,
@@ -973,7 +1072,7 @@ function renderAlerts() {
     }[a.kind || 'award']?.() || '';
     return `<div class="rowalert"><div><strong>${esc(a.title)}</strong>
       <div class="muted" style="font-size:11px">${desc}</div>
-      <div class="muted" style="font-size:11px">${esc(last)}${a.lastResult?.best ? ` — ${esc(a.lastResult.best)}` : ''}</div></div>
+      <div class="muted${check.kind === 'error' ? ' alert-error' : ''}" style="font-size:11px"${check.kind === 'error' ? ' role="alert"' : ''}>${check.kind === 'error' ? '⚠ ' : ''}${esc(last)}${check.kind !== 'error' && a.lastWarnings?.length ? ` · Warning: ${esc(a.lastWarnings.join('; '))}` : ''}${check.kind !== 'error' && a.lastResult?.best ? ` — ${esc(a.lastResult.best)}` : ''}</div></div>
       <div class="btnrow" style="margin:0"><button class="btn small" data-toggle="${esc(a.id)}" data-active="${a.active ? '1' : ''}">${a.active ? 'Pause' : 'Resume'}</button><button class="btn small" data-delete="${esc(a.id)}">Remove</button></div></div>`;
   }).join('');
 }
@@ -991,9 +1090,12 @@ $('runMonitor').onclick = async () => {
   busy($('runMonitor'), true, 'Checking…');
   try {
     const r = await api('/api/monitor/run', { method: 'POST', body: {} });
+    const run = summarizeRun(r.results);
+    state.runErrors = run.errors;
     state.alerts = await api('/api/alerts'); renderAlerts();
-    const fresh = r.results.filter(x => x.isNew).length;
-    toast(`Checked ${r.alertsChecked} alert(s)${fresh ? ` — ${fresh} with new space!` : ''}`);
+    const title = id => state.alerts.find(a => a.id === id)?.title || id;
+    const detail = Object.entries(run.errors).slice(0, 2).map(([id, err]) => `${title(id)}: ${err}`).join('; ');
+    toast(`Checked ${r.alertsChecked} alert(s)${run.fresh ? ` — ${run.fresh} with new space!` : ''}${run.failed ? ` · ${run.failed} failed (${detail}${run.failed > 2 ? '…' : ''})` : ''}`);
   } catch (e) { toast(e.message); } finally { busy($('runMonitor'), false); }
 };
 
@@ -1045,8 +1147,9 @@ function renderPartners() {
   const today = new Date().toISOString().slice(0, 10);
   const bankName = id => (typeof d.banks?.[id] === 'object' ? d.banks[id].name : d.banks?.[id]) || programLabel(id);
   const rows = [];
-  for (const [target, p] of Object.entries(d.programs || {})) for (const [bank, e] of Object.entries(p.transfers || {})) {
-    const bonusLive = e.bonusPct && (!e.bonusEnds || e.bonusEnds >= today);
+  for (const p of Object.values(d.programs || {})) for (const [bank, e] of Object.entries(p.transfers || {})) {
+    // Rolling offers (no published end date) only count as live while recently re-confirmed by a source check.
+    const bonusLive = e.bonusPct && (!e.bonusEnds || e.bonusEnds >= today) && (!e.bonusRolling || (e.bonusLastConfirmedAt?.slice(0, 10) ?? '') >= today);
     rows.push(`<tr><td>${esc(p.name)}</td><td>${esc(bankName(bank))}</td><td>${esc(e.ratio[0])}:${esc(e.ratio[1])}</td><td>${e.days ? `${esc(e.days)}d` : 'Instant'}</td><td>${bonusLive ? `+${Math.round(e.bonusPct * 100)}% ${e.bonusRolling ? '(live now; end date not published)' : `until ${esc(e.bonusEnds || '?')}`}` : '—'}</td><td>${e.unverified ? '<span class="tag warn">UNVERIFIED</span>' : e.verifiedBy?.length ? `<span class="tag" title="${esc(e.verifiedBy.map(s => SOURCE_NAMES[s] || s).join(', '))}">✓ ${e.verifiedBy.length} source${e.verifiedBy.length > 1 ? 's' : ''}</span>` : '<span class="tag muted">NOT CHECKED</span>'}</td></tr>`);
   }
   $('partnerTable').innerHTML = rows.sort().join('');
@@ -1301,6 +1404,7 @@ document.querySelectorAll('button[data-product]').forEach(b => {
   b.onclick = () => {
     document.querySelectorAll('button[data-product]').forEach(x => x.classList.toggle('active', x === b));
     const prev = state.product;
+    if (prev !== b.dataset.product) cancelSearch();
     state.product = b.dataset.product;
     const hotels = state.product === 'hotels', cash = state.product === 'cash';
     // Hotels search by city; flights/cash keep their own destination text.
@@ -1361,7 +1465,7 @@ $('recents').addEventListener('click', e => {
   runSearch();
 });
 document.querySelector('#view-search .searchbox').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); runSearch(); }
+  if (e.key === 'Enter' && e.target.matches('input')) { e.preventDefault(); if (!$('searchBtn').disabled) runSearch(); }
 });
 renderRecents();
 initDates();

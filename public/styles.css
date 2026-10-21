@@ -149,6 +149,8 @@ button.seg.active { background: var(--surface); color: var(--ink); box-shadow: v
 .formgrid > div { display: grid; gap: 5px; align-content: start; }
 .formgrid label { font-size: 12px; color: var(--muted); font-weight: 600; }
 .formgrid input, .formgrid select, .formgrid textarea { width: 100%; }
+.formgrid > .span-2 { grid-column: span 2; }
+.formgrid > .span-4 { grid-column: 1 / -1; }
 .chips { display: flex; gap: 18px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
 .check { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
 .searchfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
@@ -257,6 +259,7 @@ tbody tr:hover td { background: var(--surface-2); }
   .top, .viewhead, .cardhead, .searchfoot { flex-direction: column; align-items: stretch; }
   .kpis, .systemgrid, .formgrid, .wallet-summary { grid-template-columns: 1fr; }
   .update-card { grid-column: span 1; }
+  .formgrid > .span-2, .formgrid > .span-4 { grid-column: 1 / -1; }
   .metrics, .detailgrid { grid-template-columns: 1fr 1fr; }
   .result { flex-direction: column; align-items: stretch; }
   .result .right { text-align: left; }
@@ -383,3 +386,12 @@ tbody tr:hover td { background: var(--surface-2); }
 .recents { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; font-size: 12px; color: var(--muted); }
 .recents button { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); }
 .recents button:hover { border-color: var(--brand); color: var(--brand-ink); }
+
+/* ---------- v0.14.1: accessible flight selection, notices, pagination ---------- */
+.opt-pick { display: flex; gap: 10px; align-items: flex-start; }
+.opt-pick input[type=radio] { width: 18px; height: 18px; margin: 3px 0 0; flex: none; accent-color: var(--brand); cursor: pointer; }
+.opt-pick label { cursor: pointer; display: block; flex: 1; }
+.opt:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 25%, transparent); }
+.opt.invalid .check { background: var(--amber); }
+.alert-error { color: var(--red, #b91c1c); font-weight: 600; }
+.count-note { font-size: 12.5px; color: var(--muted); margin: 8px 2px; }
