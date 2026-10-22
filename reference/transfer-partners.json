@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "source": "Roame Transfer Partners Cheat Sheet",
   "sourceUrl": "https://roame.travel/transfer-partners-cheat-sheet",
-  "lastUpdated": "2026-10-21",
+  "lastUpdated": "2026-10-22",
   "note": "Partner-specific chunk bonuses apply only where eligible. Rolling offers require same-day source confirmation; bonusEnds is reserved for authoritative expiry dates. Always verify before moving points — transfers are irreversible.",
   "banks": {
     "amex": {
@@ -226,7 +226,7 @@
             "roame",
             "tpg"
           ],
-          "bonusLastConfirmedAt": "2026-10-21T15:59:08.814Z",
+          "bonusLastConfirmedAt": "2026-10-22T15:54:35.612Z",
           "bonusConfirmedBy": [
             "roame"
           ]
@@ -382,6 +382,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -460,7 +461,7 @@
             "roame",
             "tpg"
           ],
-          "bonusLastConfirmedAt": "2026-10-21T15:59:08.814Z",
+          "bonusLastConfirmedAt": "2026-10-22T15:54:35.612Z",
           "bonusConfirmedBy": [
             "roame"
           ]
@@ -752,7 +753,7 @@
             "roame",
             "tpg"
           ],
-          "bonusLastConfirmedAt": "2026-10-21T15:59:08.814Z",
+          "bonusLastConfirmedAt": "2026-10-22T15:54:35.612Z",
           "bonusConfirmedBy": [
             "roame"
           ]
@@ -1005,7 +1006,7 @@
           ],
           "bonusPct": 0.35,
           "bonusRolling": true,
-          "bonusLastConfirmedAt": "2026-10-21T15:59:08.814Z",
+          "bonusLastConfirmedAt": "2026-10-22T15:54:35.612Z",
           "bonusConfirmedBy": [
             "roame"
           ]
@@ -1104,7 +1105,6 @@
           "days": 0,
           "verifiedBy": [
             "roame",
-            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1296,6 +1296,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1466,6 +1467,7 @@
           "days": 2,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         }
@@ -2058,6 +2060,23 @@
           "verifiedBy": [
             "roame"
           ]
+        },
+        "citi": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "roame",
+            "tpg"
+          ],
+          "bonusPct": 0.3,
+          "bonusLastConfirmedAt": "2026-10-22T15:54:35.612Z",
+          "bonusConfirmedBy": [
+            "roame"
+          ],
+          "bonusRolling": true
         }
       }
     },
@@ -2324,7 +2343,7 @@
           ],
           "bonusPct": 0.2,
           "bonusRolling": true,
-          "bonusLastConfirmedAt": "2026-10-21T15:59:08.814Z",
+          "bonusLastConfirmedAt": "2026-10-22T15:54:35.612Z",
           "bonusConfirmedBy": [
             "roame"
           ]
@@ -2612,6 +2631,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2678,6 +2698,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2689,6 +2710,17 @@
           "days": 0,
           "verifiedBy": [
             "roame"
+          ]
+        },
+        "bilt": {
+          "ratio": [
+            1,
+            1
+          ],
+          "days": 0,
+          "verifiedBy": [
+            "tpg",
+            "upgradedpoints"
           ]
         }
       }
@@ -2827,6 +2859,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2850,6 +2883,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         }
@@ -2901,45 +2935,45 @@
     "cents": {
       "aerlingus": 1.4,
       "aeromexico": 0.8,
-      "aeroplan": 1.4,
-      "flyingblue": 1.3,
-      "american": 1.7,
+      "aeroplan": 1.5,
+      "flyingblue": 1.4,
+      "american": 1.45,
       "ana": 1.4,
-      "alaska": 1.5,
-      "lifemiles": 1.4,
+      "alaska": 1.55,
+      "lifemiles": 1.6,
       "ba": 1.4,
       "cathay": 1.3,
-      "delta": 1.25,
+      "delta": 1.2,
       "emirates": 1.2,
       "etihad": 1.2,
       "finnair": 1.4,
       "iberia": 1.4,
       "jetblue": 1.35,
-      "qantas": 1.3,
+      "qantas": 1.25,
       "qatar": 1.4,
       "singapore": 1.3,
-      "southwest": 1.3,
+      "southwest": 1.25,
       "turkish": 1.1,
-      "united": 1.5,
-      "virginatlantic": 1.3,
-      "accor": 2,
-      "choice": 0.6,
-      "hilton": 0.5,
-      "ihg": 0.5,
-      "marriott": 0.7,
-      "hyatt": 1.7,
-      "wyndham": 1.1
+      "united": 1.2,
+      "virginatlantic": 1.5,
+      "accor": 2.3,
+      "choice": 0.85,
+      "hilton": 0.4,
+      "ihg": 0.6,
+      "marriott": 0.75,
+      "hyatt": 1.65,
+      "wyndham": 0.55
     }
   },
   "verification": {
-    "checkedAt": "2026-10-21T15:59:08.814Z",
+    "checkedAt": "2026-10-22T15:54:35.612Z",
     "sources": {
       "roame": 218,
       "upgradedpoints": 143,
-      "tpg": 100
+      "tpg": 106
     }
   },
-  "updatedAt": "2026-10-21T15:59:08.814Z",
-  "revision": 2,
-  "contentHash": "77c3a3b83fcb3fbef26727bcc2ca5816ef4553220af204b1dd91ddc55b512307"
+  "updatedAt": "2026-10-22T15:54:35.612Z",
+  "revision": 3,
+  "contentHash": "11821f8a4cea3a8f33434857438953bba23f2445535bb91df6d129fdf0d3621d"
 }
