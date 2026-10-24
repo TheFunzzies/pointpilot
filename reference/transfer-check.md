@@ -1,4 +1,4 @@
-# Transfer partner check — 2026-10-23
+# Transfer partner check — 2026-10-24
 
 Sources: Roame (218 routes), Upgraded Points (143 routes), The Points Guy (106 routes)
 
