@@ -1,16 +1,15 @@
-# Transfer partner check — 2026-10-24
+# Transfer partner check — 2026-10-25
 
 Sources: Roame (218 routes), Upgraded Points (143 routes), The Points Guy (106 routes)
 
-## Changes applied (8)
+## Changes applied (7)
 - Confirmed bonus Capital One Miles → British Airways Executive Club: +20% (roame)
-- Confirmed bonus Citi ThankYou → Japan Airlines Mileage Bank: +30% (roame)
 - Confirmed bonus Citi ThankYou → Qatar Airways Privilege Club: +35% (roame)
 - Confirmed bonus American Express Membership Rewards → Aeromexico Rewards: +20% (roame)
 - Confirmed bonus American Express Membership Rewards → Air France/KLM Flying Blue: +25% (roame)
 - Confirmed bonus Capital One Miles → Virgin Atlantic Flying Club: +30% (roame)
-- Confirmed bonus Citi ThankYou → Avianca LifeMiles: +25% (roame)
 - Confirmed bonus American Express Membership Rewards → Marriott Bonvoy: +35% (roame)
+- Removed unlisted rolling bonus Citi ThankYou → Japan Airlines Mileage Bank
 
 ## Disagreements to review (5)
 - Only roame lists Marriott Bonvoy → Finnair Plus 3:1; not added
