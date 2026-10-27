@@ -91,6 +91,13 @@ h1, h2, h3, h4, h5 { font-family: "Segoe UI Variable Display", "Segoe UI", syste
 .nav:hover { background: var(--surface-3); }
 .nav.active { background: var(--sidebar-active); color: var(--brand-ink); }
 .nav.active .icon { color: var(--brand); }
+.nav-more { margin-top: 4px; }
+.nav-more > summary { list-style: none; cursor: pointer; }
+.nav-more > summary::-webkit-details-marker { display: none; }
+.nav-more > summary::after { content: '›'; margin-left: auto; color: var(--muted); font-size: 17px; line-height: 1; }
+.nav-more[open] > summary::after { content: '⌄'; font-size: 14px; }
+.nav-submenu { display: grid; gap: 2px; padding: 3px 0 3px 12px; }
+.nav-submenu .nav { font-size: 13px; }
 .sidefoot { margin-top: auto; padding: 12px 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--muted); font-size: 12px; }
 .sidefoot b { color: var(--ink); font-weight: 600; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 99px; background: #f59e0b; margin-right: 6px; vertical-align: 1px; }
@@ -249,10 +256,12 @@ tbody tr:hover td { background: var(--surface-2); }
 /* ---------- responsive ---------- */
 @media (max-width: 1100px) {
   .shell { grid-template-columns: minmax(0, 1fr); }
-  .sidebar { position: relative; height: auto; flex-direction: row; align-items: center; gap: 12px; padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+  .sidebar { position: relative; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border-right: 0; border-bottom: 1px solid var(--line); overflow: visible; }
   .brand { margin: 0 8px 0 4px; }
-  .sidebar nav { display: flex; gap: 2px; }
+  .sidebar nav { display: flex; flex: 1 1 400px; flex-wrap: wrap; gap: 2px; min-width: 0; }
   .nav { white-space: nowrap; }
+  .nav-more { position: relative; margin-top: 0; }
+  .nav-submenu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 30; min-width: 220px; padding: 8px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); box-shadow: var(--shadow); }
   .sidefoot { display: none; }
   .main { padding: 20px; }
   .kpis, .systemgrid { grid-template-columns: repeat(2, 1fr); }
@@ -260,7 +269,9 @@ tbody tr:hover td { background: var(--surface-2); }
 }
 @media (max-width: 680px) {
   .main { padding: 14px; }
+  .sidebar nav { flex-basis: 100%; }
   .top, .viewhead, .cardhead, .searchfoot { flex-direction: column; align-items: stretch; }
+  .filters-disclosure > summary { align-items: flex-start; flex-direction: column; gap: 2px; }
   .kpis, .systemgrid, .formgrid, .wallet-summary { grid-template-columns: 1fr; }
   .update-card { grid-column: span 1; }
   .formgrid > .span-2, .formgrid > .span-4 { grid-column: 1 / -1; }
@@ -314,6 +325,16 @@ tbody tr:hover td { background: var(--surface-2); }
 .filters > div { display: grid; gap: 4px; }
 .filters label { font-size: 11.5px; color: var(--muted); font-weight: 600; }
 .filters select, .filters input { padding: 6px 8px; font-size: 13px; }
+.filters-disclosure { margin-top: 14px; }
+.filters-disclosure > summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; list-style: none; padding: 10px 13px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+.filters-disclosure > summary::-webkit-details-marker { display: none; }
+.filters-disclosure[open] > summary { border-radius: var(--radius-sm) var(--radius-sm) 0 0; }
+.filters-disclosure .filters { margin-top: 0; border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+.picker-intro { margin: 10px 2px 0; color: var(--muted); font-size: 12.5px; }
+.advanced-search { margin-top: 8px; }
+.advanced-search summary { width: fit-content; color: var(--brand-ink); font-size: 13px; font-weight: 650; cursor: pointer; }
+.advanced-search[open] { padding-top: 8px; border-top: 1px solid var(--line); }
+.discovery-advanced { margin-top: 14px; }
 .picker { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; align-items: start; }
 .picker.single { grid-template-columns: 1fr; }
 .picker-col h3 { margin: 0 0 8px; font-size: 15px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }

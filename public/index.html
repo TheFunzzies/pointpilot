@@ -27,12 +27,17 @@
     <button class="nav" data-view="discover"><svg class="icon"><use href="#i-map"/></svg>Explore Destinations</button>
     <button class="nav" data-view="builder"><svg class="icon"><use href="#i-map"/></svg>Trip Builder</button>
     <button class="nav" data-view="wallet"><svg class="icon"><use href="#i-wallet"/></svg>My Points</button>
-    <button class="nav" data-view="deals"><svg class="icon"><use href="#i-tag"/></svg>Cash Deals</button>
     <button class="nav" data-view="alerts"><svg class="icon"><use href="#i-bell"/></svg>Alerts</button>
-    <button class="nav" data-view="history"><svg class="icon"><use href="#i-trend"/></svg>Price History</button>
-    <button class="nav" data-view="manual"><svg class="icon"><use href="#i-pencil"/></svg>Manual Entry</button>
-    <button class="nav" data-view="partners"><svg class="icon"><use href="#i-repeat"/></svg>Transfer Partners</button>
-    <button class="nav" data-view="system"><svg class="icon"><use href="#i-sliders"/></svg>Data &amp; System</button>
+    <details class="nav-more">
+      <summary class="nav">More</summary>
+      <div class="nav-submenu">
+        <button class="nav" data-view="deals"><svg class="icon"><use href="#i-tag"/></svg>Cash Deals</button>
+        <button class="nav" data-view="history"><svg class="icon"><use href="#i-trend"/></svg>Price History</button>
+        <button class="nav" data-view="manual"><svg class="icon"><use href="#i-pencil"/></svg>Manual Entry</button>
+        <button class="nav" data-view="partners"><svg class="icon"><use href="#i-repeat"/></svg>Transfer Partners</button>
+        <button class="nav" data-view="system"><svg class="icon"><use href="#i-sliders"/></svg>Data &amp; System</button>
+      </div>
+    </details>
   </nav>
   <div class="sidefoot"><span class="dot" id="liveDot"></span><b id="modeLabel">Checking data…</b><br><small id="modeHint"></small></div>
 </aside>
@@ -58,9 +63,9 @@
 <div><label for="dateFrom" id="dateFromLabel">Departure date</label><input id="dateFrom" type="date"></div>
 <div><label for="dateTo" id="dateToLabel">Return date (optional)</label><input id="dateTo" type="date"></div>
 <div><label for="flex">Date flexibility</label><select id="flex"><option value="0">Exact</option><option value="3" selected>± 3 days</option><option value="7">± 7 days</option><option value="14">± 14 days</option></select></div>
-<div><label for="rank">Rank by</label><select id="rank"><option value="overall" selected>Lowest effective cost</option><option value="points">Fewest points</option><option value="cpp">Best cents / point</option><option value="nonstop">Nonstop first</option><option value="seat">Best seat (business/first)</option><option value="duration">Shortest travel time</option></select></div>
+<div><label for="rank">Rank by</label><select id="rank"><option value="overall" selected>Lowest effective cost</option><option value="points">Fewest points</option><option value="fees">Lowest taxes &amp; fees</option><option value="stops">Fewest stops</option><option value="cpp">Best cents / point</option><option value="nonstop">Nonstop first</option><option value="seat">Best seat (business/first)</option><option value="duration">Shortest total travel time</option></select></div>
 </div>
-<div class="chips"><label class="check" id="productWrap" title="Find flights that feature a specific business or first class seat">Seat product <select id="productHunt" style="margin-left:6px;max-width:320px"><option value="">Any seat</option></select></label><label class="check"><input id="directOnly" type="checkbox"> Nonstop only</label><label class="check" id="keepFlexibleWrap"><input id="keepFlexible" type="checkbox" checked> Preserve flexible points when possible</label><label class="check" id="useGoogleWrap" hidden><input id="useGoogle" type="checkbox"> Check live Google Flights price (uses 1 SerpApi search)</label></div>
+<details class="advanced-search"><summary>More filters and options</summary><div class="chips"><label class="check" id="productWrap" title="Find flights that feature a specific business or first class seat">Seat product <select id="productHunt" style="margin-left:6px;max-width:320px"><option value="">Any seat</option></select></label><label class="check"><input id="directOnly" type="checkbox"> Nonstop only</label><label class="check" id="keepFlexibleWrap"><input id="keepFlexible" type="checkbox" checked> Preserve flexible points when possible</label><label class="check" id="useGoogleWrap" hidden><input id="useGoogle" type="checkbox"> Check live Google Flights price (uses 1 SerpApi search)</label></div></details>
 <fieldset class="fk-rooms" id="roomsWrap" hidden><legend>Rooms</legend>
 <p class="muted fk-help">Say who sleeps in which room; PointPilot never splits your party for you. Limits are 4 rooms, 1 to 8 adults and up to 6 children per room. They are input limits, not hotel capacity claims. With more than one room, points are an estimate: one room's observed award × the number of rooms.</p>
 <div id="roomsList"></div>
@@ -83,12 +88,16 @@
 <div class="span-2"><label for="discoverDestinations">Destinations to compare (up to 8)</label><input id="discoverDestinations" value="Melbourne, Tokyo, London, Paris" placeholder="Melbourne, Tokyo, London"><small class="muted">Separate cities or airport codes with commas.</small></div>
 <div><label for="discoverDepart">Departure date</label><input id="discoverDepart" type="date"></div>
 <div><label for="discoverReturn">Return date (optional)</label><input id="discoverReturn" type="date"></div>
+ </div>
+<details class="advanced-search discovery-advanced"><summary>More search options</summary>
+<div class="formgrid discovery-form">
 <div><label for="discoverFlex">Date flexibility</label><select id="discoverFlex"><option value="0">Exact</option><option value="3" selected>± 3 days</option><option value="7">± 7 days</option><option value="14">± 14 days</option></select></div>
 <div><label for="discoverCabin">Cabin</label><select id="discoverCabin"><option value="economy">Economy</option><option value="premium">Premium economy</option><option value="business" selected>Business</option><option value="first">First</option></select></div>
 <div><label for="discoverTravelers">Travelers</label><select id="discoverTravelers"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
-<div><label for="discoverRank">Rank by</label><select id="discoverRank"><option value="overall">Lowest effective cost</option><option value="points">Fewest points</option></select></div>
+<div><label for="discoverRank">Rank by</label><select id="discoverRank"><option value="overall">Lowest effective cost</option><option value="points">Fewest points</option><option value="fees">Lowest taxes &amp; fees</option><option value="stops">Fewest stops</option><option value="duration">Shortest total travel time</option></select></div>
 </div>
 <div class="chips"><label class="check"><input id="discoverNonstop" type="checkbox"> Nonstop only</label><label class="check"><input id="discoverFlexible" type="checkbox" checked> Preserve flexible points when possible</label></div>
+</details>
 <div class="searchfoot"><span id="discoverStatus" role="status" aria-live="polite">Searches use your saved points and may make several award data requests.</span><button class="btn primary" id="discoverSearch"><svg class="icon"><use href="#i-search"/></svg>Compare destinations</button></div>
 </div>
 <div id="discoverResults" aria-live="polite"></div>

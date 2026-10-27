@@ -350,17 +350,22 @@ function renderFlightResults(r) {
   const hunt = r.query.product;
   const cabinProducts = (state.products || []).filter(p => p.cabin === r.query.cabin);
   $('results').innerHTML = warningsBox(r.dataStatus.warnings) + truncatedNotice(r) + productHuntBanner(r) + `<div id="awSummary"></div>
-    <div class="card filters" id="awFilters">
+    <details class="filters-disclosure" id="awFilters">
+      <summary><strong>Filter and sort flights</strong><span id="filterSummary" class="muted">No filters · sorted by fewest points</span></summary>
+      <div class="card filters">
       <div><label for="fMaxPts">Max points / person</label><input id="fMaxPts" type="number" min="0" step="5000" placeholder="Any" style="width:120px"></div>
+      <div><label for="fMaxFees">Max fees / person</label><input id="fMaxFees" type="number" min="0" step="25" placeholder="Any" style="width:120px"></div>
       <div><label for="fMaxHours">Max travel time</label><select id="fMaxHours"><option value="">Any</option><option value="10">10h</option><option value="14">14h</option><option value="18">18h</option><option value="22">22h</option><option value="26">26h</option><option value="32">32h</option></select></div>
       <div><label for="fStops">Stops</label><select id="fStops"><option value="">Any</option><option value="0">Nonstop</option><option value="1">1 stop or fewer</option></select></div>
       <div><label for="fDepart">Departs</label><select id="fDepart"><option value="">Any time</option><option value="0-6">Overnight (12–6 AM)</option><option value="6-12">Morning (6 AM–12 PM)</option><option value="12-18">Afternoon (12–6 PM)</option><option value="18-24">Evening (6 PM–12 AM)</option></select></div>
       <div><label for="fSeat">Seat quality</label><select id="fSeat"><option value="">Any</option><option value="3">Lie-flat or better</option><option value="4">Excellent (direct aisle)</option><option value="5">Top-tier suites only</option></select></div>
       <div><label for="fProgram">Program</label><select id="fProgram"><option value="">All programs</option>${programs.map(p => `<option value="${esc(p)}">${esc(programLabel(p))}</option>`).join('')}</select></div>
       <div><label for="fProduct">Seat product</label><select id="fProduct" style="max-width:240px"><option value="">Any</option>${cabinProducts.map(p => `<option value="${esc(p.key)}"${hunt?.key === p.key ? ' selected' : ''}>${esc(p.airline)}: ${esc(p.product)}</option>`).join('')}</select></div>
-      <div><label for="fSort">Sort by</label><select id="fSort"><option value="points">Fewest points</option><option value="seat">Best seat</option><option value="duration">Shortest travel time</option><option value="depart">Departure time</option></select></div>
+      <div><label for="fSort">Sort by</label><select id="fSort"><option value="points">Fewest points</option><option value="fees">Lowest taxes &amp; fees</option><option value="stops">Fewest stops</option><option value="seat">Best seat</option><option value="duration">Shortest travel time</option><option value="depart">Departure time</option></select></div>
       <div><button class="btn small ghost" data-action="clear-filters">Clear filters</button></div>
-    </div>
+      </div>
+    </details>
+    <p class="picker-intro">The optimizer’s <strong>RECOMMENDED</strong> option is preselected when available. Use dates, filters, and “Show more” to compare other fetched flights.</p>
     <div class="picker ${hasReturn ? '' : 'single'}"><div class="picker-col" id="awCol-Outbound"></div>${hasReturn ? '<div class="picker-col" id="awCol-Return"></div>' : ''}</div>`;
   $('awFilters').addEventListener('input', () => { award.show = { Outbound: 25, Return: 25 }; renderColumns(); });
   renderColumns();
@@ -397,14 +402,17 @@ const optById = id => [...(award.r?.outbound || []), ...(award.r?.return || [])]
 function filteredOptions(leg) {
   const list = (leg === 'Outbound' ? award.r.outbound : award.r.return) || [];
   const v = id => $(id)?.value || '';
-  const maxPts = Number(v('fMaxPts')) || 0, maxH = Number(v('fMaxHours')) || 0, stops = v('fStops'), dep = v('fDepart'), seat = Number(v('fSeat')) || 0, prog = v('fProgram'), sort = v('fSort') || 'points';
+  const maxPts = Number(v('fMaxPts')) || 0, maxFees = v('fMaxFees') === '' ? null : Number(v('fMaxFees')), maxH = Number(v('fMaxHours')) || 0, stops = v('fStops'), dep = v('fDepart'), seat = Number(v('fSeat')) || 0, prog = v('fProgram'), sort = v('fSort') || 'points';
   const wantProduct = productOf(v('fProduct'));
   const out = list.filter(o => {
     const f = o.flight;
+    const duration = f?.totalDurationMin ?? o.totalDurationMin;
+    const rawStops = f?.stops ?? o.stops;
+    const stopsCount = rawStops != null && Number.isFinite(Number(rawStops)) ? Number(rawStops) : o.direct === true ? 0 : null;
     if (maxPts && o.mileageCost > maxPts) return false;
-    if (maxH && f && f.totalDurationMin > maxH * 60) return false;
-    if (stops === '0' && !(f ? f.stops === 0 : o.direct === true)) return false;
-    if (stops === '1' && f && f.stops > 1) return false;
+    if (maxFees != null && (!Number.isFinite(maxFees) || o.totalTaxes == null || o.totalTaxes > maxFees)) return false;
+    if (maxH && (duration == null || !Number.isFinite(Number(duration)) || duration > maxH * 60)) return false;
+    if (stops && (stopsCount == null || stopsCount > Number(stops))) return false;
     if (dep) { if (!f?.depart?.time) return false; const h = Number(f.depart.time.slice(0, 2)); const [a, b] = dep.split('-').map(Number); if (h < a || h >= b) return false; }
     if (seat && !((o.seatScore ?? -1) >= seat)) return false;
     if (prog && o.program !== prog) return false;
@@ -413,11 +421,27 @@ function filteredOptions(leg) {
   });
   const cmp = {
     points: (a, b) => a.mileageCost - b.mileageCost || (b.seatScore ?? -1) - (a.seatScore ?? -1),
+    fees: (a, b) => (a.totalTaxes ?? Infinity) - (b.totalTaxes ?? Infinity) || a.mileageCost - b.mileageCost,
+    stops: (a, b) => (a.flight?.stops ?? (a.direct === true ? 0 : Infinity)) - (b.flight?.stops ?? (b.direct === true ? 0 : Infinity)) || a.mileageCost - b.mileageCost,
     seat: (a, b) => (b.seatScore ?? -1) - (a.seatScore ?? -1) || a.mileageCost - b.mileageCost,
     duration: (a, b) => (a.flight?.totalDurationMin ?? Infinity) - (b.flight?.totalDurationMin ?? Infinity) || a.mileageCost - b.mileageCost,
     depart: (a, b) => String(a.flight?.departUtc || `${a.date}T99`).localeCompare(String(b.flight?.departUtc || `${b.date}T99`))
   }[sort];
   return out.sort(cmp);
+}
+
+function updateFilterSummary() {
+  const summary = $('filterSummary');
+  if (!summary) return;
+  const values = [
+    'fMaxPts', 'fMaxFees', 'fMaxHours', 'fStops', 'fDepart', 'fSeat', 'fProgram', 'fProduct'
+  ];
+  const active = values.filter(id => {
+    const value = $(id)?.value;
+    return Boolean(value) && (id !== 'fMaxPts' || Number(value) > 0);
+  }).length;
+  const sort = ({ points: 'fewest points', fees: 'lowest fees', stops: 'fewest stops', seat: 'best seat', duration: 'shortest time', depart: 'earliest departure' })[$('fSort')?.value] || 'fewest points';
+  summary.textContent = active ? `${active} filter${active === 1 ? '' : 's'} active · sorted by ${sort}` : `No filters · sorted by ${sort}`;
 }
 
 /** Choose a flight: clears the stale evaluation so nothing can act on the previous pair. */
@@ -522,6 +546,7 @@ async function ensureExpanded(leg, day) {
 
 const renderColumns = () => keepFocus(renderColumnsInner);
 function renderColumnsInner() {
+  updateFilterSummary();
   for (const leg of ['Outbound', 'Return']) {
     const col = $(`awCol-${leg}`);
     if (!col) continue;
@@ -638,8 +663,9 @@ async function renderAwardSummary() {
     const addBtn = $('awAddBuilder');
     if (addBtn) { addBtn.disabled = !award.pair.ok; addBtn.title = award.pair.ok ? '' : award.pair.reason; }
     if (!award.pair.ok) { $('awHeadline').textContent = 'These flights cannot be combined'; $('awFunding').innerHTML = `<div class="warnbox" role="alert">${esc(award.pair.reason)}</div>`; state.bestTrip = null; return; }
-    if (!r.affordable) { $('awHeadline').textContent = 'Not affordable with your points'; $('awFunding').innerHTML = `<div class="warnbox">${esc(r.reason)}</div>`; state.bestTrip = null; return; }
+    if (!r.affordable) { $('awHeadline').textContent = r.fundingStatus === 'search-limited' ? 'Funding could not be confirmed' : 'Not covered by your current points'; $('awFunding').innerHTML = `<div class="warnbox">${esc(r.reason)} You can still add these flights to your Trip Builder as a draft and review the funding status there.</div>`; const add = $('awAddBuilder'); if (add) add.textContent = 'Add draft to Trip Builder'; state.bestTrip = null; return; }
     const t = r.trip;
+    const add = $('awAddBuilder'); if (add) add.textContent = 'Add to Trip Builder';
     state.bestTrip = t;
     const cmp = document.querySelector('[data-action="compare-cash"]'); if (cmp) cmp.disabled = false;
     $('awHeadline').textContent = `${fmt(t.totalSourcePoints)} points + ${money(t.taxesUsd)} for ${t.travelers} traveler${t.travelers > 1 ? 's' : ''}${hasReturn && !back ? ' (outbound only so far)' : ''}`;
@@ -1122,7 +1148,7 @@ $('results').addEventListener('click', async e => {
   if (action === 'opt-details') { const id = btn.dataset.id; award.open.has(id) ? award.open.delete(id) : award.open.add(id); renderColumns(); return; }
   if (action === 'more') { award.show[btn.dataset.leg] += 25; renderColumns(); return; }
   if (action === 'reset-rec') { const ids = award.r.recommended?.ids || []; award.sel = { Outbound: ids[0] || null, Return: ids[1] || null }; state.bestTrip = null; renderColumns(); renderAwardSummary(); return; }
-  if (action === 'clear-filters') { ['fMaxPts', 'fMaxHours', 'fStops', 'fDepart', 'fSeat', 'fProgram', 'fProduct'].forEach(id => { $(id).value = ''; }); renderColumns(); return; }
+  if (action === 'clear-filters') { ['fMaxPts', 'fMaxFees', 'fMaxHours', 'fStops', 'fDepart', 'fSeat', 'fProgram', 'fProduct'].forEach(id => { $(id).value = ''; }); renderColumns(); return; }
   if (action === 'add-builder') { addSelectionToBuilder(); return; }
   if (action === 'hotel-more') { const c = btn.dataset.city; state.hotelShow[c] = (state.hotelShow[c] || 20) + 20; keepFocus(() => renderHotels(state.lastHotels)); return; }
   if (action === 'hotel-info-all') { busy(btn, true, 'Loading…'); loadHotelInfo(state.hotelRows.filter(h => !h.info)).catch(err => { toast(err.message); renderHotels(state.lastHotels); }); return; }
@@ -1544,6 +1570,12 @@ const COUNTRY_CITIES = {
 // ---------- navigation ----------
 function showView(name) {
   document.querySelectorAll('.nav').forEach(x => x.classList.toggle('active', x.dataset.view === name));
+  const more = document.querySelector('.nav-more');
+  if (more) {
+    const secondaryActive = [...more.querySelectorAll('[data-view]')].some(x => x.dataset.view === name);
+    more.open = secondaryActive;
+    more.querySelector('summary')?.classList.toggle('active', secondaryActive);
+  }
   document.querySelectorAll('.view').forEach(x => x.classList.toggle('active', x.id === `view-${name}`));
   if (name === 'history') loadHistory().catch(e => toast(e.message));
   if (name === 'builder') loadBuilder();
@@ -1570,7 +1602,8 @@ function renderDiscovery(data, query) {
   entries.sort((a, b) => {
     const x = best(a), y = best(b);
     if (!x || !y) return Number(Boolean(y)) - Number(Boolean(x));
-    return query.rank === 'points' ? x.totalSourcePoints - y.totalSourcePoints : x.effectiveCostUsd - y.effectiveCostUsd;
+    const rank = { points: () => x.totalSourcePoints - y.totalSourcePoints, fees: () => (x.taxesUsd ?? Infinity) - (y.taxesUsd ?? Infinity), stops: () => (x.totalStops ?? Infinity) - (y.totalStops ?? Infinity), duration: () => (x.totalDurationMin ?? Infinity) - (y.totalDurationMin ?? Infinity) }[query.rank];
+    return (rank ? rank() : x.effectiveCostUsd - y.effectiveCostUsd) || x.effectiveCostUsd - y.effectiveCostUsd;
   });
   const source = status => ({ fetched: 'Award data refreshed', 'recent-cache': 'Recent cached award data', 'not-configured': 'Manual awards only', error: 'Award data refresh failed; cached results may be stale', skipped: 'Local award data' }[status] || 'Award data status unknown');
   $('discoverResults').innerHTML = `<div class="resultsbar"><div><h2>Best options found</h2><p>Each destination is an alternative using your full saved wallet. Points are not reserved. Availability can change. Alerts notify you when a matching trip can be funded with your current points.</p></div></div><div class="discovery-results">${entries.map(entry => {
@@ -1585,7 +1618,8 @@ function renderDiscovery(data, query) {
       return `${esc(l.origin)} → ${esc(l.destination)} · ${esc(dateFmt(l.date))} · ${esc(l.programName || programLabel(l.program))}${esc(age + providerTime)}`;
     }).join('<br>') || '';
     const funding = t?.sources?.map(s => s.direct ? `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} already held` : `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} → ${fmt(s.targetPoints)} ${esc(programLabel(s.targetProgram))}`).join(' · ') || '';
-    const detail = t ? `<div class="discovery-price">${fmt(t.totalSourcePoints)} points <span>+ ${t.taxesEstimated ? '≈' : ''}${money(t.taxesUsd)} taxes &amp; fees${t.taxesEstimated ? ' (estimated or unknown)' : ''}</span></div><p>${legs}</p><p>${funding}</p><p>Effective cost: ${money(t.effectiveCostUsd)} for ${fmt(t.travelers)} traveler${t.travelers === 1 ? '' : 's'}</p>${warningsBox(t.warnings || [])}` : `<p>${esc(reason)}</p>`;
+    const tripQuality = t ? `<p class="muted">${t.totalDurationMin == null ? 'Total time unavailable' : `${dur(t.totalDurationMin)} total travel`}${t.totalStops == null ? '' : ` · ${t.totalStops} stop${t.totalStops === 1 ? '' : 's'}`}</p>` : '';
+    const detail = t ? `<div class="discovery-price">${fmt(t.totalSourcePoints)} points <span>+ ${t.taxesEstimated ? '≈' : ''}${money(t.taxesUsd)} taxes &amp; fees${t.taxesEstimated ? ' (estimated or unknown)' : ''}</span></div><p>${legs}</p>${tripQuality}<p>${funding}</p><p>Effective cost: ${money(t.effectiveCostUsd)} for ${fmt(t.travelers)} traveler${t.travelers === 1 ? '' : 's'}</p>${warningsBox(t.warnings || [])}` : `<p>${esc(reason)}</p>`;
     const warnings = r ? [...(r.dataStatus?.warnings || []), ...(r.truncated ? [r.truncatedReason || 'Results were limited.'] : [])] : [];
     const badge = t ? 'FUNDABLE' : warning ? 'SEARCH FAILED' : 'NO FUNDED TRIP FOUND';
     return `<article class="card discovery-card"><div class="cardhead"><h3>${esc(entry.destination)}</h3><span class="tag ${t ? '' : 'muted'}">${badge}</span></div>${detail}<p class="muted">${esc(source(r?.dataStatus?.api))}</p>${warningsBox(warnings)}<div class="btnrow"><button class="btn small${t ? ' primary' : ''}" data-discover-action="view" data-index="${originalIndex}">View flights</button><button class="btn small" data-discover-action="watch" data-index="${originalIndex}"${r ? '' : ' disabled'}>Set alert</button></div></article>`;
@@ -1654,7 +1688,7 @@ $('discoverResults').addEventListener('click', async e => {
   runSearch();
 });
 
-document.querySelectorAll('.nav').forEach(b => { b.onclick = () => showView(b.dataset.view); });
+document.querySelectorAll('.nav[data-view]').forEach(b => { b.onclick = () => showView(b.dataset.view); });
 desktop?.onNavigate?.(showView);
 
 document.querySelectorAll('button[data-product]').forEach(b => {
@@ -1684,8 +1718,8 @@ document.querySelectorAll('button[data-product]').forEach(b => {
       : `<option ${cash ? '' : 'selected'} value="business">Business</option><option value="first">First</option><option value="premium">Premium Economy</option><option ${cash ? 'selected' : ''} value="economy">Economy</option>`;
     $('cabinLabel').textContent = hotels ? 'Room' : 'Cabin';
     $('rank').disabled = cash;
-    $('rank').options[3].disabled = hotels;
-    if (hotels && $('rank').value === 'nonstop') $('rank').value = 'overall';
+    for (const option of $('rank').options) option.disabled = hotels && !['overall', 'points'].includes(option.value);
+    if (hotels && !['overall', 'points'].includes($('rank').value)) $('rank').value = 'overall';
     $('keepFlexibleWrap').hidden = cash;
     $('productWrap').hidden = state.product !== 'flights';
     $('useGoogleWrap').hidden = !cash;
