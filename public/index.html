@@ -24,6 +24,7 @@
   <div class="brand"><span class="brand-mark"><svg class="icon"><use href="#i-plane"/></svg></span><div class="brand-text">Point<span>Pilot</span></div></div>
   <nav>
     <button class="nav active" data-view="search"><svg class="icon"><use href="#i-search"/></svg>Trip Optimizer</button>
+    <button class="nav" data-view="discover"><svg class="icon"><use href="#i-map"/></svg>Explore Destinations</button>
     <button class="nav" data-view="builder"><svg class="icon"><use href="#i-map"/></svg>Trip Builder</button>
     <button class="nav" data-view="wallet"><svg class="icon"><use href="#i-wallet"/></svg>My Points</button>
     <button class="nav" data-view="deals"><svg class="icon"><use href="#i-tag"/></svg>Cash Deals</button>
@@ -73,6 +74,26 @@
 <div class="card resultsbar" id="resultsBar"><div><h2>Opportunities</h2><p id="resultMeta">No search yet.</p></div></div><div id="results"></div>
 </section>
 
+<section id="view-discover" class="view">
+<div class="viewhead"><div><h2>Explore destinations</h2><p>Compare award trips you can fund with your current points.</p></div></div>
+<div class="note discovery-wallet-note" id="discoverWalletNote" hidden>Add your balances to see which trips your points can fund. <button class="btn small" id="discoverWallet">Open My Points</button></div>
+<div class="card searchbox">
+<div class="formgrid discovery-form" style="margin-top:0">
+<div class="span-2"><label for="discoverOrigins">Departure cities or airports</label><input id="discoverOrigins" placeholder="Boston, JFK"></div>
+<div class="span-2"><label for="discoverDestinations">Destinations to compare (up to 8)</label><input id="discoverDestinations" value="Melbourne, Tokyo, London, Paris" placeholder="Melbourne, Tokyo, London"><small class="muted">Separate cities or airport codes with commas.</small></div>
+<div><label for="discoverDepart">Departure date</label><input id="discoverDepart" type="date"></div>
+<div><label for="discoverReturn">Return date (optional)</label><input id="discoverReturn" type="date"></div>
+<div><label for="discoverFlex">Date flexibility</label><select id="discoverFlex"><option value="0">Exact</option><option value="3" selected>± 3 days</option><option value="7">± 7 days</option><option value="14">± 14 days</option></select></div>
+<div><label for="discoverCabin">Cabin</label><select id="discoverCabin"><option value="economy">Economy</option><option value="premium">Premium economy</option><option value="business" selected>Business</option><option value="first">First</option></select></div>
+<div><label for="discoverTravelers">Travelers</label><select id="discoverTravelers"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+<div><label for="discoverRank">Rank by</label><select id="discoverRank"><option value="overall">Lowest effective cost</option><option value="points">Fewest points</option></select></div>
+</div>
+<div class="chips"><label class="check"><input id="discoverNonstop" type="checkbox"> Nonstop only</label><label class="check"><input id="discoverFlexible" type="checkbox" checked> Preserve flexible points when possible</label></div>
+<div class="searchfoot"><span id="discoverStatus" role="status" aria-live="polite">Searches use your saved points and may make several award data requests.</span><button class="btn primary" id="discoverSearch"><svg class="icon"><use href="#i-search"/></svg>Compare destinations</button></div>
+</div>
+<div id="discoverResults" aria-live="polite"></div>
+</section>
+
 <section id="view-builder" class="view">
 <div class="viewhead"><div><h2>Trip Builder</h2><p>Your award flights, hotels and the flights between home and the award airports, assembled into one trip with one combined points and cash total.</p></div><button class="btn ghost" id="clearTrip">Clear flights</button></div>
 <div id="tbReadinessSlot"></div>
@@ -111,7 +132,7 @@
 <div id="dealResults"></div>
 </div></section>
 
-<section id="view-alerts" class="view"><div class="viewhead"><div><h2>Alerts</h2><p>Award trips, hotel stays, cash fares and airport deal watches are re-checked in the background. You get a Windows notification when something new appears.</p></div><button class="btn primary" id="runMonitor">Check all now</button></div><div class="card" id="alerts"></div><div class="card empty" id="alertEmpty"><strong>No alerts yet</strong>Run a search and choose “Monitor this trip” or “Monitor this stay”.</div></section>
+<section id="view-alerts" class="view"><div class="viewhead"><div><h2>Alerts</h2><p>Award trips, hotel stays, cash fares and airport deal watches are checked while PointPilot is open or running in the tray. You get a Windows notification when something new appears.</p></div><button class="btn primary" id="runMonitor">Check all now</button></div><div class="card" id="alerts"></div><div class="card empty" id="alertEmpty"><strong>No alerts yet</strong>Run a flight search—even if no award space appears—and choose “Monitor this trip”. You can also monitor a hotel stay.</div></section>
 
 <section id="view-history" class="view"><div class="viewhead"><div><h2>Historical award prices</h2><p>Published benchmarks plus every award price PointPilot has seen.</p></div><button class="btn" id="refreshHistory">Refresh</button></div><div class="stack"><div class="card searchbox"><div class="formgrid" style="margin-top:0"><div><label for="histProgram">Program</label><select id="histProgram"><option value="">All programs</option></select></div><div><label for="histOrigin">Origin</label><input id="histOrigin" placeholder="JFK"></div><div><label for="histDestination">Destination</label><input id="histDestination" placeholder="BKK"></div><div><label for="histCabin">Cabin</label><select id="histCabin"><option value="">All</option><option value="economy">Economy</option><option value="premium">Premium</option><option value="business">Business</option><option value="first">First</option></select></div></div></div><div class="card tablecard"><div class="tableScroll"><table><thead><tr><th>Observed</th><th>Program</th><th>Scope</th><th>Cabin</th><th>Points</th><th>Type</th><th>Source</th></tr></thead><tbody id="historyTable"></tbody></table></div></div><div class="note" id="historySources"></div></div></section>
 

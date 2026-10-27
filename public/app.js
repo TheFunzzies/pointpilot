@@ -53,6 +53,8 @@ function initDates() {
   const r = new Date(d); r.setDate(r.getDate() + 12);
   $('dateFrom').value = d.toISOString().slice(0, 10);
   $('dateTo').value = r.toISOString().slice(0, 10);
+  $('discoverDepart').value = $('dateFrom').value;
+  $('discoverReturn').value = $('dateTo').value;
 }
 
 async function load() {
@@ -123,6 +125,7 @@ const pointValue = b => (Number(b.balance) || 0) * (Number(b.cpp) || 0) / 100;
 
 function renderWalletSummary() {
   const b = state.user.balances;
+  $('discoverWalletNote').hidden = b.some(x => Number(x.balance) > 0);
   $('wTotal').textContent = fmt(b.reduce((s, x) => s + (Number(x.balance) || 0), 0));
   $('wPrograms').textContent = `${b.length} program${b.length === 1 ? '' : 's'}`;
   $('wValue').textContent = money(b.reduce((s, x) => s + pointValue(x), 0));
@@ -300,7 +303,7 @@ function truncatedNotice(r) {
 }
 
 function sourceTag(l) {
-  if (l.dataSource === 'seats.aero') return `<span class="tag">LIVE · ${l.ageHours < 1 ? '<1' : Math.round(l.ageHours)}h old</span>`;
+  if (l.dataSource === 'seats.aero') return `<span class="tag">SEATS.AERO · ${Number.isFinite(l.ageHours) ? `captured ${l.ageHours < 1 ? '<1' : Math.round(l.ageHours)}h ago` : 'capture time unknown'}</span>`;
   return `<span class="tag muted">MANUAL · ${l.ageHours < 24 ? 'today' : `${Math.round(l.ageHours / 24)}d old`}</span>`;
 }
 
@@ -1314,6 +1317,7 @@ async function loadSettings() {
     s.serpApiKeySet ? `SerpApi ✓ (${s.serpApiKeyHint})` : 'SerpApi: not set'
   ].join(' · ');
   $('homeAirports').value = s.homeAirports || '';
+  if (!$('discoverOrigins').value) $('discoverOrigins').value = s.homeAirports || $('origins').value;
   if (!$('dealAirports').value) $('dealAirports').value = s.homeAirports || $('origins').value;
   state.settings = s;
 }
@@ -1545,6 +1549,111 @@ function showView(name) {
   if (name === 'builder') loadBuilder();
   if (name === 'system') { features.diagnostics?.refresh(); features.backup?.refresh(); }
 }
+
+// ---------- destination discovery ----------
+let discovery = null;
+const discoveryGuard = createGuard();
+function discoveryQuery() {
+  return {
+    origins: $('discoverOrigins').value.trim(),
+    destinations: $('discoverDestinations').value.split(',').map(x => x.trim()).filter(Boolean),
+    departDate: $('discoverDepart').value, returnDate: $('discoverReturn').value || null,
+    flexDays: Number($('discoverFlex').value), cabin: $('discoverCabin').value,
+    travelers: Number($('discoverTravelers').value), rank: $('discoverRank').value,
+    nonstopOnly: $('discoverNonstop').checked, preserveFlexible: $('discoverFlexible').checked
+  };
+}
+
+function renderDiscovery(data, query) {
+  const entries = [...(data.results || [])];
+  const best = entry => entry.result?.recommended?.trip || null;
+  entries.sort((a, b) => {
+    const x = best(a), y = best(b);
+    if (!x || !y) return Number(Boolean(y)) - Number(Boolean(x));
+    return query.rank === 'points' ? x.totalSourcePoints - y.totalSourcePoints : x.effectiveCostUsd - y.effectiveCostUsd;
+  });
+  const source = status => ({ fetched: 'Award data refreshed', 'recent-cache': 'Recent cached award data', 'not-configured': 'Manual awards only', error: 'Award data refresh failed; cached results may be stale', skipped: 'Local award data' }[status] || 'Award data status unknown');
+  $('discoverResults').innerHTML = `<div class="resultsbar"><div><h2>Best options found</h2><p>Each destination is an alternative using your full saved wallet. Points are not reserved. Availability can change. Alerts notify you when a matching trip can be funded with your current points.</p></div></div><div class="discovery-results">${entries.map(entry => {
+    const r = entry.result, t = best(entry);
+    const originalIndex = data.results.indexOf(entry);
+    const warning = entry.error ? (entry.error.message || entry.error) : null;
+    const reason = warning ? `Search failed: ${warning}` : r?.dataStatus?.api === 'error' && !r?.outbound?.length ? 'Award data could not be refreshed. Try again.' : r?.mode === 'no-inventory' ? 'No award space found for these dates.' : r?.mode === 'no-valid-pairs' ? 'No compatible outbound and return pair found.' : 'No trip was funded within this search. Check available flights and your points.';
+    const legs = t?.legs?.map(l => {
+      const age = Number.isFinite(l.ageHours) ? ` · captured ${l.ageHours < 1 ? 'less than 1 hour' : `${Math.round(l.ageHours)} hours`} ago` : '';
+      const observed = l.observedAt || l.sourceUpdatedAt;
+      const providerTime = observed && Number.isFinite(Date.parse(observed)) ? ` · provider updated ${new Date(observed).toLocaleString()}` : '';
+      return `${esc(l.origin)} → ${esc(l.destination)} · ${esc(dateFmt(l.date))} · ${esc(l.programName || programLabel(l.program))}${esc(age + providerTime)}`;
+    }).join('<br>') || '';
+    const funding = t?.sources?.map(s => s.direct ? `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} already held` : `${fmt(s.fromPoints)} ${esc(programLabel(s.from))} → ${fmt(s.targetPoints)} ${esc(programLabel(s.targetProgram))}`).join(' · ') || '';
+    const detail = t ? `<div class="discovery-price">${fmt(t.totalSourcePoints)} points <span>+ ${t.taxesEstimated ? '≈' : ''}${money(t.taxesUsd)} taxes &amp; fees${t.taxesEstimated ? ' (estimated or unknown)' : ''}</span></div><p>${legs}</p><p>${funding}</p><p>Effective cost: ${money(t.effectiveCostUsd)} for ${fmt(t.travelers)} traveler${t.travelers === 1 ? '' : 's'}</p>${warningsBox(t.warnings || [])}` : `<p>${esc(reason)}</p>`;
+    const warnings = r ? [...(r.dataStatus?.warnings || []), ...(r.truncated ? [r.truncatedReason || 'Results were limited.'] : [])] : [];
+    const badge = t ? 'FUNDABLE' : warning ? 'SEARCH FAILED' : 'NO FUNDED TRIP FOUND';
+    return `<article class="card discovery-card"><div class="cardhead"><h3>${esc(entry.destination)}</h3><span class="tag ${t ? '' : 'muted'}">${badge}</span></div>${detail}<p class="muted">${esc(source(r?.dataStatus?.api))}</p>${warningsBox(warnings)}<div class="btnrow"><button class="btn small${t ? ' primary' : ''}" data-discover-action="view" data-index="${originalIndex}">View flights</button><button class="btn small" data-discover-action="watch" data-index="${originalIndex}"${r ? '' : ' disabled'}>Set alert</button></div></article>`;
+  }).join('')}</div>`;
+}
+
+async function runDiscovery() {
+  const query = discoveryQuery(), status = $('discoverStatus');
+  if (!query.origins || !query.departDate || !query.destinations.length || query.destinations.length > 8) {
+    status.textContent = 'Enter a departure city, a departure date and 1–8 destinations.';
+    return;
+  }
+  const token = discoveryGuard.next();
+  discovery = null;
+  $('discoverResults').innerHTML = '';
+  busy($('discoverSearch'), true, 'Comparing…');
+  status.textContent = 'Checking award space and your points for each destination…';
+  try {
+    const result = await api('/api/search/destinations', { method: 'POST', body: query, signal: token.signal });
+    if (!discoveryGuard.isCurrent(token)) return;
+    discovery = { result, query };
+    renderDiscovery(result, query);
+    status.textContent = `Compared ${result.results.length} destination(s). Results depend on available award data.`;
+    refreshHealth().catch(() => {});
+  } catch (e) {
+    if (!isAbort(e) && discoveryGuard.isCurrent(token)) status.textContent = `Search failed: ${e.message}`;
+  } finally { if (discoveryGuard.isCurrent(token)) busy($('discoverSearch'), false); }
+}
+
+$('discoverSearch').addEventListener('click', runDiscovery);
+$('discoverWallet').addEventListener('click', () => showView('wallet'));
+function discoveryCostHint() {
+  const count = discoveryQuery().destinations.length;
+  const calls = count * ($('discoverReturn').value ? 6 : 3);
+  $('discoverStatus').textContent = count > 0 && count <= 8
+    ? `Up to ${calls} award data requests; cached searches can use fewer. Each option uses your saved points.`
+    : 'Choose 1–8 destinations. Searches use your saved points.';
+}
+['discoverDestinations', 'discoverReturn'].forEach(id => $(id).addEventListener('input', discoveryCostHint));
+$('discoverResults').addEventListener('click', async e => {
+  const button = e.target.closest('[data-discover-action]');
+  const entry = discovery?.result.results[Number(button?.dataset.index)];
+  if (!button || !entry) return;
+  const { destinations: _destinations, ...q } = discovery.query;
+  q.destination = entry.destination;
+  if (button.dataset.discoverAction === 'watch') {
+    busy(button, true, 'Saving…');
+    try {
+      const a = await api('/api/alerts', { method: 'POST', body: { ...q, title: `${q.origins} → ${q.destination} · ${q.cabin} · ${q.travelers} pax` } });
+      state.alerts.unshift(a); renderAlerts(); renderKPIs();
+      toast('Alert saved for a trip your current points can fund. Keep PointPilot running to check it.');
+    } catch (err) { toast(err.message); }
+    finally { busy(button, false); }
+    return;
+  }
+  document.querySelector('button[data-product="flights"]').click();
+  const type = document.querySelector(`input[name="tripType"][value="${q.returnDate ? 'round-trip' : 'one-way'}"]`);
+  type.checked = true; type.dispatchEvent(new Event('change', { bubbles: true }));
+  $('origins').value = q.origins; $('destination').value = q.destination;
+  $('dateFrom').value = q.departDate; $('dateTo').value = q.returnDate || '';
+  $('flex').value = String(q.flexDays); $('cabin').value = q.cabin;
+  $('travelers').value = String(q.travelers); $('rank').value = q.rank;
+  $('directOnly').checked = q.nonstopOnly; $('keepFlexible').checked = q.preserveFlexible;
+  $('productHunt').value = '';
+  showView('search');
+  runSearch();
+});
+
 document.querySelectorAll('.nav').forEach(b => { b.onclick = () => showView(b.dataset.view); });
 desktop?.onNavigate?.(showView);
 
@@ -1679,4 +1788,5 @@ if (window.PPFeatures) {
 applyTripType();
 renderRecents();
 initDates();
+discoveryCostHint();
 load();

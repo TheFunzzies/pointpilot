@@ -4,6 +4,7 @@ A Windows desktop app that finds award flights and works out the cheapest way to
 
 - **Live award search** for flights through the [seats.aero](https://seats.aero) Partner API, and for hotels (Hilton, Hyatt, IHG, Marriott, Choice, Wyndham, I Prefer) through its sister service [rooms.aero](https://rooms.aero). Both are optional and use the same seats.aero Pro key, each with its own daily quota. Manual entry covers anything else.
 - **Portfolio-aware optimizer** that funds the *whole trip* for *all travelers*. It uses miles you already hold first, then picks bank transfers by your own ¢/point values. It respects transfer minimums and increments, time-limited bonuses, the Marriott 60k→25k bonus, slow transfers and a max-transfers limit.
+- **Explore destinations** compares up to eight destinations from your chosen departure cities for the same dates, cabin and travelers. Each result uses your current wallet as an independent alternative, shows its funding path and data status, and can open the flight search or create an alert. Searches can use up to three seats.aero calls per destination for each direction; cached queries may use fewer. Results are the best found within the provider and optimizer limits, and availability can change.
 - **Cash fares**: search cash prices, set **price alerts** (below a target, or a set % below the route's usual price), and get a **deals feed** from your home airports. This uses a free [Travelpayouts](https://www.travelpayouts.com) token (recent Aviasales fares). An optional [SerpApi](https://serpapi.com) key (free: 250 searches/month) adds live Google Flights prices, Google's low/typical/high rating and cabin-aware "points vs. cash" comparisons on award results.
 - **Alerts** re-check saved trips in the background and show a Windows notification (and an optional Slack/Discord webhook) when new matching space appears.
 - **Price history** from published award-chart benchmarks plus every price PointPilot sees, used to label deals ("12% below historical median").
@@ -72,7 +73,7 @@ desktop/              Electron shell (tray, notifications, auto-update)
 ## Release
 
 1. Bump `version` in `package.json`, then run `npm install` so the lockfile picks up the new version. Commit both.
-2. Tag and push: `git tag v0.15.0 && git push origin v0.15.0` (use the version from `package.json`).
+2. Tag and push: `git tag v0.16.0 && git push origin v0.16.0` (use the version from `package.json`).
 3. The **Release** workflow tests, builds and publishes the installer, blockmap and `latest.yml`. Installed apps update themselves from there. Windows builds are currently unsigned, so SmartScreen can warn about the downloaded installer.
 
 The release fails early if the tag doesn't match `package.json`, or if the lockfile is missing.
