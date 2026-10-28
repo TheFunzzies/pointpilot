@@ -248,6 +248,8 @@ function makeHandler(getPort, gate = createRecoveryGate()) {
       const alertMatch = p.match(/^\/api\/alerts\/([a-z0-9]+)$/i);
       if (alertMatch && m === 'DELETE') { await deleteAlert(alertMatch[1]); return send(res, 200, { ok: true }); }
       if (alertMatch && m === 'PATCH') { const b = await body(req); await setAlertActive(alertMatch[1], b.active); return send(res, 200, { ok: true }); }
+      const alertRunMatch = p.match(/^\/api\/monitor\/run\/([a-z0-9]+)$/i);
+      if (alertRunMatch && m === 'POST') return send(res, 200, await runMonitor({ force: true, alertId: alertRunMatch[1] }));
       if (m === 'POST' && p === '/api/monitor/run') return send(res, 200, await runMonitor({ force: true }));
 
       return send(res, 404, { error: 'Not found' });

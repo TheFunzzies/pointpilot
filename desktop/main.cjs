@@ -187,7 +187,12 @@ function buildMenu() {
 }
 
 // ---------- IPC ----------
-ipcMain.handle('open-provider', (_e, { providerId, url }) => { openCaptureBrowser(String(providerId), String(url)); return { ok: true }; });
+ipcMain.handle('open-provider', async (_e, { providerId, url } = {}) => {
+  const { providerUrlAllowed } = await import('../lib/providers.mjs');
+  if (!providerUrlAllowed(String(providerId || ''), String(url || ''))) return { ok: false, message: 'This URL is not an approved page for that provider.' };
+  openCaptureBrowser(String(providerId), String(url));
+  return { ok: true };
+});
 ipcMain.handle('app-info', () => ({ version: app.getVersion(), dataDir: dataDir(), packaged: app.isPackaged }));
 ipcMain.handle('check-for-updates', () => checkForUpdates());
 ipcMain.handle('install-update', () => { if (!autoUpdater) return { ok: false }; isQuitting = true; autoUpdater.quitAndInstall(false, true); return { ok: true }; });

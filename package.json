@@ -1,6 +1,6 @@
 {
   "name": "pointpilot",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "private": true,
   "type": "module",
   "description": "PointPilot: find award space and fund trips from your points portfolio.",
@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
-    "electron": "44.5.1",
+    "electron": "44.10.0",
     "electron-builder": "26.17.0",
     "eslint": "9.39.5",
     "globals": "17.13.0"

@@ -109,7 +109,8 @@ function renderPurchaseOffers(offers = []) {
   if (!offers.length) { list.innerHTML = '<p class="muted fk-help">No buy-points offers saved. Add a current effective price to compare it with a selected award and cash fare.</p>'; return; }
   list.innerHTML = `<div class="purchase-offer-list" aria-label="Saved buy-points offers">${offers.map(o => {
     const link = safeUrl(o.offerUrl);
-    return `<div class="purchase-offer-row"><div><strong>${esc(programLabel(o.program))}</strong><div class="muted">${Number(o.pricePerPointCents).toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}¢/point${o.offerEnds ? ` · ends ${dateFmt(o.offerEnds)}` : ''}${o.notes ? ` · ${esc(o.notes)}` : ''}</div>${link ? `<a href="${esc(link)}" target="_blank" rel="noreferrer">Official purchase page ↗</a>` : ''}<small>Minimum ${fmt(o.minimumPurchase)} · increments of ${fmt(o.purchaseIncrement)}</small></div><div class="btnrow" style="margin:0"><button type="button" class="btn small" data-edit-purchase="${esc(o.program)}">Edit</button><button type="button" class="btn small ghost" data-remove-purchase="${esc(o.program)}">Remove</button></div></div>`;
+    const expired = Boolean(o.offerEnds && o.offerEnds < new Date().toISOString().slice(0, 10));
+    return `<div class="purchase-offer-row"><div><strong>${esc(programLabel(o.program))}</strong>${expired ? ' <span class="tag warn">Expired · refresh before using</span>' : ''}<div class="muted">${Number(o.pricePerPointCents).toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}¢/point${o.offerEnds ? ` · ends ${dateFmt(o.offerEnds)}` : ''}${o.notes ? ` · ${esc(o.notes)}` : ''}</div>${link ? `<a href="${esc(link)}" target="_blank" rel="noreferrer">Official purchase page ↗</a>` : ''}<small>Minimum ${fmt(o.minimumPurchase)} · increments of ${fmt(o.purchaseIncrement)}</small></div><div class="btnrow" style="margin:0"><button type="button" class="btn small" data-edit-purchase="${esc(o.program)}">Edit</button><button type="button" class="btn small ghost" data-remove-purchase="${esc(o.program)}">Remove</button></div></div>`;
   }).join('')}</div>`;
 }
 
@@ -173,7 +174,7 @@ $('purchaseOffersList').addEventListener('click', async e => {
 // ---------- wallet ----------
 function renderKPIs() {
   const b = state.user.balances;
-  $('kpiTotal').textContent = fmt(b.reduce((s, x) => s + Number(x.balance || 0), 0));
+  $('kpiTotal').textContent = fmt(b.filter(x => Number(x.balance) > 0).length);
   $('kpiFlex').textContent = fmt(b.filter(x => x.type === 'bank').reduce((s, x) => s + Number(x.balance || 0), 0));
   $('kpiAlerts').textContent = state.alerts.filter(a => a.active !== false).length;
 }
@@ -1394,13 +1395,23 @@ function renderAlerts() {
     return `<div class="rowalert"><div><strong>${esc(a.title)}</strong>
       <div class="muted" style="font-size:11px">${desc}</div>
       <div class="muted${check.kind === 'error' ? ' alert-error' : ''}" style="font-size:11px"${check.kind === 'error' ? ' role="alert"' : ''}>${check.kind === 'error' ? '⚠ ' : ''}${esc(last)}${check.kind !== 'error' && a.lastWarnings?.length ? ` · Warning: ${esc(a.lastWarnings.join('; '))}` : ''}${check.kind !== 'error' && a.lastResult?.best ? ` — ${esc(a.lastResult.best)}` : ''}</div></div>
-      <div class="btnrow" style="margin:0"><button class="btn small" data-toggle="${esc(a.id)}" data-active="${a.active ? '1' : ''}">${a.active ? 'Pause' : 'Resume'}</button><button class="btn small" data-delete="${esc(a.id)}">Remove</button></div></div>`;
+      <div class="btnrow" style="margin:0"><button class="btn small" data-check="${esc(a.id)}"${a.active ? '' : ' disabled'}>Check now</button><button class="btn small" data-toggle="${esc(a.id)}" data-active="${a.active ? '1' : ''}">${a.active ? 'Pause' : 'Resume'}</button><button class="btn small" data-delete="${esc(a.id)}">Remove</button></div></div>`;
   }).join('');
 }
 
 $('alerts').addEventListener('click', async e => {
-  const { toggle, delete: del, active } = e.target.dataset;
+  const { toggle, delete: del, active, check } = e.target.dataset;
   try {
+    if (check) {
+      const button = e.target.closest('[data-check]');
+      busy(button, true, 'Checking…');
+      const r = await api(`/api/monitor/run/${check}`, { method: 'POST', body: {} });
+      const run = summarizeRun(r.results);
+      state.runErrors = run.errors;
+      state.alerts = await api('/api/alerts'); renderAlerts();
+      toast(`Checked alert${run.fresh ? ' — new availability found!' : ''}${run.failed ? ' — check failed; see alert details.' : ''}`);
+      return;
+    }
     if (del) {
       const alert = state.alerts.find(a => a.id === del);
       if (!alert || !window.confirm(`Remove the alert “${alert.title}”?`)) return;
@@ -1445,7 +1456,12 @@ function renderProviders(list) {
 }
 $('providerList').addEventListener('click', e => {
   const { open, url } = e.target.dataset;
-  if (open && desktop) { desktop.openProvider(open, url); toast('Search normally in the new window. Ctrl+Shift+S saves the page.'); }
+  if (open && desktop) {
+    desktop.openProvider(open, url).then(result => {
+      if (result?.ok) toast('Search normally in the new window. Ctrl+Shift+S saves the page.');
+      else toast(result?.message || 'Could not open that provider page.');
+    }).catch(e => toast(e.message));
+  }
 });
 
 $('saveManualAward').onclick = async () => {
@@ -1793,7 +1809,7 @@ function renderDiscovery(data, query) {
     return (rank ? rank() : x.effectiveCostUsd - y.effectiveCostUsd) || x.effectiveCostUsd - y.effectiveCostUsd;
   });
   const source = status => ({ fetched: 'Award data refreshed', 'recent-cache': 'Recent cached award data', 'not-configured': 'Manual awards only', error: 'Award data refresh failed; cached results may be stale', skipped: 'Local award data' }[status] || 'Award data status unknown');
-  $('discoverResults').innerHTML = `<div class="resultsbar"><div><h2>Best options found</h2><p>Each destination is an alternative using your full saved wallet. Points are not reserved. Availability can change. Alerts notify you when a matching trip can be funded with your current points.</p></div></div><div class="discovery-results">${entries.map(entry => {
+  $('discoverResults').innerHTML = `<div class="resultsbar"><div><h2>Best options found</h2><p>These are the best matches returned by the selected data source, not an exhaustive list. Each destination is an alternative using your full saved wallet; points are not reserved. Availability can change. Alerts notify you when a matching trip can be funded with your current points.</p></div></div><div class="discovery-results">${entries.map(entry => {
     const r = entry.result, t = best(entry);
     const originalIndex = data.results.indexOf(entry);
     const warning = entry.error ? (entry.error.message || entry.error) : null;
