@@ -58,11 +58,11 @@ test('page loads the feature scripts before app.js, with no inline scripts or ha
   const scripts = [...html.matchAll(/<script\b([^>]*)>/g)].map(m => m[1]);
   assert.ok(scripts.every(a => /\bsrc="\/[a-z-]+\.js"/.test(a)), 'every script is an external same-origin file');
   const order = [...html.matchAll(/<script src="\/([a-z-]+\.js)">/g)].map(m => m[1]);
-  assert.deepEqual(order, ['helpers.js', 'feature-kit.js', 'itinerary-ui.js', 'readiness-ui.js', 'backup-ui.js', 'diagnostics-ui.js', 'app.js']);
+  assert.deepEqual(order, ['helpers.js', 'feature-kit.js', 'itinerary-ui.js', 'readiness-ui.js', 'backup-ui.js', 'diagnostics-ui.js', 'app.js', 'llm-ui.js']);
   assert.doesNotMatch(html, /\son[a-z]+\s*=/i, 'no inline event handlers');
   assert.doesNotMatch(html, /javascript:/i);
   assert.doesNotMatch(html, /https?:\/\/(?!www\.)[^"' ]*\.(js|css)/, 'no CDN assets');
-  for (const f of ['feature-kit.js', 'itinerary-ui.js', 'readiness-ui.js', 'backup-ui.js', 'diagnostics-ui.js']) {
+  for (const f of ['feature-kit.js', 'itinerary-ui.js', 'readiness-ui.js', 'backup-ui.js', 'diagnostics-ui.js', 'llm-ui.js']) {
     const src = read(f);
     assert.doesNotMatch(src, /\beval\s*\(|new Function\s*\(|document\.write|\son(click|change|input|submit)\s*=\s*["']/, `${f} must not use eval or inline handlers`);
     assert.doesNotMatch(src, /require\(|process\./, `${f} has no Node access`);

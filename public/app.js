@@ -356,8 +356,9 @@ async function runSearch() {
       const r = await api('/api/cash/search', { method: 'POST', body: q, signal });
       if (!live()) return;
       state.lastCashQuery = q;
+      state.lastCashResult = r;
       renderCash(r); saveRecent();
-      msg.textContent = `${r.fares.length} fare(s) for ${r.query.origins.join(', ')} → ${r.query.destinations.join(', ')}${r.google ? ' · Google Flights checked' : ''}.`;
+      msg.textContent = `${r.fares.length} fare(s) for ${r.query.origins.join(', ')} → ${r.query.destinations.join(', ')}${r.google ? (r.dataStatus.google === 'recent-cache' ? ' · recent Google Flights cache used' : ' · Google Flights checked') : ''}.`;
       return;
     }
     msg.textContent = 'Searching award space and optimizing against your points…';
@@ -1166,7 +1167,8 @@ function renderCash(r) {
     const i = r.google.insights;
     const g0 = r.google.fares[0];
     const gq = g0 ? fareQuote(g0, t, money) : null;
-    google = `<div class="card reco"><div class="cardhead"><div><div class="eyebrow">Live Google Flights · ${esc(r.query.cabin)}</div><h3>${g0 ? (gq.exact ? `${money(g0.price)} per person` : `${money(g0.price)} · ${esc(gq.label)}`) : 'No live fares found'}${g0 && gq.exact && t > 1 ? ` · ${money(g0.total)} total` : ''}</h3>${gq?.oneAdult ? `<p class="fk-estimate">${esc(gq.oneAdult.label)}: ${esc(gq.oneAdult.amountText)}</p>` : ''}</div>${safeUrl(r.google.url) ? `<a class="btn small" href="${esc(r.google.url)}" target="_blank" rel="noreferrer">Open in Google Flights ↗</a>` : ''}</div>
+    const cacheNote = r.dataStatus?.google === 'recent-cache' && r.google.cachedAt ? ` · cached at ${new Date(r.google.cachedAt).toLocaleTimeString()}` : '';
+    google = `<div class="card reco"><div class="cardhead"><div><div class="eyebrow">${r.dataStatus?.google === 'recent-cache' ? 'Cached Google Flights' : 'Live Google Flights'} · ${esc(r.query.cabin)}${esc(cacheNote)}</div><h3>${g0 ? (gq.exact ? `${money(g0.price)} per person` : `${money(g0.price)} · ${esc(gq.label)}`) : 'No live fares found'}${g0 && gq.exact && t > 1 ? ` · ${money(g0.total)} total` : ''}</h3>${gq?.oneAdult ? `<p class="fk-estimate">${esc(gq.oneAdult.label)}: ${esc(gq.oneAdult.amountText)}</p>` : ''}</div>${safeUrl(r.google.url) ? `<a class="btn small" href="${esc(r.google.url)}" target="_blank" rel="noreferrer">Open in Google Flights ↗</a>` : ''}</div>
       ${i?.level ? `<div class="note"><strong>${esc(LEVEL_TEXT[i.level] || i.level)}.</strong>${i.typicalRange ? ` Typical: ${money(i.typicalRange[0])}–${money(i.typicalRange[1])}.` : ''}</div>` : ''}
       ${i?.level && t > 1 ? '<div class="note" role="note">For a group search this rating is context only: Google\'s price unit is unconfirmed, so it is not an exact benchmark.</div>' : ''}
       ${r.google.fares.length ? `<div class="result-list">${r.google.fares.slice(0, 5).map(f => `<div class="result card"><div><h4>${esc(f.airlines)}</h4><p>${esc(f.origin)} → ${esc(f.destination)} · ${f.stops === 0 ? 'nonstop' : `${f.stops} stop(s)`}${f.durationMin ? ` · ${Math.floor(f.durationMin / 60)}h ${f.durationMin % 60}m` : ''}</p></div><div class="right">${quoteHtml(f, t)}</div></div>`).join('')}</div>` : ''}
@@ -1184,7 +1186,45 @@ function renderCash(r) {
     : '<div class="card empty"><strong>No recent fares found for these dates.</strong>Aviasales may not have cached prices for this route yet. Try ± more days, nearby airports, or a live Google check.</div>';
   const econRef = r.economyReference?.length ? `<div class="note"><strong>Economy fares for reference</strong> (recent Aviasales):<br>${r.economyReference.map(f => `${esc(f.origin)} → ${esc(f.destination)} ${dateFmt(f.departDate)}${f.returnDate ? ` – ${dateFmt(f.returnDate)}` : ''}: ${money(f.price)}${f.pricingLabel && t > 1 ? ` (${esc(f.pricingLabel)})` : ''}`).join('<br>')}</div>` : '';
   const googleBanner = `<div class="card searchbox" style="margin-bottom:12px"><div class="cardhead"><div><h3>See every flight on Google Flights</h3><p>${esc(r.query.origins.join(', '))} → ${esc(r.query.destinations.join(', '))} · ${esc(r.query.cabin)} · ${dateFmt(r.query.out.start)}${r.query.back ? ` – ${dateFmt(r.query.back.end)}` : ''}, prefilled.</p></div><a class="btn primary" href="${esc(r.googleFlightsUrl)}" target="_blank" rel="noreferrer">Open Google Flights ↗</a></div></div>`;
-  $('results').innerHTML = googleBanner + warningsBox(r.dataStatus.warnings) + truncatedNotice(r) + google + list + econRef + alertForm;
+  $('results').innerHTML = googleBanner + warningsBox(r.dataStatus.warnings) + truncatedNotice(r) + google + list + econRef + `<div class="card searchbox" id="awardCompareRoot"><div class="cardhead"><div><h3>Compare award options</h3><p>Search award space for this route, date, cabin, and traveler count, then compare it with these cash fares.</p></div><button class="btn primary" id="compareAwardsBtn">Compare points and cash</button></div><div id="awardCompareResults"></div></div>` + alertForm;
+  $('compareAwardsBtn')?.addEventListener('click', compareCashAwards);
+}
+
+async function compareCashAwards() {
+  const q = state.lastCashQuery;
+  const root = $('awardCompareResults');
+  const button = $('compareAwardsBtn');
+  if (!q || !root || !button) return;
+  button.disabled = true;
+  button.textContent = 'Searching award space…';
+  root.innerHTML = '<p class="muted" role="status">Checking PointPilot award sources for the same route and dates…</p>';
+  try {
+    const awardQuery = { ...q, useGoogle: undefined };
+    const result = await api('/api/search/trip', { method: 'POST', body: awardQuery });
+    if (state.lastCashQuery !== q || !$('awardCompareResults')) return;
+    const cash = state.lastCashResult;
+    const cashItems = [...(cash?.google?.fares || []), ...(cash?.fares || [])];
+    const cashSummary = cashItems.length
+      ? `<p class="note">Cash fares found: ${cashItems.slice(0, 4).map(f => `${esc(f.airlines || f.airline || 'Flight')} ${money(f.price)}${f.origin && f.destination ? ` · ${esc(f.origin)}→${esc(f.destination)}` : ''}`).join(' · ')}</p>`
+      : '<p class="note">No comparable cash fare was returned for these dates.</p>';
+    const trips = result.trips || [];
+    const cards = trips.map(t => {
+      const legs = (t.legs || []).map(l => `${esc(l.programName || programLabel(l.program))}: ${esc(l.origin)}→${esc(l.destination)} ${dateFmt(l.date)}${l.flight?.flightNumbers?.length ? ` · ${esc(l.flight.flightNumbers.join(' / '))}` : ''}`).join('<br>');
+      const points = t.totalSourcePoints ?? t.totalTargetPoints;
+      const fees = t.taxesUsd == null ? 'fees not reported' : `${money(t.taxesUsd)} taxes & fees`;
+      const funding = (t.sources || []).map(s => `${fmt(s.fromPoints)} ${esc(programLabel(s.from))}${s.direct ? ' held' : ` → ${esc(programLabel(s.targetProgram))}`}`).join(' + ');
+      return `<article class="card result award-cash-option"><div><span class="tag">ROUTE-LEVEL OPTION · SAME FLIGHT NOT CONFIRMED</span><h4>${fmt(points)} points + ${fees}</h4><p>${legs}</p><p>Fundable from current balances${funding ? ` · ${funding}` : ''}</p><p>Estimated effective cost: ${money(t.effectiveCostUsd)}</p></div></article>`;
+    }).join('');
+    const status = result.dataStatus?.api;
+    const source = status === 'fetched' ? 'Live award data was checked.' : status === 'recent-cache' ? 'Recent award data was used.' : status === 'error' ? 'The live award source failed; results may use local cached data.' : 'Only manually saved award data is available.';
+    const warning = result.dataStatus?.warnings?.length ? warningsBox(result.dataStatus.warnings) : '';
+    const empty = trips.length ? '' : `<div class="card empty"><strong>${result.mode === 'no-inventory' ? 'No award results found' : result.mode === 'unaffordable' ? 'Award space found, but not funded' : 'No matching award options found'}</strong><p>${esc(source)} This does not establish that no award seat exists across all programs.</p></div>`;
+    root.innerHTML = `${cashSummary}<p class="muted">${esc(source)} Award options below match the route and dates, but are not verified as the same flights shown in cash results.</p>${warning}${truncatedNotice(result)}${cards ? `<div class="result-list">${cards}</div>` : empty}`;
+  } catch (error) {
+    root.innerHTML = `<div class="card empty search-error" role="alert"><strong>Award comparison failed</strong><p>${esc(error.message)}</p><p>Cash results are still available above.</p></div>`;
+  } finally {
+    if ($('compareAwardsBtn')) { $('compareAwardsBtn').disabled = false; $('compareAwardsBtn').textContent = 'Compare points and cash'; }
+  }
 }
 
 async function compareCashValueOnly() {

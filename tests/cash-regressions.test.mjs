@@ -66,6 +66,30 @@ test('SerpApi coalesces lookups, records failures, and retries failures without 
   assert.equal((await apiUsage()).serpCalls - before, 3);
 });
 
+test('Google Flights results survive a provider-module restart and avoid a duplicate request', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return { ok: true, status: 200, json: async () => ({ best_flights: [{ price: 410, flights: [{ departure_airport: { id: 'JFK', time: `${date} 09:00` }, arrival_airport: { id: 'HND', time: `${date} 15:00` }, flight_number: 'JL 5', airline: 'Japan Airlines' }] }] }) }; };
+  const params = { apiKey: 'persistent-google-cache-test', origins: ['JFK'], destinations: ['HND'], departDate: date };
+  const first = await googleFlights(params);
+  assert.equal(first.fares[0].price, 410); assert.ok(first.cachedAt); assert.equal(calls, 1);
+  globalThis.fetch = async () => { throw new Error('should be served from disk cache'); };
+  const restarted = await import(`../lib/serpapi.mjs?restart=${Date.now()}`);
+  const second = await restarted.googleFlights(params);
+  assert.equal(second.calls, 0); assert.equal(second.fares[0].flightNumbers, 'JL 5'); assert.equal(second.cachedAt, first.cachedAt); assert.equal(calls, 1);
+});
+
+test('Travelpayouts route results survive a provider-module restart and avoid a duplicate request', async () => {
+  let calls = 0;
+  globalThis.fetch = async () => { calls++; return response([raw(735)]); };
+  const params = { token: 'persistent-travelpayouts-cache-test', origin: 'JFK', destination: 'HND', departAt: date, returnAt: back };
+  const first = await routeFares(params);
+  assert.equal(first.fares[0].price, 735); assert.ok(first.cachedAt); assert.equal(calls, 1);
+  globalThis.fetch = async () => { throw new Error('should be served from disk cache'); };
+  const restarted = await import(`../lib/travelpayouts.mjs?restart=${Date.now()}`);
+  const second = await restarted.routeFares(params);
+  assert.equal(second.calls, 0); assert.equal(second.fares[0].price, 735); assert.equal(second.cachedAt, first.cachedAt); assert.equal(calls, 1);
+});
+
 test('Google Hotels coalesces concurrent enrichment and counts failed requests at the boundary', async () => {
   const { enrichHotels } = await import('../lib/hotelinfo.mjs');
   await updateSettings({ serpApiKey: 'hotel-cache' });

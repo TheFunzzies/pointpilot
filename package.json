@@ -1,6 +1,6 @@
 {
   "name": "pointpilot",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "private": true,
   "type": "module",
   "description": "PointPilot: find award space and fund trips from your points portfolio.",
@@ -12,7 +12,7 @@
     "start": "node server.mjs",
     "mcp": "node mcp/server.mjs",
     "monitor": "node server.mjs --monitor-once",
-    "test": "node --test",
+    "test": "node --test \"tests/*.test.mjs\"",
     "lint": "eslint .",
     "desktop": "electron .",
     "build:siwc": "npm run build --workspace @siwc/local",

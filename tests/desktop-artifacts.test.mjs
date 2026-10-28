@@ -185,7 +185,7 @@ test('main process registers the handlers behind the trusted-sender check and no
   assert.match(main, /ipcMain\.handle\('open-backup'/);
   assert.doesNotMatch(main, /ipcMain\.handle\('(read|write)-?file/i);
   const ipcNames = [...main.matchAll(/ipcMain\.handle\('([^']+)'/g)].map(m => m[1]).sort();
-  assert.deepEqual(ipcNames, ['app-info', 'check-for-updates', 'install-update', 'open-backup', 'open-provider', 'save-artifact', 'settings-changed']);
+  assert.deepEqual(ipcNames, ['app-info', 'check-for-updates', 'install-update', 'llm-ask', 'llm-openai-disconnect', 'llm-openai-sign-in', 'llm-remove-claude-key', 'llm-save-claude-key', 'llm-status', 'open-backup', 'open-provider', 'save-artifact', 'settings-changed']);
 });
 
 // A spy file system: every call is recorded, so "zero reads" is something we can assert.
