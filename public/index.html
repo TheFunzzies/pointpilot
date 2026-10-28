@@ -23,7 +23,7 @@
 <aside class="sidebar">
   <div class="brand"><span class="brand-mark"><svg class="icon"><use href="#i-plane"/></svg></span><div class="brand-text">Point<span>Pilot</span></div></div>
   <nav>
-    <button class="nav active" data-view="search"><svg class="icon"><use href="#i-search"/></svg>Trip Optimizer</button>
+    <button class="nav active" data-view="search" aria-current="page"><svg class="icon"><use href="#i-search"/></svg>Trip Optimizer</button>
     <button class="nav" data-view="discover"><svg class="icon"><use href="#i-map"/></svg>Explore Destinations</button>
     <button class="nav" data-view="builder"><svg class="icon"><use href="#i-map"/></svg>Trip Builder</button>
     <button class="nav" data-view="wallet"><svg class="icon"><use href="#i-wallet"/></svg>My Points</button>
@@ -46,7 +46,7 @@
 
 <section id="view-search" class="view active">
 <div class="kpis"><div class="card kpi"><span>Tracked points</span><b id="kpiTotal">0</b><small>all programs</small></div><div class="card kpi"><span>Flexible points</span><b id="kpiFlex">0</b><small>bank currencies</small></div><div class="card kpi"><span>Best option</span><b id="kpiScore">—</b><small id="kpiHint">run a search</small></div><div class="card kpi"><span>Active alerts</span><b id="kpiAlerts">0</b><small>saved monitors</small></div></div>
-<div class="card searchbox"><div class="cardhead"><div><h2>Plan a trip</h2><p>Leave the return date empty for one-way.</p></div><div class="seg"><button class="seg active" data-product="flights">Flights</button><button class="seg" data-product="hotels">Hotels</button><button class="seg" data-product="cash">Cash fares</button></div></div>
+<div class="card searchbox"><div class="cardhead"><div><h2>Plan a trip</h2><p>Leave the return date empty for one-way.</p></div><div class="seg" role="group" aria-label="Search type"><button class="seg active" data-product="flights" aria-pressed="true">Flights</button><button class="seg" data-product="hotels" aria-pressed="false">Hotels</button><button class="seg" data-product="cash" aria-pressed="false">Cash fares</button></div></div>
 <fieldset class="fk-triptype" id="tripTypeWrap"><legend class="fk-sr">Trip type</legend>
 <label class="check"><input type="radio" name="tripType" value="one-way"> One way</label>
 <label class="check"><input type="radio" name="tripType" value="round-trip" checked> Round trip</label>
@@ -57,13 +57,13 @@
 <div id="classicSearch">
 <div class="formgrid">
 <div><label for="destination" id="destinationLabel">Destination</label><input id="destination" value="Thailand" placeholder="Thailand, Tokyo, BKK… (hotels: a city)"></div>
-<div><label for="origins" id="originsLabel">Departure airports</label><input id="origins" value="JFK,BOS,EWR" placeholder="JFK,BOS or New York"></div>
-<div><label for="travelers">Travelers</label><select id="travelers"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+<div id="originsField"><label for="origins" id="originsLabel">Departure airports</label><input id="origins" value="JFK,BOS,EWR" placeholder="JFK,BOS or New York"></div>
+<div id="travelersField"><label for="travelers">Travelers</label><select id="travelers"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
 <div><label for="cabin" id="cabinLabel">Cabin</label><select id="cabin"><option selected value="business">Business</option><option value="first">First</option><option value="premium">Premium Economy</option><option value="economy">Economy</option></select></div>
 <div><label for="dateFrom" id="dateFromLabel">Departure date</label><input id="dateFrom" type="date"></div>
 <div><label for="dateTo" id="dateToLabel">Return date (optional)</label><input id="dateTo" type="date"></div>
 <div><label for="flex">Date flexibility</label><select id="flex"><option value="0">Exact</option><option value="3" selected>± 3 days</option><option value="7">± 7 days</option><option value="14">± 14 days</option></select></div>
-<div><label for="rank">Rank by</label><select id="rank"><option value="overall" selected>Lowest effective cost</option><option value="points">Fewest points</option><option value="fees">Lowest taxes &amp; fees</option><option value="stops">Fewest stops</option><option value="cpp">Best cents / point</option><option value="nonstop">Nonstop first</option><option value="seat">Best seat (business/first)</option><option value="duration">Shortest total travel time</option></select></div>
+<div id="rankField"><label for="rank">Rank by</label><select id="rank"><option value="overall" selected>Lowest effective cost</option><option value="points">Fewest points</option><option value="fees">Lowest taxes &amp; fees</option><option value="stops">Fewest stops</option><option value="cpp">Best cents / point</option><option value="nonstop">Nonstop first</option><option value="seat">Best seat (business/first)</option><option value="duration">Shortest total travel time</option></select></div>
 </div>
 <details class="advanced-search"><summary>More filters and options</summary><div class="chips"><label class="check" id="productWrap" title="Find flights that feature a specific business or first class seat">Seat product <select id="productHunt" style="margin-left:6px;max-width:320px"><option value="">Any seat</option></select></label><label class="check"><input id="directOnly" type="checkbox"> Nonstop only</label><label class="check" id="keepFlexibleWrap"><input id="keepFlexible" type="checkbox" checked> Preserve flexible points when possible</label><label class="check" id="useGoogleWrap" hidden><input id="useGoogle" type="checkbox"> Check live Google Flights price (uses 1 SerpApi search)</label></div></details>
 <fieldset class="fk-rooms" id="roomsWrap" hidden><legend>Rooms</legend>
@@ -121,6 +121,17 @@
 <p class="muted fk-walletlink">Moving to another PC, or want a safety copy? <button type="button" class="btn small ghost" id="gotoBackup">Back up or restore your points</button></p>
 <div class="wallet-summary"><div class="card kpi"><span>Total points &amp; miles</span><b id="wTotal">0</b><small id="wPrograms">0 programs</small></div><div class="card kpi"><span>Estimated value</span><b id="wValue">$0</b><small>at your ¢/pt values</small></div><div class="card kpi"><span>Flexible bank points</span><b id="wFlex">0</b><small>transferable to partners</small></div></div>
 <div class="wallet-grid" id="walletGroups"></div>
+<div class="card searchbox purchase-offers-card" style="margin-top:14px"><div class="cardhead"><div><h3>Buy-points offers</h3><p>Save the effective price per point for a current promotion. Include taxes and any bonus in the price you enter; offers can be targeted and change quickly.</p></div></div>
+<div class="formgrid purchase-offer-form">
+<div><label for="purchaseProgram">Airline program</label><select id="purchaseProgram"><option value="">Choose a program</option></select></div>
+<div><label for="purchaseCpp">Effective cost (¢/point)</label><input id="purchaseCpp" type="number" min="0.001" max="100" step="0.001" placeholder="e.g. 1.79"></div>
+<div><label for="purchaseMinimum">Minimum purchase (points)</label><input id="purchaseMinimum" type="number" min="1" step="1000" value="1000"></div>
+<div><label for="purchaseIncrement">Purchase increment (points)</label><input id="purchaseIncrement" type="number" min="1" step="1000" value="1000"></div>
+<div><label for="purchaseEnds">Offer ends (optional)</label><input id="purchaseEnds" type="date"></div>
+<div class="span-2"><label for="purchaseUrl">Official purchase link (optional)</label><input id="purchaseUrl" type="url" placeholder="https://www.airline.com/buy-points"></div>
+<div class="span-2"><label for="purchaseNotes">Offer notes (optional)</label><input id="purchaseNotes" maxlength="240" placeholder="e.g. 100% bonus, targeted offer"></div>
+</div><div class="searchfoot"><span id="purchaseOfferMessage" role="status" aria-live="polite">Saved on this computer and included in backups.</span><div class="btnrow" style="margin:0"><button type="button" class="btn primary small" id="savePurchaseOffer">Save offer</button><button type="button" class="btn small" id="clearPurchaseOfferForm">Clear fields</button></div></div>
+<div id="purchaseOffersList" class="purchase-offers-list"></div></div>
 <div class="card searchbox" style="margin-top:14px"><div class="cardhead"><div><h3>Optimizer preferences</h3><p>Saved automatically.</p></div></div><div class="formgrid">
 <div><label for="prefMaxTransfers">Max transfers per trip</label><input id="prefMaxTransfers" type="number" min="1" max="10"></div>
 <div><label for="prefMaxDays">Penalize transfers slower than (days)</label><input id="prefMaxDays" type="number" min="0" max="60"></div>
@@ -137,7 +148,7 @@
 <div><label for="dealMaxPrice">Max price per person (USD)</label><input id="dealMaxPrice" type="number" min="0" step="50" placeholder="Any"></div>
 <div><label for="dealMinDrop">Alert when at least</label><select id="dealMinDrop"><option value="15">15% below usual</option><option value="25" selected>25% below usual</option><option value="35">35% below usual</option><option value="50">50% below usual</option></select></div>
 </div><div class="searchfoot"><span id="dealMessage">Deals become more accurate as PointPilot builds price history (3+ days per route).</span><div class="btnrow" style="margin:0"><button class="btn" id="watchDeals"><svg class="icon"><use href="#i-bell"/></svg>Watch these airports</button><button class="btn primary" id="findDeals"><svg class="icon"><use href="#i-search"/></svg>Find deals</button></div></div></div>
-<div class="cardhead" id="dealTabsBar" hidden><div class="seg" id="dealTabs"><button class="seg active" data-scope="all">All</button><button class="seg" data-scope="international">International</button><button class="seg" data-scope="domestic">Domestic</button></div><div class="btnrow" style="margin:0" id="dealGoogleLinks"></div></div>
+<div class="cardhead" id="dealTabsBar" hidden><div class="seg" id="dealTabs" role="group" aria-label="Cash deal region"><button class="seg active" data-scope="all" aria-pressed="true">All</button><button class="seg" data-scope="international" aria-pressed="false">International</button><button class="seg" data-scope="domestic" aria-pressed="false">Domestic</button></div><div class="btnrow" style="margin:0" id="dealGoogleLinks"></div></div>
 <div id="dealResults"></div>
 </div></section>
 

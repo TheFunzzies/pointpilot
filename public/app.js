@@ -100,7 +100,75 @@ function fillProgramSelects() {
   $('manualProgram').innerHTML = opts(['airline']);
   $('manualHotelProgram').innerHTML = opts(['hotel']);
   $('histProgram').innerHTML = '<option value="">All programs</option>' + opts();
+  $('purchaseProgram').innerHTML = '<option value="">Choose a program</option>' + opts(['airline']);
 }
+
+function renderPurchaseOffers(offers = []) {
+  const list = $('purchaseOffersList');
+  if (!list) return;
+  if (!offers.length) { list.innerHTML = '<p class="muted fk-help">No buy-points offers saved. Add a current effective price to compare it with a selected award and cash fare.</p>'; return; }
+  list.innerHTML = `<div class="purchase-offer-list" aria-label="Saved buy-points offers">${offers.map(o => {
+    const link = safeUrl(o.offerUrl);
+    return `<div class="purchase-offer-row"><div><strong>${esc(programLabel(o.program))}</strong><div class="muted">${Number(o.pricePerPointCents).toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}¢/point${o.offerEnds ? ` · ends ${dateFmt(o.offerEnds)}` : ''}${o.notes ? ` · ${esc(o.notes)}` : ''}</div>${link ? `<a href="${esc(link)}" target="_blank" rel="noreferrer">Official purchase page ↗</a>` : ''}<small>Minimum ${fmt(o.minimumPurchase)} · increments of ${fmt(o.purchaseIncrement)}</small></div><div class="btnrow" style="margin:0"><button type="button" class="btn small" data-edit-purchase="${esc(o.program)}">Edit</button><button type="button" class="btn small ghost" data-remove-purchase="${esc(o.program)}">Remove</button></div></div>`;
+  }).join('')}</div>`;
+}
+
+function clearPurchaseOfferFields() {
+  $('purchaseProgram').value = '';
+  $('purchaseCpp').value = '';
+  $('purchaseMinimum').value = '1000';
+  $('purchaseIncrement').value = '1000';
+  $('purchaseEnds').value = '';
+  $('purchaseUrl').value = '';
+  $('purchaseNotes').value = '';
+}
+
+$('savePurchaseOffer').onclick = async () => {
+  const program = $('purchaseProgram').value;
+  const cpp = Number($('purchaseCpp').value);
+  if (!program || !Number.isFinite(cpp) || cpp <= 0) { $('purchaseOfferMessage').textContent = 'Choose a program and enter its effective cost per point.'; return; }
+  const offer = {
+    program, pricePerPointCents: cpp,
+    minimumPurchase: Number($('purchaseMinimum').value || 1000),
+    purchaseIncrement: Number($('purchaseIncrement').value || 1000),
+    offerEnds: $('purchaseEnds').value || null,
+    offerUrl: $('purchaseUrl').value.trim(), notes: $('purchaseNotes').value.trim()
+  };
+  const offers = (state.settings?.buyPointsOffers || []).filter(o => o.program !== program).concat(offer);
+  try {
+    await api('/api/settings', { method: 'PUT', body: { buyPointsOffers: offers } });
+    await desktop?.settingsChanged?.();
+    await loadSettings();
+    clearPurchaseOfferFields();
+    $('purchaseOfferMessage').textContent = 'Offer saved on this computer and in your backups.';
+    toast(`${programLabel(program)} offer saved`);
+  } catch (e) { $('purchaseOfferMessage').textContent = e.message; }
+};
+$('clearPurchaseOfferForm').onclick = () => { clearPurchaseOfferFields(); $('purchaseOfferMessage').textContent = 'Offer fields cleared.'; };
+$('purchaseOffersList').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const offers = state.settings?.buyPointsOffers || [];
+  const offer = offers.find(o => o.program === (b.dataset.editPurchase || b.dataset.removePurchase));
+  if (!offer) return;
+  if (b.dataset.editPurchase) {
+    $('purchaseProgram').value = offer.program;
+    $('purchaseCpp').value = offer.pricePerPointCents;
+    $('purchaseMinimum').value = offer.minimumPurchase;
+    $('purchaseIncrement').value = offer.purchaseIncrement;
+    $('purchaseEnds').value = offer.offerEnds || '';
+    $('purchaseUrl').value = offer.offerUrl || '';
+    $('purchaseNotes').value = offer.notes || '';
+    $('purchaseCpp').focus();
+    return;
+  }
+  if (!window.confirm(`Remove the saved ${programLabel(offer.program)} buy-points offer?`)) return;
+  try {
+    await api('/api/settings', { method: 'PUT', body: { buyPointsOffers: offers.filter(o => o.program !== offer.program) } });
+    await desktop?.settingsChanged?.();
+    await loadSettings();
+    $('purchaseOfferMessage').textContent = 'Offer removed.';
+  } catch (err) { $('purchaseOfferMessage').textContent = err.message; }
+});
 
 // ---------- wallet ----------
 function renderKPIs() {
@@ -150,8 +218,8 @@ function renderWallet() {
       ${rows.length ? `<div class="wallet-head"><span>Program</span><span style="text-align:right">Balance</span><span style="text-align:right">Value ¢/pt</span><span style="text-align:right">Worth</span><span></span></div>` : `<div class="wallet-empty">${esc(g.empty)}</div>`}
       ${rows.map(({ b, i }) => `<div class="wallet-row">
         <div class="name">${esc(b.program)}</div>
-        <input type="number" min="0" step="1000" inputmode="numeric" aria-label="${esc(b.program)} balance" data-i="${i}" data-k="balance" value="${esc(b.balance)}">
-        <input type="number" min="0" step="0.05" aria-label="${esc(b.program)} value in cents per point" data-i="${i}" data-k="cpp" value="${esc(b.cpp)}">
+        <label class="wallet-input"><span>Balance</span><input type="number" min="0" step="1000" inputmode="numeric" aria-label="${esc(b.program)} balance" data-i="${i}" data-k="balance" value="${esc(b.balance)}"></label>
+        <label class="wallet-input"><span>Value ¢/pt</span><input type="number" min="0" step="0.05" aria-label="${esc(b.program)} value in cents per point" data-i="${i}" data-k="cpp" value="${esc(b.cpp)}"></label>
         <span class="value" data-value-for="${i}">${money(pointValue(b))}</span>
         <button class="btn ghost icon-only" title="Remove ${esc(b.program)}" aria-label="Remove ${esc(b.program)}" data-remove="${i}"><svg class="icon"><use href="#i-x"/></svg></button>
       </div>`).join('')}
@@ -189,6 +257,8 @@ $('walletGroups').addEventListener('input', e => {
 $('walletGroups').addEventListener('click', async e => {
   const btn = e.target.closest('button'); if (!btn) return;
   if (btn.dataset.remove != null) {
+    const current = state.user.balances[Number(btn.dataset.remove)];
+    if (!current || !window.confirm(`Remove ${current.program} from My Points? Its saved balance and valuation will be removed.`)) return;
     const [removed] = state.user.balances.splice(Number(btn.dataset.remove), 1);
     renderWallet(); renderKPIs(); queueWalletSave(); toast(`Removed ${removed.program}`);
   } else if (btn.dataset.add) {
@@ -262,7 +332,13 @@ async function runSearch() {
     if (product === 'hotels') {
       const roomCheck = buildRooms(roomsState.rows);
       $('roomsError').textContent = roomCheck.ok ? '' : roomCheck.error;
-      if (!roomCheck.ok) { msg.textContent = roomCheck.error; return; }
+      if (!roomCheck.ok) {
+        state.lastHotelQuery = null;
+        $('results').innerHTML = `<div class="card empty search-error" role="alert"><strong>Check the room details</strong><p>${esc(roomCheck.error)}</p></div>`;
+        $('resultMeta').textContent = 'No results for this search.';
+        msg.textContent = roomCheck.error;
+        return;
+      }
       msg.textContent = 'Searching hotel award space…';
       const q = currentHotelQuery();
       const r = await api('/api/search/hotels', { method: 'POST', body: q, signal });
@@ -293,6 +369,11 @@ async function runSearch() {
     msg.textContent = `Searched ${r.query.origins.join(', ')} → ${r.query.destinations.join(', ')} using ${src}.`;
   } catch (e) {
     if (isAbort(e) || !live()) return;
+    if (product === 'flights') state.lastQuery = null;
+    if (product === 'hotels') state.lastHotelQuery = null;
+    if (product === 'cash') state.lastCashQuery = null;
+    $('results').innerHTML = `<div class="card empty search-error" role="alert"><strong>Search failed</strong><p>${esc(e.message)}</p><p>Check the dates, airport or city names, and your data connection, then try again.</p></div>`;
+    $('resultMeta').textContent = 'No results for this search.';
     msg.textContent = `Search failed: ${e.message}`;
   } finally { if (live()) busy($('searchBtn'), false); }
 }
@@ -394,6 +475,7 @@ function productHuntBanner(r) {
 
 // ---------- award results: pick an outbound and a return ----------
 const award = { r: null, sel: { Outbound: null, Return: null }, recIds: new Set(), show: {}, open: new Set(), seq: 0, day: {}, loading: new Set() };
+let activePurchaseQuote = null;
 const SEAT_TIER = { 5: 'Top-tier suite', 4: 'Excellent lie-flat', 3: 'Lie-flat', 2: 'Older lie-flat', 1: 'Recliner', 0: 'Standard seat' };
 const seatChip = p => (p && p.type ? `<span class="seatchip s${p.score ?? 0}" title="${esc(SEAT_TIER[p.score] || '')}: ${esc(p.detail || '')}${p.certainty === 'varies' ? ' (varies by aircraft)' : ''}">${p.score >= 3 ? '★'.repeat(p.score - 2) + ' ' : ''}${esc(p.type)}${p.certainty === 'varies' ? ' *' : ''}</span>` : '');
 const dayLabel = d => (d ? new Date(`${d}T00:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) : '');
@@ -631,13 +713,14 @@ async function renderAwardSummary() {
   const isRec = award.recIds.size && [...award.recIds].every(id => id === award.sel.Outbound || id === award.sel.Return);
   const box = $('awSummary');
   state.bestTrip = null;
+  activePurchaseQuote = null;
   const clientConflict = hasReturn && back ? returnConflict(back) : null;
   award.pair = pairAddability({ clientConflict });
   keepFocus(() => { box.innerHTML = `<div class="card summary-card"><div class="cardhead"><div><div class="eyebrow">Your trip${isRec ? ' · recommended' : ''}</div><h3 id="awHeadline">${out ? 'Calculating…' : 'Choose your flights'}</h3></div>
       ${!isRec && award.recIds.size ? '<button class="btn small" data-action="reset-rec">Back to recommended</button>' : ''}</div>
     <div class="summary-legs">${summaryLeg(out, 'Outbound')}${hasReturn ? summaryLeg(back, 'Return') : ''}</div>
     <div id="awFunding"></div><div id="cashCompare"></div>
-    <div class="btnrow"><button class="btn primary" id="awAddBuilder" data-action="add-builder"${out && award.pair.ok ? '' : ' disabled'}${award.pair.ok ? '' : ` title="${esc(award.pair.reason)}"`}><svg class="icon"><use href="#i-map"/></svg>Add to Trip Builder</button><button class="btn" data-action="compare-cash" disabled><svg class="icon"><use href="#i-tag"/></svg>Compare with cash price</button><button class="btn" data-action="monitor-open"><svg class="icon"><use href="#i-bell"/></svg>Set an alert</button></div>
+    <div class="btnrow"><button class="btn primary" id="awAddBuilder" data-action="add-builder"${out && award.pair.ok ? '' : ' disabled'}${award.pair.ok ? '' : ` title="${esc(award.pair.reason)}"`}><svg class="icon"><use href="#i-map"/></svg>Add to Trip Builder</button><button class="btn" data-action="compare-cash" disabled><svg class="icon"><use href="#i-tag"/></svg>Compare purchase vs cash</button><button class="btn" data-action="monitor-open"><svg class="icon"><use href="#i-bell"/></svg>Set an alert</button></div>
     <div id="awAlertPanel" class="note" hidden>
       <strong>Alert me when…</strong>
       <div class="btnrow" style="margin-top:8px">
@@ -663,11 +746,12 @@ async function renderAwardSummary() {
     const addBtn = $('awAddBuilder');
     if (addBtn) { addBtn.disabled = !award.pair.ok; addBtn.title = award.pair.ok ? '' : award.pair.reason; }
     if (!award.pair.ok) { $('awHeadline').textContent = 'These flights cannot be combined'; $('awFunding').innerHTML = `<div class="warnbox" role="alert">${esc(award.pair.reason)}</div>`; state.bestTrip = null; return; }
-    if (!r.affordable) { $('awHeadline').textContent = r.fundingStatus === 'search-limited' ? 'Funding could not be confirmed' : 'Not covered by your current points'; $('awFunding').innerHTML = `<div class="warnbox">${esc(r.reason)} You can still add these flights to your Trip Builder as a draft and review the funding status there.</div>`; const add = $('awAddBuilder'); if (add) add.textContent = 'Add draft to Trip Builder'; state.bestTrip = null; return; }
+    const cmp = document.querySelector('[data-action="compare-cash"]'); if (cmp) cmp.disabled = false;
+    activePurchaseQuote = { legs, travelers: award.r.query.travelers, trip: r.affordable ? r.trip : null };
+    if (!r.affordable) { $('awHeadline').textContent = r.fundingStatus === 'search-limited' ? 'Funding could not be confirmed' : 'Not covered by your current points'; $('awFunding').innerHTML = `<div class="warnbox">${esc(r.reason)} You can still add these flights to your Trip Builder as a draft, or compare the cost to buy the target program points with the cash fare.</div>`; const add = $('awAddBuilder'); if (add) add.textContent = 'Add draft to Trip Builder'; state.bestTrip = null; return; }
     const t = r.trip;
     const add = $('awAddBuilder'); if (add) add.textContent = 'Add to Trip Builder';
     state.bestTrip = t;
-    const cmp = document.querySelector('[data-action="compare-cash"]'); if (cmp) cmp.disabled = false;
     $('awHeadline').textContent = `${fmt(t.totalSourcePoints)} points + ${money(t.taxesUsd)} for ${t.travelers} traveler${t.travelers > 1 ? 's' : ''}${hasReturn && !back ? ' (outbound only so far)' : ''}`;
     $('kpiScore').textContent = money(t.effectiveCostUsd);
     $('kpiHint').textContent = `${fmt(t.totalSourcePoints)} pts + ${money(t.taxesUsd)}`;
@@ -1033,8 +1117,12 @@ function renderStayPlan(plan) {
 $('stayPlan').addEventListener('click', async e => {
   const b = e.target.closest('[data-plan]'); if (!b) return;
   try {
-    if (b.dataset.plan === 'remove') renderStayPlan(await api(`/api/stay-plan/stays/${b.dataset.id}`, { method: 'DELETE', body: {} }));
-    if (b.dataset.plan === 'clear') renderStayPlan(await api('/api/stay-plan', { method: 'DELETE', body: {} }));
+    if (b.dataset.plan === 'remove') {
+      const stay = state.plan?.stays?.find(x => x.id === b.dataset.id);
+      if (!stay || !window.confirm(`Remove ${stay.name} from the stay plan?`)) return;
+      renderStayPlan(await api(`/api/stay-plan/stays/${b.dataset.id}`, { method: 'DELETE', body: {} }));
+    }
+    if (b.dataset.plan === 'clear' && window.confirm('Clear all stays from the stay plan?')) renderStayPlan(await api('/api/stay-plan', { method: 'DELETE', body: {} }));
   } catch (err) { toast(err.message); }
 });
 
@@ -1098,7 +1186,7 @@ function renderCash(r) {
   $('results').innerHTML = googleBanner + warningsBox(r.dataStatus.warnings) + truncatedNotice(r) + google + list + econRef + alertForm;
 }
 
-async function compareCash() {
+async function compareCashValueOnly() {
   const t = state.bestTrip; if (!t) return;
   const out = t.legs[0], back = t.legs[1];
   const box = $('cashCompare');
@@ -1107,12 +1195,12 @@ async function compareCash() {
     const r = await api('/api/cash/itinerary', { method: 'POST', body: { origin: out.origin, destination: out.destination, departDate: out.date, returnDate: back?.date || null, cabin: out.cabin, travelers: t.travelers } });
     // The selection may have changed while we waited; never paint an old comparison onto a new trip.
     if (state.bestTrip !== t || !$('valueMetric') || $('cashCompare') !== box) return;
-    if (!r.available) { box.innerHTML = `<div class="note">${esc(r.reason || 'No cash price found for these dates.')} <a href="${esc(r.url)}" target="_blank" rel="noreferrer">Check Google Flights ↗</a></div>`; return; }
+    if (!r.available) { box.innerHTML = `<div class="note">${esc(r.reason || 'No cash price found for these dates.')} <a href="${esc(r.url)}" target="_blank" rel="noreferrer">Check Google Flights ↗</a></div>`; return r; }
     if (!isExactComparable(r)) {
       // A group price with an unconfirmed basis is shown as returned; savings and cents-per-point are not computed from it.
       const gq = comparisonQuote({ ...r, exactComparable: false }, t.travelers, money);
       box.innerHTML = `<div class="warnbox"><strong>Cash price returned: ${gq.price == null ? '—' : money(gq.price)}${gq.caption ? ` ${esc(gq.caption)}` : ''} (${esc(r.cabin)}).</strong> <span class="fk-estimate">${esc(gq.label)}</span>${gq.oneAdult ? `<br><span class="fk-estimate">${esc(gq.oneAdult.label)}: ${esc(gq.oneAdult.amountText)}</span>` : ''}<br>Cents per point and savings are not calculated, because this group price is not an exact comparison. <a href="${esc(r.url)}" target="_blank" rel="noreferrer">Check Google Flights ↗</a></div>`;
-      return;
+      return r;
     }
     const cpp = ((r.total - t.taxesUsd) / t.totalSourcePoints) * 100;
     const avgCpp = t.pointsCostUsd / t.totalSourcePoints * 100;
@@ -1125,7 +1213,69 @@ async function compareCash() {
       : cpp >= avgCpp ? `Points win: you get ${cpp.toFixed(2)}¢ per point, above the ${avgCpp.toFixed(2)}¢ you value them at.`
       : `Consider paying cash: points only get ${cpp.toFixed(2)}¢ each, below the ${avgCpp.toFixed(2)}¢ you value them at.`;
     box.innerHTML = `<div class="${cpp >= avgCpp ? 'note' : 'warnbox'}"><strong>Cash price: ${money(r.perTraveler)} per person (${money(r.total)} total, ${esc(r.cabin)}, ${r.source === 'google' ? 'live Google Flights' : 'recent Aviasales fare'}).</strong><br>${esc(verdict)}${r.insights?.level ? ` Google rates current prices as <strong>${esc(r.insights.level)}</strong>.` : ''} <a href="${esc(r.url)}" target="_blank" rel="noreferrer">Open in Google Flights ↗</a></div>`;
-  } catch (e) { if (state.bestTrip === t && $('cashCompare') === box) box.innerHTML = `<div class="warnbox">${esc(e.message)}</div>`; }
+    return r;
+  } catch (e) { if (state.bestTrip === t && $('cashCompare') === box) box.innerHTML = `<div class="warnbox">${esc(e.message)}</div>`; return null; }
+}
+
+async function compareCash() {
+  const selection = activePurchaseQuote; if (!selection) return;
+  const box = $('cashCompare');
+  box.innerHTML = '<div class="note" role="status">Checking cash fares and saved buy-points offers…</div>';
+  try {
+    const quotePromise = api('/api/points/purchase-quote', { method: 'POST', body: {
+      travelers: selection.travelers,
+      legs: selection.legs.map(l => ({ program: l.program || l.source, mileageCost: l.mileageCost ?? l.pointsPerTraveler, totalTaxes: l.totalTaxes }))
+    } });
+    let fareResult;
+    if (selection.trip) {
+      const cashPromise = compareCashValueOnly();
+      const quote = await quotePromise;
+      const fare = await cashPromise;
+      if (activePurchaseQuote !== selection || $('cashCompare') !== box) return;
+      const cashHtml = box.innerHTML;
+      box.innerHTML = renderPurchaseQuote(quote, cashHtml, fare);
+      return;
+    }
+    const [out, back] = selection.legs;
+    const cashPromise = api('/api/cash/itinerary', { method: 'POST', body: { origin: out.origin, destination: out.destination, departDate: out.date, returnDate: back?.date || null, cabin: out.cabin, travelers: selection.travelers } });
+    const [purchaseResult, fareResponse] = await Promise.allSettled([quotePromise, cashPromise]);
+    if (activePurchaseQuote !== selection || $('cashCompare') !== box) return;
+    if (purchaseResult.status === 'rejected') throw purchaseResult.reason;
+    const quote = purchaseResult.value;
+    fareResult = fareResponse.status === 'fulfilled' ? fareResponse.value : null;
+    const cashHtml = fareResponse.status === 'rejected'
+      ? `<div class="note">Cash fare lookup failed: ${esc(fareResponse.reason?.message || 'request failed')}</div>`
+      : !fareResult.available
+      ? `<div class="note">${esc(fareResult.reason || 'No cash price found for these dates.')} <a href="${esc(fareResult.url || '')}" target="_blank" rel="noreferrer">Check Google Flights ↗</a></div>`
+      : !isExactComparable(fareResult)
+        ? `<div class="warnbox">Cash price returned, but its group-price basis is not exact, so savings are not calculated. <a href="${esc(fareResult.url || '')}" target="_blank" rel="noreferrer">Check Google Flights ↗</a></div>`
+        : `<div class="note"><strong>Cash fare: ${money(fareResult.perTraveler)} per person (${money(fareResult.total)} total, ${esc(fareResult.cabin)}).</strong> <a href="${esc(fareResult.url || '')}" target="_blank" rel="noreferrer">Open in Google Flights ↗</a></div>`;
+    box.innerHTML = renderPurchaseQuote(quote, cashHtml, fareResult);
+  } catch (e) { if (activePurchaseQuote === selection && $('cashCompare') === box) box.innerHTML = `<div class="warnbox">${esc(e.message)}</div>`; }
+}
+
+function renderPurchaseQuote(quote, cashHtml, fare = null) {
+  const rows = quote.byProgram || [];
+  const shortRows = rows.filter(row => row.pointsShort > 0);
+  if (!shortRows.length) return `<div class="note"><strong>Existing miles in the award programs cover the full points requirement.</strong> No purchase is needed for this comparison.</div>${cashHtml}`;
+  const details = shortRows.map(row => {
+    if (row.status === 'missing-offer') return `<li>${esc(row.programName)}: short ${fmt(row.pointsShort)} points. <button type="button" class="btn small" data-action="manage-purchase-offer" data-program="${esc(row.program)}">Add a purchase price</button></li>`;
+    if (row.status === 'expired') return `<li>${esc(row.programName)}: short ${fmt(row.pointsShort)} points; the saved offer expired${row.offerEnds ? ` on ${dateFmt(row.offerEnds)}` : ''}. <button type="button" class="btn small" data-action="manage-purchase-offer" data-program="${esc(row.program)}">Update offer</button></li>`;
+    const link = safeUrl(row.offerUrl);
+    const cpp = Number(row.pricePerPointCents).toFixed(3).replace(/0+$/, '').replace(/\.$/, '');
+    return `<li>${esc(row.programName)}: buy ${fmt(row.pointsToBuy)} points at ${cpp}¢/point = <strong>${money(row.purchaseCostUsd)}</strong>${row.extraPoints ? ` (${fmt(row.extraPoints)} extra from the purchase minimum/increment)` : ''}${row.offerEnds ? ` · offer ends ${dateFmt(row.offerEnds)}` : ''}${link ? ` · <a href="${esc(link)}" target="_blank" rel="noreferrer">Purchase page ↗</a>` : ''}${row.offerNotes ? `<br><span class="muted">${esc(row.offerNotes)}</span>` : ''}</li>`;
+  }).join('');
+  const allPriced = quote.purchaseCostUsd != null;
+  const allIn = allPriced && quote.taxesComplete ? quote.purchaseCostUsd + quote.taxesUsd : null;
+  let verdict = '';
+  if (allIn != null && fare?.available && isExactComparable(fare)) {
+    const delta = Math.abs(fare.total - allIn);
+    verdict = allIn <= fare.total
+      ? `Buying the points and paying award fees is about ${money(delta)} less than this cash fare.`
+      : `The cash fare is about ${money(delta)} less than buying the points and paying award fees.`;
+  }
+  const cls = verdict && allIn <= fare.total ? 'note' : 'warnbox';
+  return `<div class="${cls}"><strong>Buy-points estimate</strong><ul class="purchase-quote-list">${details}</ul>${allPriced ? `<p>Points purchase: ${money(quote.purchaseCostUsd)}${quote.taxesComplete ? ` + ${money(quote.taxesUsd)} award fees = <strong>${money(allIn)} total</strong>` : ' + award fees not fully reported'}</p>` : '<p>Enter an effective purchase price for each program to complete the estimate.</p>'}${verdict ? `<p><strong>${esc(verdict)}</strong></p>` : ''}<p class="muted fk-help">Estimate subtracts miles already held in each award program. It excludes bank points that could be transferred. Offers may be targeted or change; award seats can disappear, and purchases may be nonrefundable. Confirm availability and final terms with the program before buying.</p></div>${cashHtml}`;
 }
 
 // Keyboard and screen-reader selection goes through the native radio inputs.
@@ -1186,6 +1336,13 @@ $('results').addEventListener('click', async e => {
   }
   if (action === 'add-stay') addStayFromResult(Number(btn.dataset.i));
   if (action === 'compare-cash') compareCash();
+  if (action === 'manage-purchase-offer') {
+    showView('wallet');
+    $('purchaseProgram').value = btn.dataset.program;
+    $('purchaseOfferMessage').textContent = `Add an effective purchase price for ${programLabel(btn.dataset.program)}.`;
+    $('purchaseCpp').focus();
+    $('purchaseOffersList').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
   if (action === 'cash-alert') {
     const q = state.lastCashQuery || currentQuery();
     const target = Number($('cashTarget').value || 0), dealPct = Number($('cashDealPct').value);
@@ -1244,7 +1401,11 @@ function renderAlerts() {
 $('alerts').addEventListener('click', async e => {
   const { toggle, delete: del, active } = e.target.dataset;
   try {
-    if (del) { await api(`/api/alerts/${del}`, { method: 'DELETE', body: {} }); state.alerts = state.alerts.filter(a => a.id !== del); }
+    if (del) {
+      const alert = state.alerts.find(a => a.id === del);
+      if (!alert || !window.confirm(`Remove the alert “${alert.title}”?`)) return;
+      await api(`/api/alerts/${del}`, { method: 'DELETE', body: {} }); state.alerts = state.alerts.filter(a => a.id !== del);
+    }
     if (toggle) { await api(`/api/alerts/${toggle}`, { method: 'PATCH', body: { active: !active } }); const a = state.alerts.find(x => x.id === toggle); if (a) a.active = !active; }
     renderAlerts(); renderKPIs();
   } catch (err) { toast(err.message); }
@@ -1295,12 +1456,22 @@ $('saveManualAward').onclick = async () => {
     totalTaxes: $('manualTaxes').value === '' ? null : Number($('manualTaxes').value), cashValue: Number($('manualCash').value || 0) || null,
     remainingSeats: Number($('manualSeats').value || 0) || null, direct: direct === '' ? null : direct === 'true'
   };
-  try { await api('/api/manual-award', { method: 'POST', body: payload }); $('manualMessage').textContent = 'Saved. It will appear in searches for 14 days and is part of price history.'; toast('Award saved'); }
+  try {
+    await api('/api/manual-award', { method: 'POST', body: payload });
+    for (const id of ['manualOrigin', 'manualDestination', 'manualDate', 'manualPoints', 'manualTaxes', 'manualCash', 'manualSeats']) $(id).value = '';
+    $('manualDirect').value = '';
+    $('manualMessage').textContent = 'Saved. It will appear in searches for 14 days and is part of price history.'; toast('Award saved');
+  }
   catch (e) { $('manualMessage').textContent = e.message; }
 };
 $('saveManualHotel').onclick = async () => {
   const payload = { program: $('manualHotelProgram').value, category: $('manualHotelCategory').value.trim() || null, name: $('manualHotelName').value.trim(), location: $('manualHotelLocation').value.trim(), checkIn: $('manualHotelDate').value, roomType: $('manualHotelRoomType').value, nightlyPoints: Number($('manualHotelPoints').value || 0), cashValue: Number($('manualHotelCash').value || 0) || null };
-  try { await api('/api/manual-hotel', { method: 'POST', body: payload }); $('manualHotelMessage').textContent = 'Saved.'; toast('Hotel award saved'); }
+  try {
+    await api('/api/manual-hotel', { method: 'POST', body: payload });
+    for (const id of ['manualHotelCategory', 'manualHotelName', 'manualHotelLocation', 'manualHotelDate', 'manualHotelPoints', 'manualHotelCash']) $(id).value = '';
+    $('manualHotelRoomType').value = 'standard';
+    $('manualHotelMessage').textContent = 'Saved.'; toast('Hotel award saved');
+  }
   catch (e) { $('manualHotelMessage').textContent = e.message; }
 };
 
@@ -1346,6 +1517,7 @@ async function loadSettings() {
   if (!$('discoverOrigins').value) $('discoverOrigins').value = s.homeAirports || $('origins').value;
   if (!$('dealAirports').value) $('dealAirports').value = s.homeAirports || $('origins').value;
   state.settings = s;
+  renderPurchaseOffers(s.buyPointsOffers || []);
 }
 $('saveCashKeys').onclick = () => {
   const patch = { homeAirports: $('homeAirports').value };
@@ -1369,7 +1541,7 @@ function renderDeals(r) {
   const intl = all.filter(d => d.scope === 'international').length;
   $('dealMessage').textContent = all.length ? `${all.length} destination(s) from ${r.airports.join(', ')}${r.destination ? ` to ${r.destination}` : ''} · ${intl} international, ${all.length - intl} domestic · ${strong} below their usual price.` : 'No fares found. Check the airport codes or try again later.';
   $('dealTabsBar').hidden = !all.length;
-  $('dealTabs').querySelectorAll('button').forEach(b => { b.classList.toggle('active', b.dataset.scope === dealScope); b.textContent = { all: `All (${all.length})`, international: `International (${intl})`, domestic: `Domestic (${all.length - intl})` }[b.dataset.scope]; });
+  $('dealTabs').querySelectorAll('button').forEach(b => { const active = b.dataset.scope === dealScope; b.classList.toggle('active', active); b.setAttribute('aria-pressed', String(active)); b.textContent = { all: `All (${all.length})`, international: `International (${intl})`, domestic: `Domestic (${all.length - intl})` }[b.dataset.scope]; });
   $('dealGoogleLinks').innerHTML = r.googleLinks ? `<a class="btn small" href="${esc(r.googleLinks.explore)}" target="_blank" rel="noreferrer">Google Flights Explore ↗</a><a class="btn small" href="${esc(r.googleLinks.deals)}" target="_blank" rel="noreferrer">Google Flights Deals ↗</a>` : '';
   $('dealResults').innerHTML = warningsBox(r.dataStatus.warnings) + (deals.length ? `<div class="result-list">${deals.map(d => `<div class="card result"><div>
       <h4>${esc(d.destinationName)}${d.destinationCountry ? `<span class="muted" style="font-weight:500">, ${esc(d.destinationCountry)}</span>` : ''} <span class="tag muted">${esc(d.destination)}</span> ${dealTag(d)} <span class="tag ${d.scope === 'domestic' ? 'muted' : 'brand'}">${d.scope === 'domestic' ? 'DOMESTIC' : 'INTERNATIONAL'}</span>${d.cabin && d.cabin !== 'economy' ? ` <span class="tag brand">${esc(d.cabin.toUpperCase())}</span>` : ''}</h4>
@@ -1520,12 +1692,16 @@ $('view-builder').addEventListener('click', async e => {
   const dir = b.dataset.dir;
   try {
     if (b.dataset.tb === 'remove-segment') {
+      if (!window.confirm('Remove this flight from Trip Builder?')) return;
       await api(`/api/trip-plan/segments/${encodeURIComponent(b.dataset.id)}`, { method: 'DELETE', body: { expectedRevision: tb.plan.revision } });
       features.readiness?.invalidate();
       return loadBuilder();
     }
     if (b.dataset.tb === 'goto') { showView(b.dataset.view); if (b.dataset.product) document.querySelector(`button[data-product="${b.dataset.product}"]`)?.click(); return; }
-    if (b.dataset.tb === 'remove-flight') return renderBuilder(await api(`/api/trip-plan/flights/${dir}`, { method: 'DELETE', body: {} }));
+    if (b.dataset.tb === 'remove-flight') {
+      if (!window.confirm(`Remove the ${dir} award flight from Trip Builder?`)) return;
+      return renderBuilder(await api(`/api/trip-plan/flights/${dir}`, { method: 'DELETE', body: {} }));
+    }
     if (b.dataset.tb === 'unpick') { tb.search[dir] = null; return renderBuilder(await api(`/api/trip-plan/positioning/${dir}`, { method: 'DELETE', body: {} })); }
     if (b.dataset.tb === 'more') { tb.showAll = { ...(tb.showAll || {}), [dir]: true }; return renderBuilder(tb.plan); }
     if (b.dataset.tb === 'search') {
@@ -1550,7 +1726,11 @@ $('view-builder').addEventListener('click', async e => {
     renderBuilder(await api('/api/trip-plan/settings', { method: 'PUT', body: { home: { origin: $('tbHome').value, returnTo: $('tbReturnTo').value || $('tbHome').value }, buffers: { outboundHours: Number($('tbBufferOut').value), returnHours: Number($('tbBufferBack').value) } } }));
   } catch (e) { toast(e.message); }
 }));
-$('clearTrip').onclick = async () => { tb.search = { outbound: null, return: null }; renderBuilder(await api('/api/trip-plan', { method: 'DELETE', body: {} })); };
+$('clearTrip').onclick = async () => {
+  if (!window.confirm('Clear all flights from Trip Builder?')) return;
+  tb.search = { outbound: null, return: null };
+  renderBuilder(await api('/api/trip-plan', { method: 'DELETE', body: {} }));
+};
 
 // Aviasales has little business/first data, so premium cabins default to the live Google check.
 function syncGoogleDefault() {
@@ -1569,7 +1749,14 @@ const COUNTRY_CITIES = {
 
 // ---------- navigation ----------
 function showView(name) {
-  document.querySelectorAll('.nav').forEach(x => x.classList.toggle('active', x.dataset.view === name));
+  document.querySelectorAll('.nav').forEach(x => {
+    const active = x.dataset.view === name;
+    x.classList.toggle('active', active);
+    if (x.dataset.view) {
+      if (active) x.setAttribute('aria-current', 'page');
+      else x.removeAttribute('aria-current');
+    }
+  });
   const more = document.querySelector('.nav-more');
   if (more) {
     const secondaryActive = [...more.querySelectorAll('[data-view]')].some(x => x.dataset.view === name);
@@ -1693,7 +1880,7 @@ desktop?.onNavigate?.(showView);
 
 document.querySelectorAll('button[data-product]').forEach(b => {
   b.onclick = () => {
-    document.querySelectorAll('button[data-product]').forEach(x => x.classList.toggle('active', x === b));
+    document.querySelectorAll('button[data-product]').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-pressed', String(x === b)); });
     const prev = state.product;
     if (prev !== b.dataset.product) cancelSearch();
     state.product = b.dataset.product;
@@ -1713,11 +1900,13 @@ document.querySelectorAll('button[data-product]').forEach(b => {
     $('destinationLabel').textContent = hotels ? 'Cities (comma-separated)' : 'Destination';
     $('destination').placeholder = hotels ? 'Tokyo, Kyoto' : 'Thailand, Tokyo, BKK…';
     $('origins').disabled = hotels; $('directOnly').disabled = hotels; $('travelers').disabled = hotels;
+    $('originsField').hidden = hotels; $('travelersField').hidden = hotels;
     $('cabin').innerHTML = hotels
       ? '<option value="any" selected>Any room</option><option value="standard">Standard</option><option value="suite">Suite</option>'
       : `<option ${cash ? '' : 'selected'} value="business">Business</option><option value="first">First</option><option value="premium">Premium Economy</option><option ${cash ? 'selected' : ''} value="economy">Economy</option>`;
     $('cabinLabel').textContent = hotels ? 'Room' : 'Cabin';
-    $('rank').disabled = cash;
+    $('rank').disabled = cash || hotels;
+    $('rankField').hidden = cash || hotels;
     for (const option of $('rank').options) option.disabled = hotels && !['overall', 'points'].includes(option.value);
     if (hotels && !['overall', 'points'].includes($('rank').value)) $('rank').value = 'overall';
     $('keepFlexibleWrap').hidden = cash;
@@ -1763,6 +1952,7 @@ document.querySelector('#view-search .searchbox').addEventListener('keydown', e 
 // ---------- feature screens (itinerary, readiness, backup, diagnostics) ----------
 const features = {};
 let tripType = 'round-trip';
+let savedReturnDate = '';
 
 /** One way / Round trip use the classic form; Open jaw / Multi-city swap in the itinerary screen. */
 function applyTripType() {
@@ -1777,8 +1967,15 @@ function applyTripType() {
   if (itinerary) { cancelSearch(); features.itinerary.setMode(tripType); }
   const oneWay = flights && tripType === 'one-way';
   $('dateTo').disabled = oneWay;
-  if (oneWay) $('dateTo').value = '';
-  else if (flights && !itinerary && !$('dateTo').value && $('dateFrom').value) $('dateTo').value = addDays($('dateFrom').value, 12);
+  if (oneWay) {
+    if ($('dateTo').value) savedReturnDate = $('dateTo').value;
+    $('dateTo').value = '';
+  } else if (flights && !itinerary) {
+    const validSavedDate = savedReturnDate && $('dateFrom').value && savedReturnDate > $('dateFrom').value;
+    if (validSavedDate) $('dateTo').value = savedReturnDate;
+    else if (!$('dateTo').value && $('dateFrom').value) $('dateTo').value = addDays($('dateFrom').value, 12);
+    savedReturnDate = '';
+  }
 }
 document.querySelectorAll('input[name="tripType"]').forEach(r => r.addEventListener('change', () => { if (r.checked) { tripType = r.value; applyTripType(); } }));
 document.querySelectorAll('button[data-product]').forEach(b => b.addEventListener('click', applyTripType));
@@ -1811,6 +2008,29 @@ document.addEventListener('click', e => {
   if (b) openReadiness(b.dataset.readiness, b);
 });
 $('gotoBackup').onclick = () => { showView('system'); $('backupCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); $('backupHeading').focus(); };
+
+function updateTableScrollCue(el) {
+  const overflowing = el.scrollWidth > el.clientWidth + 1;
+  const moreRight = overflowing && el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
+  el.classList.toggle('has-overflow', overflowing);
+  el.classList.toggle('has-more-right', moreRight);
+  if (overflowing) {
+    el.tabIndex = 0;
+    el.setAttribute('role', 'region');
+    el.setAttribute('aria-label', 'Scrollable data table; use the horizontal scroll to see more columns');
+  } else {
+    el.removeAttribute('tabindex');
+    el.removeAttribute('role');
+    el.removeAttribute('aria-label');
+  }
+}
+document.querySelectorAll('.tableScroll').forEach(el => {
+  const update = () => updateTableScrollCue(el);
+  el.addEventListener('scroll', update, { passive: true });
+  if (window.ResizeObserver) new ResizeObserver(update).observe(el);
+  if (window.MutationObserver) new MutationObserver(update).observe(el, { childList: true, subtree: true, characterData: true });
+  update();
+});
 
 if (window.PPFeatures) {
   const deps = { api, esc, safeUrl, createGuard, onPlanChanged, desktop, navigate: showView, onDataRestored };

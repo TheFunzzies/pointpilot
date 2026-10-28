@@ -157,7 +157,7 @@
     let body;
     const empty = s.phase === 'ready' && !s.plan.items.length && !s.report;
     if (s.phase === 'loading') body = '<p class="muted" role="status">Loading the saved result…</p>';
-    else if (empty || s.errorCode === 'EMPTY_PLAN') body = `<div class="card empty fk-empty"><strong>${s.scope === 'stay' ? 'No stays to check yet' : 'No flights or stays to check yet'}</strong><p>Add ${s.scope === 'stay' ? 'a hotel to the stay plan' : 'flights in the Trip Optimizer, or hotels to the stay plan'}, then check readiness.</p><div class="btnrow"><button type="button" class="btn" data-action="goto" data-view="search" data-focus="rd-goto">Open Trip Optimizer</button>${s.scope === 'trip' ? '<button type="button" class="btn" data-action="goto" data-view="builder">Open Trip Builder</button>' : ''}</div></div>`;
+    else if (empty || s.errorCode === 'EMPTY_PLAN') body = `<div class="card empty fk-empty"><strong>${s.scope === 'stay' ? 'No stays to check yet' : 'No flights or stays to check yet'}</strong><p>Add ${s.scope === 'stay' ? 'a hotel to the stay plan' : 'flights in the Trip Optimizer, or hotels to the stay plan'}, then check readiness.</p><div class="btnrow"><button type="button" class="btn" data-action="goto" data-view="search" data-focus="rd-goto">Open Trip Optimizer</button></div></div>`;
     else {
       const checking = s.phase === 'checking';
       const err = s.error ? errorInfo({ code: s.errorCode, status: s.errorStatus, message: s.error }) : null;

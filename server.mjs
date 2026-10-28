@@ -10,6 +10,7 @@ import { loadHistory, recordAwards, routeHistoryStats, getSources } from './lib/
 import { saveAwards, normalizeFlightAward, normalizeHotelAward } from './lib/awards.mjs';
 import { searchTrip, searchHotels, evaluateSelection, expandAwards } from './lib/search.mjs';
 import { searchDestinations } from './lib/destinations.mjs';
+import { quotePointPurchases } from './lib/buy-points.mjs';
 import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, setNotifier, withMonitorPaused } from './lib/monitor.mjs';
 import { loadUser, saveUser, exampleUser, publicSettings, updateSettings, getSettings, apiUsage } from './lib/settings.mjs';
 import { transferData, loadCachedReference, refreshReference, referenceStatus } from './lib/reference.mjs';
@@ -190,6 +191,10 @@ function makeHandler(getPort, gate = createRecoveryGate()) {
       if (m === 'POST' && p === '/api/hotels/enrich') return send(res, 200, await enrichHotels(await body(req)));
       if (m === 'POST' && p === '/api/award/expand') return send(res, 200, await expandAwards(await body(req)));
       if (m === 'POST' && p === '/api/trip/evaluate') return send(res, 200, await evaluateSelection(await body(req)));
+      if (m === 'POST' && p === '/api/points/purchase-quote') {
+        const [user, settings] = await Promise.all([loadUser(), getSettings()]);
+        return send(res, 200, quotePointPurchases(await body(req), { balances: user.balances, offers: settings.buyPointsOffers }));
+      }
       if (m === 'GET' && p === '/api/seatmaps') return send(res, 200, await resolveSeatMaps({ carrier: q.carrier, aircraftName: q.aircraft, aircraftCode: q.code }));
       if (m === 'GET' && p === '/api/award/trips') {
         if (!q.id) return send(res, 400, { error: 'Missing availability id' });

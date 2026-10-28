@@ -6,6 +6,7 @@ A Windows desktop app that finds award flights and works out the cheapest way to
 - **Portfolio-aware optimizer** that funds the *whole trip* for *all travelers*. It uses miles you already hold first, then picks bank transfers by your own ¢/point values. It respects transfer minimums and increments, time-limited bonuses, the Marriott 60k→25k bonus, slow transfers and a max-transfers limit.
 - **Explore destinations** compares up to eight destinations from your chosen departure cities for the same dates, cabin and travelers. Each result uses your current wallet as an independent alternative, shows its funding path and data status, and can open the flight search or create an alert. Searches can use up to three seats.aero calls per destination for each direction; cached queries may use fewer. Results are the best found within the provider and optimizer limits, and availability can change.
 - **Cash fares**: search cash prices, set **price alerts** (below a target, or a set % below the route's usual price), and get a **deals feed** from your home airports. This uses a free [Travelpayouts](https://www.travelpayouts.com) token (recent Aviasales fares). An optional [SerpApi](https://serpapi.com) key (free: 250 searches/month) adds live Google Flights prices, Google's low/typical/high rating and cabin-aware "points vs. cash" comparisons on award results.
+- **Buy-points comparison**: save a program's effective purchase price (including any bonus and tax), minimum/increment, expiry and official link under **My Points**. Compare the cost to buy the award-program miles you are short against award fees and the cash fare. The estimate counts miles already held in that airline account, not transferable bank points; it never buys or transfers points for you.
 - **Alerts** re-check saved trips in the background and show a Windows notification (and an optional Slack/Discord webhook) when new matching space appears.
 - **Price history** from published award-chart benchmarks plus every price PointPilot sees, used to label deals ("12% below historical median").
 - **Auto-updates**: the app downloads new GitHub Releases in the background, and transfer-partner data refreshes from this repo without a reinstall.
@@ -31,6 +32,8 @@ To correct a transfer ratio or add a bonus for every user: edit `reference/trans
 ## Backup, restore and diagnostics
 
 **Data & system → Backup & restore** writes one encrypted `.ppbackup` file (scrypt + AES-256-GCM, Node's built-in crypto only) holding your wallet, preferences, non-secret settings, the saved trip and stays, and alert *definitions*. API keys and the webhook address are left out unless you tick *Include API keys and webhook destination*. The password needs at least 12 characters and cannot be recovered. To restore, choose the file, enter the password and review exactly what would change: **Merge** keeps what you have (and never adds balances together), **Replace** makes the selected categories match the backup. Imported alerts start turned off, and saved keys are only overwritten if you opt in. A restore writes all five data files together with a journal; if PointPilot stops part-way, the next start rolls back to the previous data.
+
+Buy-points offers are non-secret settings and travel with the **Settings** backup category. Enter the final effective cost per point after the sale bonus and applicable taxes; targeted offers and prices can change, and award availability can disappear before a purchase completes.
 
 **Data & system → Diagnostics** previews and saves a redacted support bundle (request timings and outcomes, source freshness, attempted-request counters, anonymous alert status). It never contains keys, webhook addresses, wallet values, routes, dates or alert titles, and it is only ever saved to a file you choose.
 
@@ -73,7 +76,7 @@ desktop/              Electron shell (tray, notifications, auto-update)
 ## Release
 
 1. Bump `version` in `package.json`, then run `npm install` so the lockfile picks up the new version. Commit both.
-2. Tag and push: `git tag v0.17.0 && git push origin v0.17.0` (use the version from `package.json`).
+2. Tag and push: `git tag v0.18.0 && git push origin v0.18.0` (use the version from `package.json`).
 3. The **Release** workflow tests, builds and publishes the installer, blockmap and `latest.yml`. Installed apps update themselves from there. Windows builds are currently unsigned, so SmartScreen can warn about the downloaded installer.
 
 The release fails early if the tag doesn't match `package.json`, or if the lockfile is missing.

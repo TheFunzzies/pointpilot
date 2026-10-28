@@ -6,7 +6,7 @@
   --surface-3: #eef0f4;
   --ink: #111827;
   --ink-2: #374151;
-  --muted: #6b7280;
+  --muted: #525866;
   --line: #e5e7eb;
   --line-strong: #d1d5db;
   --brand: #4f46e5;
@@ -214,10 +214,21 @@ button.seg.active { background: var(--surface); color: var(--ink); box-shadow: v
 .wallet-row .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .wallet-row .name small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; }
 .wallet-row input { width: 100%; text-align: right; font-variant-numeric: tabular-nums; padding: 7px 9px; }
+.wallet-input { display: block; min-width: 0; }
+.wallet-input > span { display: none; }
 .wallet-row .value { text-align: right; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .wallet-empty { padding: 16px 18px; color: var(--muted); font-size: 13px; }
 .wallet-add { display: flex; gap: 8px; padding: 12px 18px; background: var(--surface-2); border-top: 1px solid var(--line); }
 .wallet-add select { flex: 1; min-width: 0; }
+.purchase-offer-form { margin-top: 4px; }
+.purchase-offers-list { margin-top: 10px; }
+.purchase-offer-list { display: grid; gap: 8px; }
+.purchase-offer-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
+.purchase-offer-row .muted, .purchase-offer-row small { display: block; font-size: 12px; }
+.purchase-offer-row small { color: var(--muted); margin-top: 2px; }
+.purchase-offer-row .btnrow { flex-wrap: nowrap; }
+.purchase-quote-list { margin: 6px 0; padding-left: 20px; }
+.purchase-quote-list li + li { margin-top: 6px; }
 .save-state { font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
 .save-state.saved { color: var(--green); }
 .save-state.error { color: var(--red); }
@@ -225,6 +236,7 @@ button.seg.active { background: var(--surface); color: var(--ink); box-shadow: v
 /* ---------- tables ---------- */
 .tablecard { overflow: hidden; }
 .tableScroll { min-width: 0; max-width: 100%; overflow: auto; }
+.tableScroll.has-more-right::before { content: 'Scroll horizontally for more columns →'; display: block; padding: 5px 10px; position: sticky; left: 0; width: max-content; z-index: 1; background: var(--surface-2); color: var(--muted); font-size: 11px; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 11px 14px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
 th { font-size: 11.5px; color: var(--muted); font-weight: 600; background: var(--surface-2); }
@@ -279,9 +291,13 @@ tbody tr:hover td { background: var(--surface-2); }
   .result { flex-direction: column; align-items: stretch; }
   .result .right { text-align: left; }
   .wallet-head { display: none; }
-  .wallet-row { grid-template-columns: 1fr 1fr 36px; }
+  .wallet-row { grid-template-columns: minmax(0, 1fr) minmax(90px, 1fr) 36px; }
   .wallet-row .name { grid-column: 1 / -1; }
   .wallet-row .value { display: none; }
+  .wallet-row input { text-align: left; }
+  .wallet-input > span { display: block; margin: 0 0 3px; color: var(--muted); font-size: 10.5px; font-weight: 600; }
+  .purchase-offer-row { align-items: flex-start; flex-direction: column; }
+  .purchase-offer-row .btnrow { width: 100%; }
 }
 
 /* ---------- v0.9: flight details, hotel cities, stay planner ---------- */
@@ -368,7 +384,7 @@ tbody tr:hover td { background: var(--surface-2); }
 .tl-card h4 { margin: 0 0 2px; font-size: 14.5px; }
 .tl-card p { margin: 2px 0; font-size: 12.5px; color: var(--muted); }
 .sticky { position: sticky; top: 16px; }
-@media (max-width: 1100px) { .builder-grid { grid-template-columns: 1fr; } .sticky { position: static; } }
+@media (max-width: 1100px) { .builder-grid { grid-template-columns: 1fr; } .sticky { position: static; } #tbSummary { order: -1; } }
 @media (max-width: 900px) { .picker, .summary-legs { grid-template-columns: 1fr; } }
 
 /* ---------- v0.11: day picker + flags ---------- */
