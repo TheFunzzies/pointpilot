@@ -156,6 +156,26 @@
 <div class="viewhead"><div><h2>My points</h2><p>Add every bank, airline and hotel balance you hold. Your value per point (¢) decides which points get spent first.</p></div><span class="save-state" id="walletState"></span></div>
 <p class="muted fk-walletlink">Moving to another PC, or want a safety copy? <button type="button" class="btn small ghost" id="gotoBackup">Back up or restore your points</button></p>
 <div class="wallet-summary"><div class="card kpi"><span>Sum of balances</span><b id="wTotal">0</b><small id="wPrograms">0 programs · units differ by program</small></div><div class="card kpi"><span>Estimated value</span><b id="wValue">$0</b><small>at your ¢/pt values</small></div><div class="card kpi"><span>Bank-point balances</span><b id="wFlex">0</b><small>currencies are not combined</small></div></div>
+<section class="card searchbox simplefin-card" id="simpleFinCard" aria-labelledby="simpleFinHeading">
+  <div class="cardhead"><div><h3 id="simpleFinHeading">Connect rewards with SimpleFIN</h3><p>Import reward balances when your institution exposes them as a SimpleFIN custom currency.</p></div><span id="simpleFinStatus" class="tag muted" role="status">Checking…</span></div>
+  <p class="note">SimpleFIN may provide card account balances without points balances. PointPilot only imports custom rewards currencies, and you choose which loyalty program each one belongs to.</p>
+  <div id="simpleFinUnsupported" class="empty" hidden>Encrypted SimpleFIN credential storage is available in the PointPilot desktop app.</div>
+  <div id="simpleFinConnect">
+    <p><a href="https://bridge.simplefin.org/simplefin/create" target="_blank" rel="noreferrer">Create a SimpleFIN token ↗</a>, then paste it here. PointPilot stores the claimed access URL encrypted with Windows credential storage.</p>
+    <label for="simpleFinToken">SimpleFIN token</label><textarea id="simpleFinToken" rows="2" maxlength="8192" autocomplete="off" spellcheck="false" placeholder="Paste the token copied from SimpleFIN"></textarea>
+    <div class="btnrow"><button class="btn primary small" type="button" id="simpleFinConnectBtn">Connect</button></div>
+  </div>
+  <div id="simpleFinAccounts" hidden></div>
+  <div id="simpleFinControls" class="btnrow" hidden>
+    <button class="btn small" type="button" id="simpleFinRefreshBtn">Refresh accounts</button>
+    <button class="btn small" type="button" id="simpleFinSaveBtn">Save mappings</button>
+    <button class="btn primary small" type="button" id="simpleFinSyncBtn" disabled>Sync mapped balances</button>
+    <button class="btn ghost small" type="button" id="simpleFinDisconnectBtn">Disconnect</button>
+  </div>
+  <label id="simpleFinReplaceLabel" class="check" hidden><input id="simpleFinReplaceConfirm" type="checkbox"> Sync replaces the saved balance for each mapped program; other balances and point valuations stay unchanged.</label>
+  <p id="simpleFinFreshness" class="muted" role="status"></p>
+  <p id="simpleFinMessage" class="muted" role="status" aria-live="polite"></p>
+</section>
 <div class="wallet-grid" id="walletGroups"></div>
 <div class="card searchbox purchase-offers-card" style="margin-top:14px"><div class="cardhead"><div><h3>Buy-points offers</h3><p>Save the effective price per point for a current promotion. Include taxes and any bonus in the price you enter; offers can be targeted and change quickly.</p></div></div>
 <div class="formgrid purchase-offer-form">

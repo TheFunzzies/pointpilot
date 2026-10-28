@@ -16,6 +16,7 @@ let lastUpdateStatus = null;
 let chatgpt = null;
 let Anthropic = null;
 let claudeKeyPath = null;
+let simpleFinAccessPath = null;
 
 const startHidden = process.argv.includes('--hidden');
 const UPDATE_INTERVAL_MS = 4 * 3600 * 1000;
@@ -55,6 +56,25 @@ async function readClaudeKey() {
     if (error.code === 'ENOENT') return null;
     throw new Error('Could not unlock the saved Claude credential. Remove it and reconnect.');
   }
+}
+
+async function readSimpleFinAccessUrl() {
+  if (!safeStorage.isEncryptionAvailable() || !simpleFinAccessPath) return null;
+  try { return safeStorage.decryptString(await fsp.readFile(simpleFinAccessPath)); }
+  catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw new Error('Could not unlock the saved SimpleFIN connection. Disconnect it and connect again.');
+  }
+}
+
+async function saveSimpleFinAccessUrl(accessUrl) {
+  if (!safeStorage.isEncryptionAvailable() || !simpleFinAccessPath) throw new Error('OS-backed credential encryption is unavailable. Restart PointPilot and try again.');
+  await fsp.mkdir(path.dirname(simpleFinAccessPath), { recursive: true });
+  await fsp.writeFile(simpleFinAccessPath, safeStorage.encryptString(accessUrl), { mode: 0o600 });
+}
+
+async function removeSimpleFinAccessUrl() {
+  if (simpleFinAccessPath) await fsp.rm(simpleFinAccessPath, { force: true });
 }
 
 function safeSession(session) {
@@ -331,8 +351,11 @@ ipcMain.handle('open-backup', event => artifacts.openBackup(event));
 app.whenReady().then(async () => {
   await fsp.mkdir(dataDir(), { recursive: true });
   const aiDirectory = path.join(app.getPath('userData'), 'ai');
+  const simpleFinDirectory = path.join(app.getPath('userData'), 'simplefin');
   await fsp.mkdir(aiDirectory, { recursive: true });
+  await fsp.mkdir(simpleFinDirectory, { recursive: true });
   claudeKeyPath = path.join(aiDirectory, 'anthropic-api-key.bin');
+  simpleFinAccessPath = path.join(simpleFinDirectory, 'access-url.bin');
   if (safeStorage.isEncryptionAvailable()) {
     try {
       Anthropic = (await import('@anthropic-ai/sdk')).default;
@@ -362,6 +385,12 @@ app.whenReady().then(async () => {
   process.env.POINTPILOT_DATA_DIR = dataDir();
   process.env.POINTPILOT_VERSION = app.getVersion();
   serverModule = await import('../server.mjs');
+  serverModule.setSimpleFinCredentialStore({
+    isAvailable: () => app.isReady() && safeStorage.isEncryptionAvailable(),
+    read: readSimpleFinAccessUrl,
+    save: saveSimpleFinAccessUrl,
+    remove: removeSimpleFinAccessUrl
+  });
   serverModule.setNotifier(({ title, body }) => notify(title, body));
   await new Promise(resolve => { server = serverModule.startServer({ port: 0, onReady: p => { serverPort = p; resolve(); } }); });
   buildMenu();

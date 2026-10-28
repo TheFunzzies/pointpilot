@@ -28,6 +28,8 @@ import { createRoutes as createBackupRoutes } from './lib/backup-routes.mjs';
 import { createRoutes as createItineraryRoutes } from './lib/itinerary-routes.mjs';
 import { createRoutes as createReadinessRoutes } from './lib/readiness-routes.mjs';
 import { createRoutes as createDiagnosticsRoutes } from './lib/diagnostics-routes.mjs';
+import { claimAccessUrl, fetchAccounts } from './lib/simplefin-protocol.mjs';
+import { clearSimpleFinWalletState, getSimpleFinWalletState, publicSimpleFinWalletState, saveSimpleFinMappings, saveSimpleFinSnapshot, syncSimpleFinBalances } from './lib/simplefin-wallet.mjs';
 
 try { if (!process.versions.electron) process.loadEnvFile?.(); } catch (e) { if (e.code !== 'ENOENT') throw e; }
 const VERSION = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8')).version;
@@ -133,6 +135,37 @@ function createRecoveryGate() {
 }
 const RECOVERY_LOCKED = 'PointPilot could not finish undoing an interrupted restore, so your data is locked to protect it. Close anything that is using the PointPilot data folder, then try again or restart PointPilot.';
 let activeGate = null;
+let simpleFinCredentialStore = null;
+
+export function setSimpleFinCredentialStore(store) {
+  if (!store || typeof store.isAvailable !== 'function' || typeof store.read !== 'function' || typeof store.save !== 'function' || typeof store.remove !== 'function') {
+    throw new TypeError('SimpleFIN credential storage must provide availability, read, save and remove operations.');
+  }
+  simpleFinCredentialStore = store;
+}
+
+async function simpleFinStorageAvailable() {
+  return Boolean(simpleFinCredentialStore && await simpleFinCredentialStore.isAvailable());
+}
+
+function simpleFinResponse(state, { connected = false, supported = false } = {}) {
+  return { supported, ...publicSimpleFinWalletState(state, connected) };
+}
+
+async function refreshSimpleFinAccountSet(accessUrl) {
+  // PointPilot only needs the opaque custom-currency marker for user mapping. Avoid making
+  // secondary requests to currency URLs supplied by an institution's account response.
+  const accountSet = await fetchAccounts(accessUrl, { balancesOnly: true, version: 2, resolveCustomCurrencies: false });
+  await saveSimpleFinSnapshot(accountSet.accounts, new Date().toISOString(), accountSet.errors);
+  return accountSet;
+}
+
+async function storedSimpleFinAccessUrl() {
+  if (!await simpleFinStorageAvailable()) throw Object.assign(new Error('Encrypted SimpleFIN credential storage is unavailable. Use the PointPilot desktop app with OS credential encryption enabled.'), { status: 503, code: 'SIMPLEFIN_STORAGE_UNAVAILABLE' });
+  const accessUrl = await simpleFinCredentialStore.read();
+  if (!accessUrl) throw Object.assign(new Error('Connect a SimpleFIN token first.'), { status: 409, code: 'SIMPLEFIN_NOT_CONNECTED' });
+  return accessUrl;
+}
 
 function makeHandler(getPort, gate = createRecoveryGate()) {
   const featureHandlers = createFeatureHandlers();
@@ -160,6 +193,52 @@ function makeHandler(getPort, gate = createRecoveryGate()) {
       if (m === 'GET' && p === '/api/health') {
         const [h, s, usage] = await Promise.all([loadHistory(), getSettings(), apiUsage()]);
         return send(res, 200, { ok: true, version: VERSION, awardObservations: h.length, dataDir: dataDir(), liveData: s.seatsAeroApiKey ? 'seats.aero' : 'manual-only', cashData: { travelpayouts: Boolean(s.travelpayoutsToken), google: Boolean(s.serpApiKey) }, apiCallsToday: usage.calls, roomsCallsToday: usage.roomsCalls, tpCallsToday: usage.tpCalls, serpCallsThisMonth: usage.serpCalls, reference: referenceStatus() });
+      }
+      if (m === 'GET' && p === '/api/simplefin') {
+        const supported = await simpleFinStorageAvailable();
+        const connected = supported && Boolean(await simpleFinCredentialStore.read());
+        return send(res, 200, simpleFinResponse(await getSimpleFinWalletState(), { connected, supported }));
+      }
+      if (m === 'POST' && p === '/api/simplefin/connect') {
+        const supported = await simpleFinStorageAvailable();
+        if (!supported) throw Object.assign(new Error('Encrypted SimpleFIN credential storage is unavailable. Use the PointPilot desktop app with OS credential encryption enabled.'), { status: 503, code: 'SIMPLEFIN_STORAGE_UNAVAILABLE' });
+        const input = await readBody(req, 16 * 1024);
+        if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(key => key !== 'token') || typeof input.token !== 'string' || input.token.length > 8192) throw Object.assign(new Error('Paste a valid SimpleFIN token.'), { status: 400, code: 'INVALID_SIMPLEFIN_INPUT' });
+        // A claim token is single use. Save the claimed access URL before fetching balances so a
+        // transient /accounts error does not force the user to claim a second token.
+        const access = await claimAccessUrl(input.token);
+        try { await simpleFinCredentialStore.save(access.accessUrl); }
+        catch { throw Object.assign(new Error('SimpleFIN claimed the token, but PointPilot could not store the encrypted access URL. Generate a new token and try again.'), { status: 500, code: 'SIMPLEFIN_CREDENTIAL_SAVE_FAILED' }); }
+        try { await refreshSimpleFinAccountSet(access.accessUrl); }
+        catch (error) { throw Object.assign(new Error(`The SimpleFIN token was claimed and saved, but PointPilot could not fetch balances: ${error.message}`), { status: error.status || 502, code: 'SIMPLEFIN_ACCOUNTS_FAILED' }); }
+        return send(res, 200, simpleFinResponse(await getSimpleFinWalletState(), { connected: true, supported: true }));
+      }
+      if (m === 'POST' && p === '/api/simplefin/refresh') {
+        const accessUrl = await storedSimpleFinAccessUrl();
+        await refreshSimpleFinAccountSet(accessUrl);
+        return send(res, 200, simpleFinResponse(await getSimpleFinWalletState(), { connected: true, supported: true }));
+      }
+      if (m === 'PUT' && p === '/api/simplefin/mappings') {
+        const input = await readBody(req, FEATURE_MAX_BODY);
+        if (!input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(key => key !== 'mappings')) throw Object.assign(new Error('Choose valid SimpleFIN account mappings.'), { status: 400, code: 'INVALID_SIMPLEFIN_INPUT' });
+        await saveSimpleFinMappings(input.mappings);
+        const supported = await simpleFinStorageAvailable();
+        const connected = supported && Boolean(await simpleFinCredentialStore.read());
+        return send(res, 200, simpleFinResponse(await getSimpleFinWalletState(), { supported, connected }));
+      }
+      if (m === 'POST' && p === '/api/simplefin/sync') {
+        const accessUrl = await storedSimpleFinAccessUrl();
+        await refreshSimpleFinAccountSet(accessUrl);
+        const synced = await syncSimpleFinBalances();
+        const simpleFin = simpleFinResponse(await getSimpleFinWalletState(), { connected: true, supported: true });
+        return send(res, 200, { user: synced.user, sync: synced.sync, simpleFin });
+      }
+      if (m === 'DELETE' && p === '/api/simplefin') {
+        const supported = await simpleFinStorageAvailable();
+        if (!supported) throw Object.assign(new Error('Encrypted SimpleFIN credential storage is unavailable.'), { status: 503, code: 'SIMPLEFIN_STORAGE_UNAVAILABLE' });
+        await simpleFinCredentialStore.remove();
+        await clearSimpleFinWalletState();
+        return send(res, 200, simpleFinResponse(await getSimpleFinWalletState(), { connected: false, supported: true }));
       }
       if (m === 'GET' && p === '/api/user') return send(res, 200, await loadUser());
       if (m === 'GET' && p === '/api/user/example') return send(res, 200, exampleUser());

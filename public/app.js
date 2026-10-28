@@ -2,7 +2,7 @@
 const $ = id => document.getElementById(id);
 const desktop = window.pointpilot || null;
 
-const state = { product: 'flights', user: { balances: [], preferences: {} }, alerts: [], partners: null, programs: [], lastQuery: null };
+const state = { product: 'flights', user: { balances: [], preferences: {} }, alerts: [], partners: null, programs: [], lastQuery: null, simpleFin: null };
 
 // ---------- helpers ----------
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -68,7 +68,7 @@ async function load() {
     state.alerts = alerts;
     fillProgramSelects();
     renderWallet(); renderPartners(); renderAlerts(); renderProviders(providers.providers); renderKPIs();
-    await Promise.all([refreshHealth(), loadSettings(), loadProducts()]);
+    await Promise.all([refreshHealth(), loadSettings(), loadProducts(), loadSimpleFin()]);
   } catch (e) {
     $('statusPill').textContent = '● Backend error';
     toast(e.message);
@@ -234,6 +234,95 @@ function renderWallet() {
   $('prefNonstop').value = String(Boolean(prefs.preferNonstop));
   renderWalletSummary();
 }
+
+function renderSimpleFin() {
+  const s = state.simpleFin || { supported: false, connected: false, accounts: [] };
+  $('simpleFinStatus').textContent = s.connected ? 'Connected' : s.supported ? 'Not connected' : 'Desktop app only';
+  $('simpleFinStatus').className = `tag ${s.connected ? '' : 'muted'}`;
+  $('simpleFinUnsupported').hidden = Boolean(s.supported);
+  $('simpleFinConnect').hidden = !s.supported || Boolean(s.connected);
+  $('simpleFinAccounts').hidden = !s.connected;
+  $('simpleFinControls').hidden = !s.connected;
+  $('simpleFinReplaceLabel').hidden = !s.connected;
+  const rewards = (s.accounts || []).filter(a => a.rewardsCurrency);
+  if (s.connected) {
+    $('simpleFinAccounts').innerHTML = rewards.length ? `<div class="result-list">${rewards.map(a => {
+      const choices = state.programs.map(p => `<option value="${esc(p.id)}" ${a.program === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+      return `<div class="result card"><div><h4>${esc(a.name)}</h4><p>${esc(a.currencyName || 'Custom rewards currency')} · ${fmt(a.balance)} ${esc(a.currencyAbbr || 'points')}${a.balanceAt ? ` · balance as of ${esc(dateFmt(a.balanceAt))}` : ''}</p></div><label>Map to program<select data-simplefin-map="${esc(a.key)}"><option value="">Choose a loyalty program</option>${choices}</select></label></div>`;
+    }).join('')}</div>` : '<div class="empty"><strong>No points balances were returned.</strong><p>This connection may provide card account balances without loyalty points. PointPilot only lists custom rewards currencies.</p></div>';
+  }
+  $('simpleFinSyncBtn').disabled = !simpleFinSyncReady();
+  $('simpleFinFreshness').textContent = s.lastFetchedAt ? `Accounts checked ${new Date(s.lastFetchedAt).toLocaleString()}${s.lastSyncedAt ? ` · wallet last synced ${new Date(s.lastSyncedAt).toLocaleString()}` : ''}.` : '';
+  $('simpleFinMessage').textContent = (s.errors || []).map(error => error.msg).filter(Boolean).join(' · ');
+}
+
+function simpleFinSyncReady() {
+  const saved = new Map((state.simpleFin?.accounts || []).filter(account => account.rewardsCurrency).map(account => [account.key, account.program || '']));
+  const selects = [...document.querySelectorAll('[data-simplefin-map]')];
+  return $('simpleFinReplaceConfirm').checked && saved.size > 0 && selects.length === saved.size && selects.every(select => saved.get(select.dataset.simplefinMap) === select.value) && [...saved.values()].some(Boolean);
+}
+
+async function loadSimpleFin() {
+  try { state.simpleFin = await api('/api/simplefin'); renderSimpleFin(); }
+  catch (error) { $('simpleFinStatus').textContent = 'Unavailable'; $('simpleFinMessage').textContent = error.message; }
+}
+
+async function connectSimpleFin() {
+  const token = $('simpleFinToken').value.trim();
+  if (!token) { $('simpleFinMessage').textContent = 'Paste the SimpleFIN token first.'; return; }
+  busy($('simpleFinConnectBtn'), true, 'Connecting…'); $('simpleFinMessage').textContent = '';
+  try {
+    state.simpleFin = await api('/api/simplefin/connect', { method: 'POST', body: { token } });
+    $('simpleFinToken').value = '';
+    renderSimpleFin();
+    $('simpleFinMessage').textContent = 'Connected. Review the reward accounts and save their loyalty-program mappings.';
+  } catch (error) {
+    $('simpleFinMessage').textContent = error.message;
+    if (['CLAIM_FORBIDDEN', 'SIMPLEFIN_CREDENTIAL_SAVE_FAILED'].includes(error.code)) $('simpleFinToken').value = '';
+    if (error.code === 'SIMPLEFIN_ACCOUNTS_FAILED') { $('simpleFinToken').value = ''; await loadSimpleFin(); $('simpleFinMessage').textContent = error.message; }
+  }
+  finally { busy($('simpleFinConnectBtn'), false); }
+}
+
+async function refreshSimpleFin() {
+  busy($('simpleFinRefreshBtn'), true, 'Refreshing…'); $('simpleFinMessage').textContent = '';
+  try { state.simpleFin = await api('/api/simplefin/refresh', { method: 'POST', body: {} }); renderSimpleFin(); $('simpleFinMessage').textContent = 'Account balances refreshed from SimpleFIN.'; }
+  catch (error) { $('simpleFinMessage').textContent = error.message; }
+  finally { busy($('simpleFinRefreshBtn'), false); }
+}
+
+async function saveSimpleFinMappings() {
+  const mappings = [...document.querySelectorAll('[data-simplefin-map]')].map(select => ({ key: select.dataset.simplefinMap, program: select.value }));
+  busy($('simpleFinSaveBtn'), true, 'Saving…'); $('simpleFinMessage').textContent = '';
+  try { state.simpleFin = await api('/api/simplefin/mappings', { method: 'PUT', body: { mappings } }); renderSimpleFin(); $('simpleFinMessage').textContent = 'Account mappings saved.'; }
+  catch (error) { $('simpleFinMessage').textContent = error.message; }
+  finally { busy($('simpleFinSaveBtn'), false); }
+}
+
+async function syncSimpleFin() {
+  busy($('simpleFinSyncBtn'), true, 'Syncing…'); $('simpleFinMessage').textContent = '';
+  try {
+    const result = await api('/api/simplefin/sync', { method: 'POST', body: {} });
+    state.user = result.user; renderWallet(); renderKPIs(); state.simpleFin = result.simpleFin; renderSimpleFin();
+    $('simpleFinMessage').textContent = `Updated ${result.sync.programs.map(p => p.program).join(', ')} from SimpleFIN.`;
+  } catch (error) { $('simpleFinMessage').textContent = error.message; }
+  finally { busy($('simpleFinSyncBtn'), false); }
+}
+
+async function disconnectSimpleFin() {
+  busy($('simpleFinDisconnectBtn'), true, 'Disconnecting…');
+  try { state.simpleFin = await api('/api/simplefin', { method: 'DELETE', body: {} }); $('simpleFinReplaceConfirm').checked = false; renderSimpleFin(); $('simpleFinMessage').textContent = 'Disconnected. Existing wallet balances were kept.'; }
+  catch (error) { $('simpleFinMessage').textContent = error.message; }
+  finally { busy($('simpleFinDisconnectBtn'), false); }
+}
+
+$('simpleFinConnectBtn').addEventListener('click', connectSimpleFin);
+$('simpleFinRefreshBtn').addEventListener('click', refreshSimpleFin);
+$('simpleFinSaveBtn').addEventListener('click', saveSimpleFinMappings);
+$('simpleFinSyncBtn').addEventListener('click', syncSimpleFin);
+$('simpleFinDisconnectBtn').addEventListener('click', disconnectSimpleFin);
+$('simpleFinReplaceConfirm').addEventListener('change', renderSimpleFin);
+$('simpleFinAccounts').addEventListener('change', e => { if (e.target.matches('[data-simplefin-map]')) $('simpleFinSyncBtn').disabled = !simpleFinSyncReady(); });
 
 // Wallet changes save automatically (debounced) so balances are never lost.
 let walletTimer = null;

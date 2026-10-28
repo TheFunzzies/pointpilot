@@ -213,6 +213,11 @@ button.seg.active { background: var(--surface); color: var(--ink); box-shadow: v
 /* ---------- wallet ---------- */
 .wallet-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
 .wallet-grid { display: grid; gap: 14px; }
+.simplefin-card { margin-bottom: 14px; }
+.simplefin-card textarea { width: 100%; resize: vertical; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
+.simplefin-card .result label { min-width: min(280px, 100%); color: var(--muted); font-size: 12px; }
+.simplefin-card .result select { display: block; width: 100%; margin-top: 4px; }
+.simplefin-card .note { margin: 10px 0; }
 .wallet-group { overflow: hidden; }
 .wallet-group header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
 .wallet-group header h3 { margin: 0; font-size: 15px; font-weight: 650; display: flex; align-items: center; gap: 9px; }
