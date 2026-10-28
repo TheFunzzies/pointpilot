@@ -7,6 +7,7 @@
   "main": "desktop/main.cjs",
   "scripts": {
     "start": "node server.mjs",
+    "mcp": "node mcp/server.mjs",
     "monitor": "node server.mjs --monitor-once",
     "test": "node --test",
     "lint": "eslint .",
@@ -21,7 +22,9 @@
     "node": ">=22.12.0"
   },
   "dependencies": {
-    "electron-updater": "6.8.9"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "electron-updater": "6.8.9",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
@@ -50,6 +53,7 @@
       "package.json",
       "server.mjs",
       "lib/**",
+      "mcp/**",
       "public/**",
       "reference/**",
       "desktop/**"

@@ -24,7 +24,11 @@ Use a small provider adapter interface with explicit provider selection:
 
 ## Where MCP fits
 
-MCP is a good boundary for exposing PointPilot's existing capabilities to assistant clients, not a common authentication system for model providers. Build a local stdio MCP server first and expose a small allowlist of deterministic read-only tools (search saved award results, explain a funding result, list current transfer partners, and retrieve destination-search summaries). Keep search-and-refresh and all writes behind explicit UI confirmation. Codex and Claude clients can connect using their own supported sign-in flows; PointPilot's MCP process should never receive or forward their model credentials. Add a PointPilot embedded chat only after each provider's sign-in and billing path has a supported implementation.
+MCP is a good boundary for exposing PointPilot's existing capabilities to assistant clients, not a common authentication system for model providers. A first local stdio server exposes only three read-only tools: wallet balances by program, cached award search, and cached destination comparison. Search-and-refresh and all writes stay behind explicit UI confirmation. Codex, Claude, and Gemini CLI clients connect using their own supported sign-in flows; PointPilot's MCP process never receives or forwards their model credentials. Add embedded chat only after each provider's sign-in and billing path has a supported implementation.
+
+### Local development prototype
+
+From a PointPilot checkout with dependencies installed, run `npm run mcp`. Configure the assistant client to launch `node` with the absolute path to `mcp/server.mjs` and set the checkout as its working directory. This prototype is for local development; the installer does not yet register or launch the MCP server automatically. The server uses stdio, makes no network calls, and only reads PointPilot's locally stored balances and cached award data.
 
 Do not advertise “Codex login” as a supported credential type unless an official, supported OpenAI integration is available for PointPilot and has been approved as required. A user's existing Codex CLI token or configuration should never be scraped, copied, or replayed by PointPilot.
 
@@ -54,4 +58,5 @@ Do not begin with autonomous agents, booking automation, point transfers, embedd
 - [OpenAI Codex app-server guidance](https://developers.openai.com/siwc/token-sharing-open-source/codex-app-server) documents the Responses API flow and token lifecycle for Codex app-server clients.
 - [Claude Code setup](https://docs.anthropic.com/en/docs/claude-code/getting-started) documents Claude subscription sign-in and Console authentication as separate supported paths.
 - [Gemini OAuth quickstart](https://ai.google.dev/gemini-api/docs/oauth) describes OAuth for Gemini API requests using a Google Cloud project.
+- [Gemini CLI MCP setup](https://github.com/google-gemini/gemini-cli/blob/main/docs/tools/mcp-server.md) documents stdio MCP client configuration.
 - [Ollama API documentation](https://github.com/ollama/ollama/blob/main/docs/api/introduction.mdx) documents local and OpenAI-compatible API endpoints.
