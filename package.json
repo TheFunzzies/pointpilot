@@ -1,10 +1,13 @@
 {
   "name": "pointpilot",
-  "version": "0.19.0",
+  "version": "0.20.0",
   "private": true,
   "type": "module",
   "description": "PointPilot: find award space and fund trips from your points portfolio.",
   "main": "desktop/main.cjs",
+  "workspaces": [
+    "vendor/sign-in-with-chatgpt-devkit/packages/local"
+  ],
   "scripts": {
     "start": "node server.mjs",
     "mcp": "node mcp/server.mjs",
@@ -12,7 +15,8 @@
     "test": "node --test",
     "lint": "eslint .",
     "desktop": "electron .",
-    "dist": "electron-builder --win nsis --publish never",
+    "build:siwc": "npm run build --workspace @siwc/local",
+    "dist": "npm run build:siwc && electron-builder --win nsis --publish never",
     "release:check": "node scripts/check-release.mjs",
     "build:geo": "node scripts/build-geo.mjs",
     "build:hotel-awards": "node scripts/build-hotel-awards.mjs",
@@ -22,16 +26,20 @@
     "node": ">=22.12.0"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.3.0",
     "@modelcontextprotocol/sdk": "^1.32.2",
+    "@siwc/local": "file:vendor/sign-in-with-chatgpt-devkit/packages/local",
     "electron-updater": "6.8.9",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
+    "@types/node": "^24.19.2",
     "electron": "44.10.0",
     "electron-builder": "26.17.0",
     "eslint": "9.39.5",
-    "globals": "17.13.0"
+    "globals": "17.13.0",
+    "typescript": "^7.0.2"
   },
   "overrides": {
     "global-agent": "4.1.3"
@@ -56,7 +64,10 @@
       "mcp/**",
       "public/**",
       "reference/**",
-      "desktop/**"
+      "desktop/**",
+      "vendor/sign-in-with-chatgpt-devkit/packages/local/dist/**",
+      "vendor/sign-in-with-chatgpt-devkit/packages/local/package.json",
+      "vendor/sign-in-with-chatgpt-devkit/LICENSE"
     ],
     "win": {
       "target": [

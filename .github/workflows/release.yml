@@ -18,6 +18,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: actions/setup-node@v4
         with:
@@ -32,6 +34,8 @@ jobs:
         run: npm run release:check
 
       - name: Build installer
+        run: npm run build:siwc
+      - name: Package installer
         run: npx electron-builder --win nsis --publish never
 
       # Upload with the GitHub CLI instead of electron-builder's publisher so a re-run replaces

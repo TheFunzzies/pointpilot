@@ -129,6 +129,17 @@ input[type=checkbox] { accent-color: var(--brand); width: 16px; height: 16px; }
 /* ---------- layout primitives ---------- */
 .view { display: none; animation: fade .18s ease; }
 .view.active { display: block; }
+.ai-provider-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+.ai-provider { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); }
+.ai-provider h4 { margin: 0 0 6px; }
+.ai-provider p { min-height: 20px; margin: 0 0 12px; }
+.ai-provider small { display: block; color: var(--muted); line-height: 1.45; }
+.ai-provider label { display: block; margin: 8px 0 5px; font-size: 12px; }
+.ai-provider .btnrow { margin: 10px 0 8px; }
+.ai-context { margin: 12px 0; }
+.ai-answer { margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
+#aiContextPreview { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 680px) { .ai-provider-grid { grid-template-columns: 1fr; } }
 @keyframes fade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
 .stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }

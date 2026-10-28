@@ -28,6 +28,7 @@
     <button class="nav" data-view="builder"><svg class="icon"><use href="#i-map"/></svg>Trip Builder</button>
     <button class="nav" data-view="wallet"><svg class="icon"><use href="#i-wallet"/></svg>My Points</button>
     <button class="nav" data-view="alerts"><svg class="icon"><use href="#i-bell"/></svg>Alerts</button>
+    <button class="nav" data-view="assistant"><svg class="icon"><use href="#i-sliders"/></svg>AI Assistant</button>
     <details class="nav-more">
       <summary class="nav">More</summary>
       <div class="nav-submenu">
@@ -77,6 +78,41 @@
 <div id="stayPlan" hidden></div>
 <div id="stayReadinessSlot"></div>
 <div class="card resultsbar" id="resultsBar"><div><h2>Opportunities</h2><p id="resultMeta">No search yet.</p></div></div><div id="results"></div>
+</section>
+
+<section id="view-assistant" class="view">
+  <div class="viewhead"><div><h2>AI travel assistant</h2><p>Ask about your points and planning options. PointPilot never sends your wallet unless you choose to include it.</p></div></div>
+  <div class="stack">
+    <div class="card searchbox">
+      <div class="cardhead"><div><h3>Connect an assistant</h3><p>Credentials stay on this computer and are handled by PointPilot’s desktop process.</p></div></div>
+      <div class="ai-provider-grid">
+        <article class="ai-provider">
+          <h4>OpenAI / ChatGPT</h4><p id="aiOpenAiStatus" class="muted">Checking connection…</p>
+          <div class="btnrow"><button class="btn primary small" id="aiOpenAiConnect">Sign in with ChatGPT</button><button class="btn small" id="aiOpenAiDisconnect" hidden>Disconnect</button></div>
+          <small>Eligible ChatGPT plans can be used after you approve the request in OpenAI’s sign-in flow. This does not read Codex CLI credentials.</small>
+        </article>
+        <article class="ai-provider">
+          <h4>Claude</h4><p id="aiClaudeStatus" class="muted">API key not connected</p>
+          <label for="aiClaudeKey">Anthropic Console API key</label><input id="aiClaudeKey" type="password" autocomplete="new-password" placeholder="sk-ant-…">
+          <div class="btnrow"><button class="btn primary small" id="aiClaudeSave">Save key securely</button><button class="btn small" id="aiClaudeRemove" hidden>Remove key</button></div>
+          <small>Claude.ai/Pro/Max sign-in is not supported for third-party apps without Anthropic’s prior approval. API usage may be billed separately.</small>
+        </article>
+      </div>
+    </div>
+    <div class="card searchbox">
+      <div class="formgrid ai-form">
+        <div><label for="aiProvider">Provider</label><select id="aiProvider"><option value="openai">OpenAI / ChatGPT</option><option value="anthropic">Claude API</option></select></div>
+        <div><label for="aiModel">Model</label><select id="aiModel"><option value="">Connect a provider first</option></select></div>
+      </div>
+      <label class="check ai-context"><input id="aiIncludeWallet" type="checkbox"> Include my points balances with this question</label>
+      <pre id="aiContextPreview" class="note" hidden></pre>
+      <p class="note">PointPilot sends your question and only the optional wallet context you select. It does not keep chat history. Answers are guidance; check live availability and prices in Trip Optimizer.</p>
+      <label for="aiPrompt">Your question</label><textarea id="aiPrompt" rows="4" maxlength="4000" placeholder="How could I use my transferable points for a trip to Japan?"></textarea>
+      <div class="searchfoot"><span id="aiMessage" role="status">Connect ChatGPT or add an Anthropic API key to get started.</span><button class="btn primary" id="aiAsk">Ask</button></div>
+      <div id="aiAnswer" class="ai-answer" hidden aria-live="polite"></div>
+    </div>
+    <div class="note">For Claude, Codex, or Gemini apps you already use, PointPilot also provides a local read-only MCP server. See <a href="https://github.com/TheFunzzies/pointpilot/blob/main/docs/llm-integration.md" target="_blank" rel="noreferrer">MCP setup instructions</a>.</div>
+  </div>
 </section>
 
 <section id="view-discover" class="view">
@@ -193,4 +229,4 @@
 <div class="card sys"><h3>Local data</h3><b>Private on this PC</b><p id="sysDataDir">—</p></div>
 <div class="card sys update-card"><h3>Software updates</h3><b id="updateVersion">—</b><p id="updateMessage">PointPilot downloads updates from GitHub Releases automatically.</p><div class="btnrow"><button class="btn small" id="checkUpdates">Check now</button><button class="btn small primary" id="installUpdate" hidden>Restart &amp; install</button></div></div>
 </div></div></section>
-</main></div><div id="toast" class="toast" role="status"></div><script src="/helpers.js"></script><script src="/feature-kit.js"></script><script src="/itinerary-ui.js"></script><script src="/readiness-ui.js"></script><script src="/backup-ui.js"></script><script src="/diagnostics-ui.js"></script><script src="/app.js"></script></body></html>
+</main></div><div id="toast" class="toast" role="status"></div><script src="/helpers.js"></script><script src="/feature-kit.js"></script><script src="/itinerary-ui.js"></script><script src="/readiness-ui.js"></script><script src="/backup-ui.js"></script><script src="/diagnostics-ui.js"></script><script src="/app.js"></script><script src="/llm-ui.js"></script></body></html>
