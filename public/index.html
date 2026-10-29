@@ -119,6 +119,7 @@
 <div class="viewhead"><div><h2>Explore destinations</h2><p>Compare award trips you can fund with your current points.</p></div></div>
 <div class="note discovery-wallet-note" id="discoverWalletNote" hidden>Add your balances to see which trips your points can fund. <button class="btn small" id="discoverWallet">Open My Points</button></div>
 <div class="card searchbox">
+<div class="formgrid discovery-form" style="margin-top:0"><div class="span-2"><label for="discoverRequest">Describe the trip you want</label><input id="discoverRequest" placeholder="Flights from BOS to SXM in December"><small class="muted">Enter a route and month or date; PointPilot will fill the search fields below.</small></div><div style="align-self:end"><button class="btn" type="button" id="parseDiscoverRequest">Use this request</button></div></div>
 <div class="formgrid discovery-form" style="margin-top:0">
 <div class="span-2"><label for="discoverOrigins">Departure cities or airports</label><input id="discoverOrigins" placeholder="Boston, JFK"></div>
 <div class="span-2"><label for="discoverDestinations">Destinations to compare (up to 8)</label><input id="discoverDestinations" value="Melbourne, Tokyo, London, Paris" placeholder="Melbourne, Tokyo, London"><small class="muted">Separate cities or airport codes with commas.</small></div>
@@ -127,7 +128,7 @@
  </div>
 <details class="advanced-search discovery-advanced"><summary>More search options</summary>
 <div class="formgrid discovery-form">
-<div><label for="discoverFlex">Date flexibility</label><select id="discoverFlex"><option value="0">Exact</option><option value="3" selected>± 3 days</option><option value="7">± 7 days</option><option value="14">± 14 days</option></select></div>
+<div><label for="discoverFlex">Date flexibility</label><select id="discoverFlex"><option value="0">Exact</option><option value="3" selected>± 3 days</option><option value="7">± 7 days</option><option value="14">± 14 days</option><option value="15">Whole month</option></select></div>
 <div><label for="discoverCabin">Cabin</label><select id="discoverCabin"><option value="economy">Economy</option><option value="premium">Premium economy</option><option value="business" selected>Business</option><option value="first">First</option></select></div>
 <div><label for="discoverTravelers">Travelers</label><select id="discoverTravelers"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
 <div><label for="discoverRank">Rank by</label><select id="discoverRank"><option value="overall">Lowest effective cost</option><option value="points">Fewest points</option><option value="fees">Lowest taxes &amp; fees</option><option value="stops">Fewest stops</option><option value="duration">Shortest total travel time</option></select></div>

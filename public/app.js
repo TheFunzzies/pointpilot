@@ -2027,6 +2027,41 @@ function discoveryQuery() {
   };
 }
 
+// A small deterministic parser covers common route/date phrasing without sending trip text anywhere.
+function parseDiscoveryRequest(text) {
+  const route = String(text || '').match(/\bfrom\s+(.+?)\s+(?:to|into)\s+(.+?)(?=\s+(?:in|on|during|for)\s+|$)/i)
+    || String(text || '').match(/\b([A-Z]{3})\s*(?:→|->|to)\s*([A-Z]{3})\b/i);
+  if (!route) throw new Error('Use a route like “from BOS to SXM”.');
+  const origins = route[1].trim().replace(/[.,]+$/, '');
+  const destination = route[2].trim().replace(/[.,]+$/, '');
+  if (!origins || !destination) throw new Error('Enter both a departure city and destination.');
+  const input = String(text || '');
+  const months = ['january','february','march','april','may','june','july','august','september','october','november','december'];
+  const monthPattern = new RegExp(`\\b(${months.join('|')})(?:\\s+(20\\d{2}))?\\b`, 'i');
+  const month = input.match(monthPattern);
+  let departDate = '';
+  let flexDays = null;
+  if (month) {
+    let year = Number(month[2] || new Date().getFullYear());
+    const monthIndex = months.indexOf(month[1].toLowerCase());
+    if (!month[2] && monthIndex < new Date().getMonth()) year++;
+    departDate = `${year}-${String(monthIndex + 1).padStart(2, '0')}-16`;
+    flexDays = '15';
+  } else {
+    const iso = input.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+    const written = input.match(new RegExp(`\\b(${months.join('|')})\\s+(\\d{1,2})(?:,?\\s+(20\\d{2}))?\\b`, 'i'));
+    if (iso) departDate = iso[1];
+    else if (written) {
+      let year = Number(written[3] || new Date().getFullYear());
+      const monthIndex = months.indexOf(written[1].toLowerCase());
+      if (!written[3] && monthIndex < new Date().getMonth()) year++;
+      departDate = `${year}-${String(monthIndex + 1).padStart(2, '0')}-${String(Number(written[2])).padStart(2, '0')}`;
+    } else throw new Error('Add a month or date, such as “in December” or “Dec 12”.');
+    flexDays = '0';
+  }
+  return { origins, destination, departDate, flexDays };
+}
+
 function renderDiscovery(data, query) {
   const entries = [...(data.results || [])];
   const best = entry => entry.result?.recommended?.trip || null;
@@ -2081,6 +2116,17 @@ async function runDiscovery() {
 }
 
 $('discoverSearch').addEventListener('click', runDiscovery);
+$('parseDiscoverRequest').addEventListener('click', () => {
+  try {
+    const parsed = parseDiscoveryRequest($('discoverRequest').value);
+    $('discoverOrigins').value = parsed.origins;
+    $('discoverDestinations').value = parsed.destination;
+    $('discoverDepart').value = parsed.departDate;
+    $('discoverFlex').value = parsed.flexDays;
+    discoveryCostHint();
+    $('discoverStatus').textContent = `Ready to search ${parsed.origins} → ${parsed.destination} using your saved points. Review the trip details, then compare destinations.`;
+  } catch (error) { $('discoverStatus').textContent = error.message; }
+});
 $('discoverWallet').addEventListener('click', () => showView('wallet'));
 function discoveryCostHint() {
   const count = discoveryQuery().destinations.length;
