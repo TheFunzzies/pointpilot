@@ -101,7 +101,43 @@ function fillProgramSelects() {
   $('manualHotelProgram').innerHTML = opts(['hotel']);
   $('histProgram').innerHTML = '<option value="">All programs</option>' + opts();
   $('purchaseProgram').innerHTML = '<option value="">Choose a program</option>' + opts(['airline']);
+  $('expirationProgram').innerHTML = '<option value="">Choose a program</option>' + opts();
 }
+
+function renderExpirations() {
+  const list = $('expirationList');
+  if (!list) return;
+  const entries = [...(state.settings?.pointExpirations || [])].sort((a, b) => a.expiresOn.localeCompare(b.expiresOn));
+  if (!entries.length) { list.innerHTML = '<p class="muted">No expiration dates tracked yet.</p>'; return; }
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  list.innerHTML = entries.map(x => {
+    const days = Math.ceil((Date.parse(`${x.expiresOn}T00:00:00`) - today.getTime()) / 86400000);
+    const badge = days < 0 ? `<span class="tag warn">Expired ${Math.abs(days)}d ago</span>` : days <= 30 ? `<span class="tag warn">${days === 0 ? 'Expires today' : `Expires in ${days}d`}</span>` : `<span class="tag muted">${days} days</span>`;
+    return `<div class="expiration-row"><div><strong>${esc(programLabel(x.program))}</strong> · ${fmt(x.points)} points · ${dateFmt(x.expiresOn)} ${badge}${x.note ? `<div class="muted">${esc(x.note)}</div>` : ''}</div><button type="button" class="btn small ghost" data-remove-expiration="${esc(x.id)}" aria-label="Remove expiration for ${esc(programLabel(x.program))}">Remove</button></div>`;
+  }).join('');
+}
+
+$('addExpiration').addEventListener('click', async () => {
+  const program = $('expirationProgram').value, points = Number($('expirationPoints').value), expiresOn = $('expirationDate').value;
+  if (!program || !Number.isSafeInteger(points) || points <= 0 || !expiresOn) { $('expirationMessage').textContent = 'Choose a program, enter a point amount, and select an expiration date.'; return; }
+  const next = [...(state.settings?.pointExpirations || []), { id: crypto.randomUUID(), program, points, expiresOn, note: $('expirationNote').value.trim() }];
+  try {
+    await api('/api/settings', { method: 'PUT', body: { pointExpirations: next } });
+    await loadSettings();
+    $('expirationProgram').value = ''; $('expirationPoints').value = ''; $('expirationDate').value = ''; $('expirationNote').value = '';
+    $('expirationMessage').textContent = 'Expiration saved. Reminders run while PointPilot is open or in the tray.';
+  } catch (e) { $('expirationMessage').textContent = e.message; }
+});
+$('expirationList').addEventListener('click', async e => {
+  const id = e.target.closest('[data-remove-expiration]')?.dataset.removeExpiration;
+  if (!id) return;
+  try {
+    const next = (state.settings?.pointExpirations || []).filter(x => x.id !== id);
+    await api('/api/settings', { method: 'PUT', body: { pointExpirations: next } });
+    await loadSettings();
+    $('expirationMessage').textContent = 'Expiration removed.';
+  } catch (err) { $('expirationMessage').textContent = err.message; }
+});
 
 function renderPurchaseOffers(offers = []) {
   const list = $('purchaseOffersList');
@@ -821,6 +857,9 @@ async function renderAwardSummary() {
           <option value="any"${out?.flight ? '' : ' selected'}>Any award on these dates fits my points</option>
         </select>
         <input id="alertMaxPts" class="inputnum" type="number" min="0" step="5000" placeholder="Max pts / person">
+        <input id="alertMaxFees" class="inputnum" type="number" min="0" step="25" placeholder="Max fees / person">
+        <input id="alertMinSeats" class="inputnum" type="number" min="0" max="9" step="1" placeholder="Min seats">
+        <label class="check" style="font-size:12px">Cabin coverage <select id="alertMinCabinPct"><option value="0">Any / unknown</option><option value="80">At least 80%</option><option value="90">At least 90%</option><option value="100">100% only</option></select></label>
         <button class="btn primary small" data-action="monitor-create">Create alert</button>
       </div>
       <p class="muted" style="margin:6px 0 0;font-size:12px">Checked in the background (Data &amp; System → alert interval); you get a Windows notification when it matches or the price drops.</p>
@@ -1448,11 +1487,12 @@ $('results').addEventListener('click', async e => {
   if (action === 'monitor-create') {
     const q = state.lastQuery || currentQuery();
     const mode = $('alertMode').value, max = Number($('alertMaxPts').value || 0);
+    const maxTaxesPerTraveler = Number($('alertMaxFees').value || 0), minSeats = Number($('alertMinSeats').value || 0), minCabinPct = Number($('alertMinCabinPct').value || 0);
     const legs = [optById(award.sel.Outbound), award.r.query.back ? optById(award.sel.Return) : null].filter(Boolean);
     const track = mode === 'any' ? null : { mode, legs: legs.map(o => ({ leg: o.leg, date: o.flight?.depart?.date || o.date, flightNumbers: o.flight?.flightNumbers || [], program: o.program, programName: o.programName, mileageCost: o.mileageCost, seatScore: o.seatScore, product: o.flight?.product?.type || null })) };
     const title = track ? `${legs.map(o => o.flight?.flightNumbers.join('/') || o.date).join(' + ')}${mode === 'similar' ? ' or similar' : ''}` : `${q.destination} ${q.cabin} · ${q.travelers} pax`;
     try {
-      const a = await api('/api/alerts', { method: 'POST', body: { ...q, track, maxPointsPerTraveler: max, title } });
+      const a = await api('/api/alerts', { method: 'POST', body: { ...q, track, maxPointsPerTraveler: max, maxTaxesPerTraveler, minSeats, minCabinPct, title } });
       state.alerts.unshift(a); renderAlerts(); renderKPIs(); $('awAlertPanel').hidden = true;
       toast(track ? 'Flight alert saved. You\'ll be notified when these flights are bookable.' : 'Trip alert saved.');
     } catch (err) { toast(err.message); }
@@ -1521,8 +1561,10 @@ function renderAlerts() {
         ? `<span class="tag brand">${a.track.mode === 'exact' ? 'EXACT FLIGHTS' : 'FLIGHTS OR SIMILAR'}</span> ${a.track.legs.map(l => `${esc(l.leg)} ${esc(l.flightNumbers.join('/') || '')} ${dateFmt(l.date)} (${fmt(l.mileageCost)} pts${l.product ? `, ${esc(l.product)}` : ''})`).join(' · ')} · ${esc(q.cabin)} · ${esc(q.travelers)} pax${a.maxPointsPerTraveler ? ` · ≤ ${fmt(a.maxPointsPerTraveler)} pts/person` : ''}${a.lastTracked ? ` · now: ${a.lastTracked.map(t => `${esc(t.leg)} ${t.found ? `${fmt(t.points)} pts` : 'not available'}`).join(', ')}` : ''}`
         : `<span class="tag brand">AWARD</span> ${esc(q.origins)} → ${esc(q.destination)} · ${esc(q.cabin)} · ${esc(q.travelers)} pax · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d`
     }[a.kind || 'award']?.() || '';
+    const filters = a.kind === 'award' ? [a.maxTaxesPerTraveler ? `≤ ${money(a.maxTaxesPerTraveler)} fees/person` : '', a.minSeats ? `≥ ${a.minSeats} seats` : '', a.minCabinPct ? `≥ ${a.minCabinPct}% cabin coverage` : ''].filter(Boolean).join(' · ') : '';
     return `<div class="rowalert"><div><strong>${esc(a.title)}</strong>
       <div class="muted" style="font-size:11px">${desc}</div>
+      ${filters ? `<div class="muted" style="font-size:11px">Filters: ${esc(filters)}</div>` : ''}
       <div class="muted${check.kind === 'error' ? ' alert-error' : ''}" style="font-size:11px"${check.kind === 'error' ? ' role="alert"' : ''}>${check.kind === 'error' ? '⚠ ' : ''}${esc(last)}${check.kind !== 'error' && a.lastWarnings?.length ? ` · Warning: ${esc(a.lastWarnings.join('; '))}` : ''}${check.kind !== 'error' && a.lastResult?.best ? ` — ${esc(a.lastResult.best)}` : ''}</div></div>
       <div class="btnrow" style="margin:0"><button class="btn small" data-check="${esc(a.id)}"${a.active ? '' : ' disabled'}>Check now</button><button class="btn small" data-toggle="${esc(a.id)}" data-active="${a.active ? '1' : ''}">${a.active ? 'Pause' : 'Resume'}</button><button class="btn small" data-delete="${esc(a.id)}">Remove</button></div></div>`;
   }).join('');
@@ -1663,6 +1705,7 @@ async function loadSettings() {
   if (!$('dealAirports').value) $('dealAirports').value = s.homeAirports || $('origins').value;
   state.settings = s;
   renderPurchaseOffers(s.buyPointsOffers || []);
+  renderExpirations();
 }
 $('saveCashKeys').onclick = () => {
   const patch = { homeAirports: $('homeAirports').value };
@@ -1746,6 +1789,61 @@ async function loadBuilder() {
   try { renderBuilder(await api('/api/trip-plan')); } catch (e) { toast(e.message); }
 }
 
+const icsEscape = value => String(value ?? '').replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+const icsUtc = value => {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z') : null;
+};
+const icsDay = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || '')) ? String(value).replace(/-/g, '') : null;
+function tripCalendarText(plan) {
+  const events = [];
+  for (const entry of plan.timeline || []) {
+    const item = entry.item || {};
+    let summary = '', description = '', start = null, end = null, allDay = false;
+    if (entry.type === 'award' || entry.type === 'positioning') {
+      const f = entry.type === 'award' ? item.flight : item;
+      const origin = f?.origin || item.origin || '';
+      const destination = f?.destination || item.destination || '';
+      const date = f?.depart?.date || item.departDate || item.date || item.dateFrom;
+      const number = f?.flightNumbers?.length ? ` · ${f.flightNumbers.join('/')}` : item.flightNumber ? ` · ${item.flightNumber}` : '';
+      summary = `${entry.type === 'award' ? 'Award flight' : 'Positioning flight'} ${origin}${origin && destination ? ' → ' : ''}${destination}${number}`;
+      description = [item.programName || item.airline || '', item.mileageCost ? `${fmt(item.mileageCost)} points per traveler` : '', item.price ? `${money(item.price)} cash` : '', 'Times are shown in UTC when available. Confirm details with the airline.'].filter(Boolean).join(' · ');
+      start = icsUtc(f?.departUtc || item.departUtc);
+      end = icsUtc(f?.arriveUtc || item.arriveUtc);
+      if (!start || !end) { start = icsDay(date); allDay = true; }
+    } else if (entry.type === 'hotel') {
+      const startDay = icsDay(item.checkIn), endDay = icsDay(item.checkOut);
+      if (!startDay || !endDay) continue;
+      summary = `Hotel · ${item.name || item.city || item.location || 'Stay'}`;
+      description = [item.city || item.location || '', item.programName || '', item.totalPoints ? `${fmt(item.totalPoints)} points` : ''].filter(Boolean).join(' · ');
+      start = startDay; end = endDay; allDay = true;
+    }
+    if (!summary || !start) continue;
+    events.push({ summary, description, start, end, allDay });
+  }
+  if (!events.length) throw new Error('Add a flight or stay with dates to your Trip Builder first.');
+  const fold = line => line.match(/.{1,70}/g)?.join('\r\n ') || '';
+  const now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  const rows = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//PointPilot//Trip Calendar//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+  events.forEach((event, i) => {
+    rows.push('BEGIN:VEVENT', `UID:${crypto.randomUUID()}-${i}@pointpilot`, `DTSTAMP:${now}`);
+    if (event.allDay) rows.push(`DTSTART;VALUE=DATE:${event.start}`, ...(event.end ? [`DTEND;VALUE=DATE:${event.end}`] : []));
+    else rows.push(`DTSTART:${event.start}`, ...(event.end ? [`DTEND:${event.end}`] : []));
+    rows.push(`SUMMARY:${icsEscape(event.summary)}`, `DESCRIPTION:${icsEscape(event.description)}`, 'END:VEVENT');
+  });
+  rows.push('END:VCALENDAR');
+  return rows.map(fold).join('\r\n') + '\r\n';
+}
+function downloadTripCalendar(plan) {
+  const text = tripCalendarText(plan);
+  const date = new Date().toISOString().slice(0, 10);
+  window.PPKit.downloadText(`pointpilot-trip-${date}.ics`, text, 'text/calendar;charset=utf-8');
+}
+$('exportTripCalendar').onclick = () => {
+  try { downloadTripCalendar(tb.plan || {}); toast('Calendar file saved.'); }
+  catch (e) { toast(e.message); }
+};
+
 function legDesc(o) {
   const f = o.flight;
   return f ? `${esc(dayLabel(f.depart?.date))} · ${t12(f.depart?.time)} ${esc(f.origin)} → ${t12(f.arrive?.time)} ${esc(f.destination)}${plusDays(f.arriveDayOffset)} · ${dur(f.totalDurationMin)} · ${esc(f.flightNumbers.join(' / '))}`
@@ -1803,6 +1901,7 @@ function positioningSlot(p, dir) {
 
 function renderBuilder(p) {
   tb.plan = p;
+  $('exportTripCalendar').disabled = !(p.timeline || []).some(x => ['award', 'positioning', 'hotel'].includes(x.type));
   if (p.planHash && p.planHash !== tb.lastHash) { if (tb.lastHash) features.readiness?.invalidate(); tb.lastHash = p.planHash; }
   for (const [id, v] of [['tbHome', p.home.origin], ['tbReturnTo', p.home.returnTo], ['tbBufferOut', p.buffers.outboundHours], ['tbBufferBack', p.buffers.returnHours]]) if (document.activeElement !== $(id)) $(id).value = v ?? '';
   const out = p.flights?.outbound, ret = p.flights?.return;

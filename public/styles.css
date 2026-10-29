@@ -212,6 +212,12 @@ button.seg.active { background: var(--surface); color: var(--ink); box-shadow: v
 
 /* ---------- wallet ---------- */
 .wallet-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.expiration-card { margin: 0 0 14px; }
+.expiration-form { margin-top: 10px; }
+.expiration-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--line); }
+.expiration-list { margin-top: 12px; }
+.expiration-list > p { margin: 10px 0 0; }
+@media (max-width: 680px) { .expiration-form { grid-template-columns: 1fr 1fr; } }
 .wallet-grid { display: grid; gap: 14px; }
 .simplefin-card { margin-bottom: 14px; }
 .simplefin-card textarea { width: 100%; resize: vertical; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; }
@@ -440,6 +446,13 @@ tbody tr:hover td { background: var(--surface-2); }
 .days.calendar .day { padding: 6px 7px; }
 .days.calendar .day .rng { font-size: 12px; }
 .days.calendar .empty-day { border: 1px dashed var(--line); border-radius: var(--radius-sm); min-height: 54px; display: grid; place-items: center; color: var(--muted); font-size: 11px; }
+@media (max-width: 520px) {
+  .days.calendar { gap: 3px; }
+  .days.calendar .day { min-width: 0; min-height: 54px; padding: 5px 2px; text-align: center; align-content: center; }
+  .days.calendar .day .rng { font-size: 10px; line-height: 1.2; overflow-wrap: anywhere; }
+  .days.calendar .day small { display: none; }
+  .days.calendar .empty-day { min-height: 54px; }
+}
 .recents { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center; font-size: 12px; color: var(--muted); }
 .recents button { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); }
 .recents button:hover { border-color: var(--brand); color: var(--brand-ink); }

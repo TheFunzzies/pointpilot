@@ -57,10 +57,10 @@
 <div id="itineraryRoot" hidden></div>
 <div id="classicSearch">
 <div class="formgrid">
-<div><label for="destination" id="destinationLabel">Destination</label><input id="destination" value="Thailand" placeholder="Thailand, Tokyo, BKK… (hotels: a city)"></div>
-<div id="originsField"><label for="origins" id="originsLabel">Departure airports</label><input id="origins" value="JFK,BOS,EWR" placeholder="JFK,BOS or New York"></div>
-<div id="travelersField"><label for="travelers">Travelers</label><select id="travelers"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
-<div><label for="cabin" id="cabinLabel">Cabin</label><select id="cabin"><option selected value="business">Business</option><option value="first">First</option><option value="premium">Premium Economy</option><option value="economy">Economy</option></select></div>
+<div><label for="destination" id="destinationLabel">Destination</label><input id="destination" placeholder="Thailand, Tokyo, BKK… (hotels: a city)"></div>
+<div id="originsField"><label for="origins" id="originsLabel">Departure airports</label><input id="origins" placeholder="JFK,BOS or New York"></div>
+<div id="travelersField"><label for="travelers">Travelers</label><select id="travelers"><option selected>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+<div><label for="cabin" id="cabinLabel">Cabin</label><select id="cabin"><option value="business">Business</option><option value="first">First</option><option value="premium">Premium Economy</option><option selected value="economy">Economy</option></select></div>
 <div><label for="dateFrom" id="dateFromLabel">Departure date</label><input id="dateFrom" type="date"></div>
 <div><label for="dateTo" id="dateToLabel">Return date (optional)</label><input id="dateTo" type="date"></div>
 <div><label for="flex">Date flexibility</label><select id="flex"><option value="0">Exact</option><option value="3" selected>± 3 days</option><option value="7">± 7 days</option><option value="14">± 14 days</option></select></div>
@@ -140,7 +140,7 @@
 </section>
 
 <section id="view-builder" class="view">
-<div class="viewhead"><div><h2>Trip Builder</h2><p>Your award flights, hotels and the flights between home and the award airports, assembled into one trip with one combined points and cash total.</p></div><button class="btn ghost" id="clearTrip">Clear flights</button></div>
+<div class="viewhead"><div><h2>Trip Builder</h2><p>Your award flights, hotels and the flights between home and the award airports, assembled into one trip with one combined points and cash total.</p></div><div class="btnrow" style="margin:0"><button class="btn" id="exportTripCalendar" disabled>Export calendar</button><button class="btn ghost" id="clearTrip">Clear flights</button></div></div>
 <div id="tbReadinessSlot"></div>
 <div id="readinessRoot" hidden></div>
 <div class="card searchbox"><div class="formgrid" style="margin-top:0">
@@ -156,6 +156,9 @@
 <div class="viewhead"><div><h2>My points</h2><p>Add every bank, airline and hotel balance you hold. Your value per point (¢) decides which points get spent first.</p></div><span class="save-state" id="walletState"></span></div>
 <p class="muted fk-walletlink">Moving to another PC, or want a safety copy? <button type="button" class="btn small ghost" id="gotoBackup">Back up or restore your points</button></p>
 <div class="wallet-summary"><div class="card kpi"><span>Sum of balances</span><b id="wTotal">0</b><small id="wPrograms">0 programs · units differ by program</small></div><div class="card kpi"><span>Estimated value</span><b id="wValue">$0</b><small>at your ¢/pt values</small></div><div class="card kpi"><span>Bank-point balances</span><b id="wFlex">0</b><small>currencies are not combined</small></div></div>
+<section class="card searchbox expiration-card" aria-labelledby="expirationHeading"><div class="cardhead"><div><h3 id="expirationHeading">Points expiring</h3><p>Track individual point batches. PointPilot reminds you 90, 60 and 30 days ahead, then daily during the final week, while it is running.</p></div></div>
+<div class="formgrid expiration-form"><div><label for="expirationProgram">Program</label><select id="expirationProgram"></select></div><div><label for="expirationPoints">Points in this batch</label><input id="expirationPoints" type="number" min="1" step="1000" placeholder="25000"></div><div><label for="expirationDate">Expiration date</label><input id="expirationDate" type="date"></div><div><label for="expirationNote">Note (optional)</label><input id="expirationNote" maxlength="160" placeholder="Account or activity needed to keep points"></div></div>
+<div class="btnrow"><button type="button" class="btn primary small" id="addExpiration">Track expiration</button><span id="expirationMessage" class="muted" role="status" aria-live="polite"></span></div><div id="expirationList" class="expiration-list"></div></section>
 <section class="card searchbox simplefin-card" id="simpleFinCard" aria-labelledby="simpleFinHeading">
   <div class="cardhead"><div><h3 id="simpleFinHeading">Connect rewards with SimpleFIN</h3><p>Import reward balances when your institution exposes them as a SimpleFIN custom currency.</p></div><span id="simpleFinStatus" class="tag muted" role="status">Checking…</span></div>
   <p class="note">SimpleFIN may provide card account balances without points balances. PointPilot only imports custom rewards currencies, and you choose which loyalty program each one belongs to.</p>
