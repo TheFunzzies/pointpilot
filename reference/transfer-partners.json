@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "source": "Roame Transfer Partners Cheat Sheet",
   "sourceUrl": "https://roame.travel/transfer-partners-cheat-sheet",
-  "lastUpdated": "2026-10-29",
+  "lastUpdated": "2026-10-30",
   "note": "Partner-specific chunk bonuses apply only where eligible. Rolling offers require same-day source confirmation; bonusEnds is reserved for authoritative expiry dates. Always verify before moving points — transfers are irreversible.",
   "banks": {
     "amex": {
@@ -85,6 +85,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -135,6 +136,7 @@
           "days": 1,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -196,6 +198,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -207,6 +210,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -222,7 +226,7 @@
             "roame",
             "tpg"
           ],
-          "bonusLastConfirmedAt": "2026-10-29T17:27:42.898Z",
+          "bonusLastConfirmedAt": "2026-10-30T17:02:09.293Z",
           "bonusConfirmedBy": [
             "roame"
           ]
@@ -235,6 +239,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -246,6 +251,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -340,6 +346,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -351,6 +358,7 @@
           "days": 3,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -365,7 +373,7 @@
             "tpg"
           ],
           "bonusPct": 0.1,
-          "bonusLastConfirmedAt": "2026-10-29T17:27:42.898Z",
+          "bonusLastConfirmedAt": "2026-10-30T17:02:09.293Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -379,6 +387,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -457,7 +466,7 @@
             "roame",
             "tpg"
           ],
-          "bonusLastConfirmedAt": "2026-10-29T17:27:42.898Z",
+          "bonusLastConfirmedAt": "2026-10-30T17:02:09.293Z",
           "bonusConfirmedBy": [
             "roame"
           ]
@@ -470,6 +479,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -481,6 +491,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -492,6 +503,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -503,6 +515,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -514,6 +527,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -608,6 +622,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -619,6 +634,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -630,6 +646,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -641,6 +658,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -700,6 +718,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -711,6 +730,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -722,6 +742,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -735,6 +756,7 @@
           "bonusEnds": "2026-10-24",
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ],
           "bonusLastConfirmedAt": "2026-10-24T14:37:32.814Z",
@@ -750,6 +772,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -831,6 +854,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -842,6 +866,7 @@
           "days": 2,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -853,6 +878,7 @@
           "days": 2,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -864,6 +890,7 @@
           "days": 2,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -945,6 +972,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -956,6 +984,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -967,6 +996,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -982,7 +1012,7 @@
           ],
           "bonusPct": 0.35,
           "bonusRolling": true,
-          "bonusLastConfirmedAt": "2026-10-29T17:27:42.898Z",
+          "bonusLastConfirmedAt": "2026-10-30T17:02:09.293Z",
           "bonusConfirmedBy": [
             "roame"
           ]
@@ -1057,6 +1087,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1068,6 +1099,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1090,6 +1122,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1171,6 +1204,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1182,6 +1216,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1255,6 +1290,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1266,6 +1302,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1280,7 +1317,7 @@
             "upgradedpoints"
           ],
           "bonusPct": 0.3,
-          "bonusLastConfirmedAt": "2026-10-29T17:27:42.898Z",
+          "bonusLastConfirmedAt": "2026-10-30T17:02:09.293Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -1294,6 +1331,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1305,6 +1343,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1316,6 +1355,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1369,6 +1409,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1380,6 +1421,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1391,6 +1433,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1402,6 +1445,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1413,6 +1457,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1434,6 +1479,7 @@
           "days": 2,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         }
@@ -1452,6 +1498,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1512,6 +1559,7 @@
           "days": 2,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1565,6 +1613,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1576,6 +1625,7 @@
           "days": 1,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1587,6 +1637,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1638,6 +1689,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1649,6 +1701,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1675,6 +1728,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1733,6 +1787,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1744,6 +1799,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1755,6 +1811,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1849,6 +1906,7 @@
           "days": 2,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1860,6 +1918,7 @@
           "days": 2,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1953,6 +2012,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -1979,6 +2039,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2020,6 +2081,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         }
@@ -2038,6 +2100,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2049,6 +2112,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2075,6 +2139,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2086,6 +2151,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2134,6 +2200,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2145,6 +2212,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2171,6 +2239,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2182,6 +2251,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2210,6 +2280,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2236,6 +2307,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2278,7 +2350,7 @@
           ],
           "bonusPct": 0.2,
           "bonusRolling": true,
-          "bonusLastConfirmedAt": "2026-10-29T17:27:42.898Z",
+          "bonusLastConfirmedAt": "2026-10-30T17:02:09.293Z",
           "bonusConfirmedBy": [
             "roame"
           ]
@@ -2299,6 +2371,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2393,6 +2466,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2424,6 +2498,7 @@
           "bonusEnds": "2026-10-31",
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2435,6 +2510,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         }
@@ -2453,6 +2529,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2464,6 +2541,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         }
@@ -2485,7 +2563,7 @@
             "tpg"
           ],
           "bonusPct": 0.35,
-          "bonusLastConfirmedAt": "2026-10-29T17:27:42.898Z",
+          "bonusLastConfirmedAt": "2026-10-30T17:02:09.293Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -2499,6 +2577,7 @@
           "days": 2,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2512,6 +2591,7 @@
           "bonusEnds": "2026-10-31",
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2540,6 +2620,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2551,6 +2632,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2562,6 +2644,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2573,6 +2656,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         }
@@ -2591,6 +2675,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2602,6 +2687,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2613,6 +2699,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2624,6 +2711,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2663,6 +2751,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2674,6 +2763,7 @@
           "days": 2,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2685,6 +2775,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         }
@@ -2702,6 +2793,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2780,6 +2872,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2791,6 +2884,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         },
@@ -2802,6 +2896,7 @@
           "days": 0,
           "verifiedBy": [
             "roame",
+            "tpg",
             "upgradedpoints"
           ]
         }
@@ -2854,19 +2949,44 @@
       "aerlingus": 1.4,
       "aeromexico": 0.8,
       "aeroplan": 1.5,
+      "flyingblue": 1.4,
+      "american": 1.45,
+      "ana": 1.4,
+      "alaska": 1.55,
+      "lifemiles": 1.6,
+      "ba": 1.4,
+      "cathay": 1.3,
+      "delta": 1.2,
+      "emirates": 1.2,
+      "etihad": 1.2,
+      "finnair": 1.4,
+      "iberia": 1.4,
+      "jetblue": 1.35,
+      "qantas": 1.25,
+      "qatar": 1.4,
+      "singapore": 1.3,
+      "southwest": 1.25,
+      "turkish": 1.1,
+      "united": 1.2,
+      "virginatlantic": 1.5,
       "accor": 2.3,
       "choice": 0.85,
-      "hilton": 0.4
+      "hilton": 0.4,
+      "ihg": 0.6,
+      "marriott": 0.75,
+      "hyatt": 1.65,
+      "wyndham": 0.55
     }
   },
   "verification": {
-    "checkedAt": "2026-10-29T17:27:42.898Z",
+    "checkedAt": "2026-10-30T17:02:09.293Z",
     "sources": {
       "roame": 219,
-      "upgradedpoints": 143
+      "upgradedpoints": 143,
+      "tpg": 106
     }
   },
-  "updatedAt": "2026-10-29T17:27:42.898Z",
-  "revision": 10,
-  "contentHash": "190742b3e90725a8368be8ecac3bb07a555b5fe78df70d6fc452ea847af8e59a"
+  "updatedAt": "2026-10-30T17:02:09.293Z",
+  "revision": 11,
+  "contentHash": "6df151ef6336997e4070468f5862d360f7842cae4e67f527e5af664bae0e72fe"
 }
