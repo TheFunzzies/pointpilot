@@ -57,8 +57,8 @@
 <div id="itineraryRoot" hidden></div>
 <div id="classicSearch">
 <div class="formgrid">
-<div><label for="destination" id="destinationLabel">Destination</label><input id="destination" placeholder="Thailand, Tokyo, BKK… (hotels: a city)"></div>
-<div id="originsField"><label for="origins" id="originsLabel">Departure airports</label><input id="origins" placeholder="JFK,BOS or New York"></div>
+<div><label for="destination" id="destinationLabel">Destination</label><input id="destination" data-places autocomplete="off" placeholder="Thailand, Tokyo, BKK… (hotels: a city)"></div>
+<div id="originsField"><label for="origins" id="originsLabel">Departure airports</label><input id="origins" data-places autocomplete="off" placeholder="JFK,BOS or New York"></div>
 <div id="travelersField"><label for="travelers">Travelers</label><select id="travelers"><option selected>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
 <div><label for="cabin" id="cabinLabel">Cabin</label><select id="cabin"><option value="business">Business</option><option value="first">First</option><option value="premium">Premium Economy</option><option selected value="economy">Economy</option></select></div>
 <div><label for="dateFrom" id="dateFromLabel">Departure date</label><input id="dateFrom" type="date"></div>
@@ -121,8 +121,8 @@
 <div class="card searchbox">
 <div class="formgrid discovery-form" style="margin-top:0"><div class="span-2"><label for="discoverRequest">Describe the trip you want</label><input id="discoverRequest" placeholder="Flights from BOS to SXM in December"><small class="muted">Enter a route and month or date; PointPilot will fill the search fields below.</small></div><div style="align-self:end"><button class="btn" type="button" id="parseDiscoverRequest">Use this request</button></div></div>
 <div class="formgrid discovery-form" style="margin-top:0">
-<div class="span-2"><label for="discoverOrigins">Departure cities or airports</label><input id="discoverOrigins" placeholder="Boston, JFK"></div>
-<div class="span-2"><label for="discoverDestinations">Destinations to compare (up to 8)</label><input id="discoverDestinations" value="Melbourne, Tokyo, London, Paris" placeholder="Melbourne, Tokyo, London"><small class="muted">Separate cities or airport codes with commas.</small></div>
+<div class="span-2"><label for="discoverOrigins">Departure cities or airports</label><input id="discoverOrigins" data-places autocomplete="off" placeholder="Boston, JFK"></div>
+<div class="span-2"><label for="discoverDestinations">Destinations to compare (up to 8)</label><input id="discoverDestinations" data-places autocomplete="off" value="Melbourne, Tokyo, London, Paris" placeholder="Melbourne, Tokyo, London"><small class="muted">Separate cities or airport codes with commas.</small></div>
 <div><label for="discoverDepart">Departure date</label><input id="discoverDepart" type="date"></div>
 <div><label for="discoverReturn">Return date (optional)</label><input id="discoverReturn" type="date"></div>
  </div>
@@ -202,7 +202,7 @@
 <section id="view-deals" class="view"><div class="viewhead"><div><h2>Cash deals from your airports</h2><p>Cheapest recent fares from your home airports to anywhere, compared with what PointPilot has seen before. Powered by Travelpayouts; prices are per person and may be up to ~48 hours old.</p></div></div>
 <div class="stack">
 <div class="card searchbox"><div class="formgrid" style="margin-top:0">
-<div><label for="dealAirports">Home airports</label><input id="dealAirports" placeholder="JFK,EWR,BOS"></div>
+<div><label for="dealAirports">Home airports</label><input id="dealAirports" data-places autocomplete="off" placeholder="JFK,EWR,BOS"></div>
 <div><label for="dealDestination">Destination (optional)</label><input id="dealDestination" placeholder="Anywhere — or Tokyo, LIS, Italy"></div>
 <div><label for="dealCabin">Cabin</label><select id="dealCabin"><option value="economy" selected>Economy</option><option value="business">Business</option></select></div>
 <div><label for="dealMaxPrice">Max price per person (USD)</label><input id="dealMaxPrice" type="number" min="0" step="50" placeholder="Any"></div>
@@ -214,7 +214,7 @@
 
 <section id="view-alerts" class="view"><div class="viewhead"><div><h2>Alerts</h2><p>Award trips, hotel stays, cash fares and airport deal watches are checked while PointPilot is open or running in the tray. You get a Windows notification when something new appears.</p></div><button class="btn primary" id="runMonitor">Check all now</button></div><div class="card" id="alerts"></div><div class="card empty" id="alertEmpty"><strong>No alerts yet</strong>Run a flight search—even if no award space appears—and choose “Monitor this trip”. You can also monitor a hotel stay.</div></section>
 
-<section id="view-history" class="view"><div class="viewhead"><div><h2>Historical award prices</h2><p>Published benchmarks plus every award price PointPilot has seen.</p></div><button class="btn" id="refreshHistory">Refresh</button></div><div class="stack"><div class="card searchbox"><div class="formgrid" style="margin-top:0"><div><label for="histProgram">Program</label><select id="histProgram"><option value="">All programs</option></select></div><div><label for="histOrigin">Origin</label><input id="histOrigin" placeholder="JFK"></div><div><label for="histDestination">Destination</label><input id="histDestination" placeholder="BKK"></div><div><label for="histCabin">Cabin</label><select id="histCabin"><option value="">All</option><option value="economy">Economy</option><option value="premium">Premium</option><option value="business">Business</option><option value="first">First</option></select></div></div></div><div class="card tablecard"><div class="tableScroll"><table><thead><tr><th>Observed</th><th>Program</th><th>Scope</th><th>Cabin</th><th>Points</th><th>Type</th><th>Source</th></tr></thead><tbody id="historyTable"></tbody></table></div></div><div class="note" id="historySources"></div></div></section>
+<section id="view-history" class="view"><div class="viewhead"><div><h2>Historical award prices</h2><p>Published benchmarks plus every award price PointPilot has seen.</p></div><button class="btn" id="refreshHistory">Refresh</button></div><div class="stack"><div class="card searchbox"><div class="formgrid" style="margin-top:0"><div><label for="histProgram">Program</label><select id="histProgram"><option value="">All programs</option></select></div><div><label for="histOrigin">Origin</label><input id="histOrigin" data-places autocomplete="off" placeholder="JFK"></div><div><label for="histDestination">Destination</label><input id="histDestination" data-places autocomplete="off" placeholder="BKK"></div><div><label for="histCabin">Cabin</label><select id="histCabin"><option value="">All</option><option value="economy">Economy</option><option value="premium">Premium</option><option value="business">Business</option><option value="first">First</option></select></div></div></div><div class="card tablecard"><div class="tableScroll"><table><thead><tr><th>Observed</th><th>Program</th><th>Scope</th><th>Cabin</th><th>Points</th><th>Type</th><th>Source</th></tr></thead><tbody id="historyTable"></tbody></table></div></div><div class="note" id="historySources"></div></div></section>
 
 <section id="view-manual" class="view"><div class="viewhead"><div><h2>Manual entry</h2><p>For programs seats.aero/rooms.aero don't cover, or without an API key: search the program's site yourself, then record what you saw.</p></div></div>
 <div class="stack">
@@ -253,4 +253,4 @@
 <div class="card sys"><h3>Local data</h3><b>Private on this PC</b><p id="sysDataDir">—</p></div>
 <div class="card sys update-card"><h3>Software updates</h3><b id="updateVersion">—</b><p id="updateMessage">PointPilot downloads updates from GitHub Releases automatically.</p><div class="btnrow"><button class="btn small" id="checkUpdates">Check now</button><button class="btn small primary" id="installUpdate" hidden>Restart &amp; install</button></div></div>
 </div></div></section>
-</main></div><div id="toast" class="toast" role="status"></div><script src="/helpers.js"></script><script src="/feature-kit.js"></script><script src="/itinerary-ui.js"></script><script src="/readiness-ui.js"></script><script src="/backup-ui.js"></script><script src="/diagnostics-ui.js"></script><script src="/app.js"></script><script src="/llm-ui.js"></script></body></html>
+</main></div><div id="toast" class="toast" role="status"></div><script src="/helpers.js"></script><script src="/place-suggest.js"></script><script src="/feature-kit.js"></script><script src="/itinerary-ui.js"></script><script src="/readiness-ui.js"></script><script src="/backup-ui.js"></script><script src="/diagnostics-ui.js"></script><script src="/app.js"></script><script src="/llm-ui.js"></script></body></html>

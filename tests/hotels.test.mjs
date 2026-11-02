@@ -70,7 +70,9 @@ test('hotel search end to end: live API rows, funding from Chase -> Hyatt, separ
     assert.deepEqual(hyatt.funding.sources.map(s => s.from), ['hyatt', 'chase']);
     // Ranked by points value spent: Conrad (150k Hilton ≈ 58k Amex via 1:2 + 30% bonus) beats Hyatt.
     assert.equal(r.rows[0].program, 'hilton');
-    assert.deepEqual(r.rows[0].funding.sources.map(s => [s.from, s.fromPoints]), [['amex', 58000]]);
+    // 58k with the Amex->Hilton bonus, 75k once it has expired (bonusEnds 2026-10-31), so don't pin to the date.
+    assert.deepEqual(r.rows[0].funding.sources.map(s => s.from), ['amex']);
+    assert.ok([58000, 75000].includes(r.rows[0].funding.sources[0].fromPoints));
     assert.ok(r.rows[0].effectiveCostUsd <= r.rows[1].effectiveCostUsd);
     assert.equal(r.rows.every(h => h.roomType === 'standard'), true);
     assert.equal((await apiUsage()).roomsCalls - before.roomsCalls, 1);
