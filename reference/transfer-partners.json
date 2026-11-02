@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "source": "Roame Transfer Partners Cheat Sheet",
   "sourceUrl": "https://roame.travel/transfer-partners-cheat-sheet",
-  "lastUpdated": "2026-11-01",
+  "lastUpdated": "2026-11-02",
   "note": "Partner-specific chunk bonuses apply only where eligible. Rolling offers require same-day source confirmation; bonusEnds is reserved for authoritative expiry dates. Always verify before moving points — transfers are irreversible.",
   "banks": {
     "amex": {
@@ -241,7 +241,13 @@
             "roame",
             "tpg",
             "upgradedpoints"
-          ]
+          ],
+          "bonusPct": 0.3,
+          "bonusLastConfirmedAt": "2026-11-02T20:48:41.481Z",
+          "bonusConfirmedBy": [
+            "roame"
+          ],
+          "bonusRolling": true
         },
         "wellsfargo": {
           "ratio": [
@@ -373,7 +379,7 @@
             "tpg"
           ],
           "bonusPct": 0.1,
-          "bonusLastConfirmedAt": "2026-11-01T17:09:53.049Z",
+          "bonusLastConfirmedAt": "2026-11-02T20:48:41.481Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -493,7 +499,13 @@
             "roame",
             "tpg",
             "upgradedpoints"
-          ]
+          ],
+          "bonusPct": 0.2,
+          "bonusLastConfirmedAt": "2026-11-02T20:48:41.481Z",
+          "bonusConfirmedBy": [
+            "roame"
+          ],
+          "bonusRolling": true
         },
         "chase": {
           "ratio": [
@@ -1311,7 +1323,7 @@
             "upgradedpoints"
           ],
           "bonusPct": 0.3,
-          "bonusLastConfirmedAt": "2026-11-01T17:09:53.049Z",
+          "bonusLastConfirmedAt": "2026-11-02T20:48:41.481Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -2108,7 +2120,13 @@
             "roame",
             "tpg",
             "upgradedpoints"
-          ]
+          ],
+          "bonusPct": 0.3,
+          "bonusLastConfirmedAt": "2026-11-02T20:48:41.481Z",
+          "bonusConfirmedBy": [
+            "roame"
+          ],
+          "bonusRolling": true
         },
         "marriott": {
           "ratio": [
@@ -2208,7 +2226,13 @@
             "roame",
             "tpg",
             "upgradedpoints"
-          ]
+          ],
+          "bonusPct": 0.3,
+          "bonusLastConfirmedAt": "2026-11-02T20:48:41.481Z",
+          "bonusConfirmedBy": [
+            "roame"
+          ],
+          "bonusRolling": true
         },
         "marriott": {
           "ratio": [
@@ -2531,7 +2555,13 @@
             "roame",
             "tpg",
             "upgradedpoints"
-          ]
+          ],
+          "bonusPct": 0.8,
+          "bonusLastConfirmedAt": "2026-11-02T20:48:41.481Z",
+          "bonusConfirmedBy": [
+            "roame"
+          ],
+          "bonusRolling": true
         }
       }
     },
@@ -2551,7 +2581,7 @@
             "tpg"
           ],
           "bonusPct": 0.35,
-          "bonusLastConfirmedAt": "2026-11-01T17:09:53.049Z",
+          "bonusLastConfirmedAt": "2026-11-02T20:48:41.481Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -2677,7 +2707,13 @@
             "roame",
             "tpg",
             "upgradedpoints"
-          ]
+          ],
+          "bonusPct": 0.3,
+          "bonusLastConfirmedAt": "2026-11-02T20:48:41.481Z",
+          "bonusConfirmedBy": [
+            "roame"
+          ],
+          "bonusRolling": true
         },
         "citi": {
           "ratio": [
@@ -2978,14 +3014,14 @@
     }
   },
   "verification": {
-    "checkedAt": "2026-11-01T17:09:53.049Z",
+    "checkedAt": "2026-11-02T20:48:41.481Z",
     "sources": {
-      "roame": 219,
+      "roame": 220,
       "upgradedpoints": 144,
       "tpg": 106
     }
   },
-  "updatedAt": "2026-11-01T17:09:53.049Z",
-  "revision": 13,
-  "contentHash": "d1f179cea7e5a3798e36eb79974d6742c8e4d2eddc2dfe8ccf10139ac587ab1c"
+  "updatedAt": "2026-11-02T20:48:41.481Z",
+  "revision": 14,
+  "contentHash": "a22a1fd50b5b722014fc89abb00d11ec69347fa954359cf4be546c8175fab47e"
 }
