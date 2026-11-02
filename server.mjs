@@ -14,7 +14,7 @@ import { quotePointPurchases } from './lib/buy-points.mjs';
 import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, setNotifier, withMonitorPaused } from './lib/monitor.mjs';
 import { loadUser, saveUser, exampleUser, publicSettings, updateSettings, getSettings, apiUsage } from './lib/settings.mjs';
 import { transferData, loadCachedReference, refreshReference, referenceStatus } from './lib/reference.mjs';
-import { PlaceError } from './lib/places.mjs';
+import { PlaceError, suggestPlaces } from './lib/places.mjs';
 import { ApiError } from './lib/errors.mjs';
 import { searchCash, dealsFromAirports, cashForItinerary } from './lib/cash.mjs';
 import { getTripsCached } from './lib/flights.mjs';
@@ -245,6 +245,7 @@ function makeHandler(getPort, gate = createRecoveryGate()) {
       if (m === 'PUT' && p === '/api/user') return send(res, 200, await saveUser(await body(req)));
       if (m === 'GET' && p === '/api/settings') return send(res, 200, await publicSettings());
       if (m === 'PUT' && p === '/api/settings') return send(res, 200, await updateSettings(await body(req)));
+      if (m === 'GET' && p === '/api/places/suggest') return send(res, 200, { suggestions: suggestPlaces(String(q.q || '').slice(0, 200)) });
       if (m === 'GET' && p === '/api/programs') return send(res, 200, { programs: listPrograms() });
       if (m === 'GET' && p === '/api/providers') return send(res, 200, { providers: listProviders() });
       if (m === 'GET' && p === '/api/transfer-partners') return send(res, 200, { ...transferData(), status: referenceStatus() });

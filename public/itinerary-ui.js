@@ -193,8 +193,8 @@
         <button type="button" class="btn small ghost" data-action="move-down" data-leg="${esc(key)}" data-focus="down-${esc(key)}" aria-label="Move flight ${index + 1} down"${index === n - 1 ? ' disabled' : ''}>Move down</button>
         <button type="button" class="btn small ghost" data-action="remove-leg" data-leg="${esc(key)}" data-focus="rm-${esc(key)}" aria-label="Remove flight ${index + 1}"${n <= 2 ? ' disabled title="A multi-city trip needs at least two flights"' : ''}>Remove</button></div></div>
       <div class="formgrid fk-grid">
-        ${input('origins', 'From (airports, city or country)', leg.origins, ' placeholder="JFK, EWR or New York"')}
-        ${input('destination', 'To', leg.destination, ' placeholder="LHR or London"')}
+        ${input('origins', 'From (airports, city or country)', leg.origins, ' data-places placeholder="JFK, EWR or New York"')}
+        ${input('destination', 'To', leg.destination, ' data-places placeholder="LHR or London"')}
         ${input('departDate', 'Date', leg.departDate, ' type="date"')}
         ${field('Date flexibility', `${key}-flexDays`, `<select id="${key}-flexDays" data-field="flexDays" data-leg="${esc(key)}" data-focus="${esc(key)}-flexDays">${FLEX.map(d => `<option value="${d}"${Number(leg.flexDays) === d ? ' selected' : ''}>${d === 0 ? 'Exact' : `± ${d} days`}</option>`).join('')}</select>`)}
         ${field('Cabin', `${key}-cabin`, `<select id="${key}-cabin" data-field="cabin" data-leg="${esc(key)}" data-focus="${esc(key)}-cabin">${CABINS.map(([v, t]) => `<option value="${v}"${leg.cabin === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`)}
@@ -206,10 +206,10 @@
     const o = state.openJaw;
     const f = (name, label, value, attrs = '', help = '') => field(label, `oj-${name}`, `<input id="oj-${name}" data-field="oj-${name}" data-focus="oj-${name}" value="${esc(value)}" autocomplete="off"${attrs}${help ? ` aria-describedby="oj-${name}-help"` : ''}>${help ? `<small id="oj-${name}-help" class="muted">${esc(help)}</small>` : ''}`);
     return `<div class="card fk-leg"><div class="formgrid fk-grid">
-        ${f('leaveFrom', 'Leaving from', o.leaveFrom, ' placeholder="JFK or New York"')}
-        ${f('flyInto', 'Fly into', o.flyInto, ' placeholder="LHR or London"')}
-        ${f('flyHomeFrom', 'Fly home from', o.flyHomeFrom, ' placeholder="CDG or Paris"', 'A different city or airport from where you arrive')}
-        ${f('returnTo', 'Return to', o.returnTo, ' placeholder="Same as leaving from"')}
+        ${f('leaveFrom', 'Leaving from', o.leaveFrom, ' data-places placeholder="JFK or New York"')}
+        ${f('flyInto', 'Fly into', o.flyInto, ' data-places placeholder="LHR or London"')}
+        ${f('flyHomeFrom', 'Fly home from', o.flyHomeFrom, ' data-places placeholder="CDG or Paris"', 'A different city or airport from where you arrive')}
+        ${f('returnTo', 'Return to', o.returnTo, ' data-places placeholder="Same as leaving from"')}
         ${f('departDate', 'Outbound date', o.departDate, ' type="date"')}
         ${f('returnDate', 'Return flight date', o.returnDate, ' type="date"')}
         ${field('Date flexibility', 'oj-flexDays', `<select id="oj-flexDays" data-field="oj-flexDays" data-focus="oj-flexDays">${FLEX.map(d => `<option value="${d}"${Number(o.flexDays) === d ? ' selected' : ''}>${d === 0 ? 'Exact' : `± ${d} days`}</option>`).join('')}</select>`)}

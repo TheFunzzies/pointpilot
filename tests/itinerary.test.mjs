@@ -128,3 +128,13 @@ test('saved query constraints and imported home positioning are validated withou
   assert.throws(()=>normalizeTripPlan({...positioned,positioning:{outbound:{...positioning,arriveUtc:'2027-06-05T19:00:00Z'}}}),/buffer/);
   assert.ok(assessTransitions({...open(),transitions:[{fromSegmentId:'leg1',toSegmentId:'leg2',type:'surface',ticketRelationship:'protected'}]}).risks.some(r=>r.code==='SEPARATE_TICKETS'));
 });
+
+test('more than three booking links keep the primary first and are truncated, not rejected', () => {
+  const p = open();
+  const links = ['a', 'b', 'c', 'd', 'e'].map((x, i) => ({ label: x, url: `https://example.com/${x}`, primary: i === 3 }));
+  p.segments[0].award.bookingLinks = links;
+  const out = normalizeTripPlan(p);
+  const got = out.segments[0].award.bookingLinks;
+  assert.equal(got.length, 3);
+  assert.equal(got[0].label, 'd');
+});
