@@ -1,6 +1,6 @@
-# Transfer partner check — 2026-11-11
+# Transfer partner check — 2026-11-12
 
-Sources: Roame (220 routes), Upgraded Points (145 routes), The Points Guy (106 routes)
+Sources: Roame (222 routes), Upgraded Points (145 routes), The Points Guy (106 routes)
 
 ## Changes applied (10)
 - Confirmed bonus Chase Ultimate Rewards → British Airways Executive Club: +30% (roame)
@@ -23,6 +23,6 @@ Sources: Roame (220 routes), Upgraded Points (145 routes), The Points Guy (106 r
 - Marriott Bonvoy → Copa ConnectMiles: ours 3:1; upgradedpoints 3:1; not listed by roame
 
 ## Names not mapped to a PointPilot program
-- roame: Korean Air Korean Air SKYPASS, TAP Air Portugal TAP Air Portugal Miles & Go, Frontier Frontier Miles, Hainan Airlines Hainan Airlines Fortune Wings Club, Amtrak Amtrak Guest Rewards®, LHW LHW Leaders Club
+- roame: Korean Air Korean Air SKYPASS, Aegean Airlines Aegean Airlines Miles+Bonus, TAP Air Portugal TAP Air Portugal Miles & Go, Frontier Frontier Miles, Hainan Airlines Hainan Airlines Fortune Wings Club, Amtrak Amtrak Guest Rewards®, LHW LHW Leaders Club
 - upgradedpoints: Rove Miles, U.S. Bank Rewards, Aegean Airlines, Air India, Air New Zealand, Amtrak Guest Rewards, Asiana, Frontier Airlines, Hainan Airlines, InterMiles, LATAM, Leaders Club, Lufthansa Miles & More, Scandinavian Airlines, TAP Portugal, Vietnam Airlines, Virgin Red, Vueling
 - tpg: TAP Miles&Go, Virgin Red (airlines and hotels), Leaders Club, Amtrak Guest Rewards
