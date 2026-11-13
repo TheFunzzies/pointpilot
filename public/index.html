@@ -23,30 +23,49 @@
 <aside class="sidebar">
   <div class="brand"><span class="brand-mark"><svg class="icon"><use href="#i-plane"/></svg></span><div class="brand-text">Point<span>Pilot</span></div></div>
   <nav>
-    <button class="nav active" data-view="search" aria-current="page"><svg class="icon"><use href="#i-search"/></svg>Trip Optimizer</button>
-    <button class="nav" data-view="discover"><svg class="icon"><use href="#i-map"/></svg>Explore Destinations</button>
-    <button class="nav" data-view="builder"><svg class="icon"><use href="#i-map"/></svg>Trip Builder</button>
-    <button class="nav" data-view="wallet"><svg class="icon"><use href="#i-wallet"/></svg>My Points</button>
+    <button class="nav active" data-view="finder" aria-current="page"><svg class="icon"><use href="#i-plane"/></svg>Find a Trip</button>
     <button class="nav" data-view="alerts"><svg class="icon"><use href="#i-bell"/></svg>Alerts</button>
-    <button class="nav" data-view="assistant"><svg class="icon"><use href="#i-sliders"/></svg>AI Assistant</button>
+    <button class="nav" data-view="wallet"><svg class="icon"><use href="#i-wallet"/></svg>My Points</button>
     <details class="nav-more">
-      <summary class="nav">More</summary>
+      <summary class="nav">More tools</summary>
       <div class="nav-submenu">
+        <button class="nav" data-view="search"><svg class="icon"><use href="#i-search"/></svg>Advanced Search</button>
+        <button class="nav" data-view="discover"><svg class="icon"><use href="#i-map"/></svg>Compare Destinations</button>
+        <button class="nav" data-view="builder"><svg class="icon"><use href="#i-map"/></svg>Trip Builder</button>
+        <button class="nav" data-view="assistant"><svg class="icon"><use href="#i-sliders"/></svg>AI Assistant</button>
         <button class="nav" data-view="deals"><svg class="icon"><use href="#i-tag"/></svg>Cash Deals</button>
         <button class="nav" data-view="history"><svg class="icon"><use href="#i-trend"/></svg>Price History</button>
         <button class="nav" data-view="manual"><svg class="icon"><use href="#i-pencil"/></svg>Manual Entry</button>
         <button class="nav" data-view="partners"><svg class="icon"><use href="#i-repeat"/></svg>Transfer Partners</button>
-        <button class="nav" data-view="system"><svg class="icon"><use href="#i-sliders"/></svg>Data &amp; System</button>
+        <button class="nav" data-view="system"><svg class="icon"><use href="#i-sliders"/></svg>Settings</button>
       </div>
     </details>
   </nav>
   <div class="sidefoot"><span class="dot" id="liveDot"></span><b id="modeLabel">Checking data…</b><br><small id="modeHint"></small></div>
 </aside>
 <main class="main">
-<header class="top"><div><div class="eyebrow">Rewards intelligence</div><h1>Spend the right points, not just any points.</h1><p class="sub">Find award space, map your transfer options and fund the whole trip from your points.</p></div><div class="top-actions"><span class="status-pill" id="statusPill">Checking data…</span></div></header>
+<header class="top slim"><div class="top-actions"><span class="status-pill" id="statusPill">Checking data…</span></div></header>
 
-<section id="view-search" class="view active">
-<div class="kpis"><div class="card kpi"><span>Programs with points</span><b id="kpiTotal">0</b><small>balances stay program-specific</small></div><div class="card kpi"><span>Bank-point balances</span><b id="kpiFlex">0</b><small>currencies are not combined</small></div><div class="card kpi"><span>Best option</span><b id="kpiScore">—</b><small id="kpiHint">run a search</small></div><div class="card kpi"><span>Active alerts</span><b id="kpiAlerts">0</b><small>saved monitors</small></div></div>
+<section id="view-finder" class="view active">
+<div class="card searchbox fd-form">
+<h1 class="fd-title">Where do you want to go?</h1>
+<p class="muted">Tell PointPilot the place and a rough time. It checks award space, your transfer options and cash fares, then tells you the best way to pay.</p>
+<div class="formgrid">
+<div class="span-2"><label for="fdDestination">To</label><input id="fdDestination" data-places autocomplete="off" placeholder="Tokyo, Italy, LIS…"></div>
+<div class="span-2"><label for="fdOrigins">From</label><input id="fdOrigins" data-places autocomplete="off" placeholder="BOS, JFK or New York"></div>
+<div><label for="fdWhen">When</label><select id="fdWhen"></select></div>
+<div><label for="fdLength">Trip length</label><select id="fdLength"><option value="3:1">Long weekend (2–4 nights)</option><option value="7:2" selected>About a week (5–9 nights)</option><option value="10:2">About 10 days (8–12 nights)</option><option value="14:3">About two weeks (11–17 nights)</option><option value="0:0">One way</option></select></div>
+<div><label for="fdCabin">Cabin</label><select id="fdCabin"><option value="economy" selected>Economy</option><option value="premium">Premium economy</option><option value="business">Business</option><option value="first">First</option></select></div>
+<div><label for="fdTravelers">Travelers</label><select id="fdTravelers"><option selected>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+</div>
+<div class="formgrid" id="fdCustom" hidden><div><label for="fdEarliest">Earliest departure</label><input id="fdEarliest" type="date"></div><div><label for="fdLatest">Latest return</label><input id="fdLatest" type="date"></div></div>
+<div class="searchfoot"><div class="chips" style="margin:0"><label class="check"><input id="fdAutoWatch" type="checkbox" checked> If nothing good turns up, watch daily and notify me</label><label class="check"><input id="fdNonstop" type="checkbox"> Nonstop only</label></div><div class="btnrow" style="margin:0"><span id="fdMessage" class="muted" role="status" aria-live="polite"></span><button class="btn primary" id="fdSearch"><svg class="icon"><use href="#i-search"/></svg>Find the best way to go</button></div></div>
+</div>
+<div id="fdResults" aria-live="polite"></div>
+</section>
+
+<section id="view-search" class="view">
+<div class="kpis" style="display:none"><div class="card kpi"><span>Programs with points</span><b id="kpiTotal">0</b><small>balances stay program-specific</small></div><div class="card kpi"><span>Bank-point balances</span><b id="kpiFlex">0</b><small>currencies are not combined</small></div><div class="card kpi"><span>Best option</span><b id="kpiScore">—</b><small id="kpiHint">run a search</small></div><div class="card kpi"><span>Active alerts</span><b id="kpiAlerts">0</b><small>saved monitors</small></div></div>
 <div class="card searchbox"><div class="cardhead"><div><h2>Plan a trip</h2><p>Leave the return date empty for one-way.</p></div><div class="seg" role="group" aria-label="Search type"><button class="seg active" data-product="flights" aria-pressed="true">Flights</button><button class="seg" data-product="hotels" aria-pressed="false">Hotels</button><button class="seg" data-product="cash" aria-pressed="false">Cash fares</button></div></div>
 <fieldset class="fk-triptype" id="tripTypeWrap"><legend class="fk-sr">Trip type</legend>
 <label class="check"><input type="radio" name="tripType" value="one-way"> One way</label>
@@ -212,7 +231,7 @@
 <div id="dealResults"></div>
 </div></section>
 
-<section id="view-alerts" class="view"><div class="viewhead"><div><h2>Alerts</h2><p>Award trips, hotel stays, cash fares and airport deal watches are checked while PointPilot is open or running in the tray. You get a Windows notification when something new appears.</p></div><button class="btn primary" id="runMonitor">Check all now</button></div><div class="card" id="alerts"></div><div class="card empty" id="alertEmpty"><strong>No alerts yet</strong>Run a flight search—even if no award space appears—and choose “Monitor this trip”. You can also monitor a hotel stay.</div></section>
+<section id="view-alerts" class="view"><div class="viewhead"><div><h2>Alerts</h2><p>Checked in the background while PointPilot runs in the tray. You get a Windows notification when something new appears.</p></div><button class="btn primary" id="runMonitor">Check all now</button></div><div class="card" id="alerts"></div><div class="card empty" id="alertEmpty"><strong>No alerts yet</strong>Search under <em>Find a Trip</em>. When nothing good is available, PointPilot starts a daily watch for you and notifies you when a points option or a cheaper fare appears.</div></section>
 
 <section id="view-history" class="view"><div class="viewhead"><div><h2>Historical award prices</h2><p>Published benchmarks plus every award price PointPilot has seen.</p></div><button class="btn" id="refreshHistory">Refresh</button></div><div class="stack"><div class="card searchbox"><div class="formgrid" style="margin-top:0"><div><label for="histProgram">Program</label><select id="histProgram"><option value="">All programs</option></select></div><div><label for="histOrigin">Origin</label><input id="histOrigin" data-places autocomplete="off" placeholder="JFK"></div><div><label for="histDestination">Destination</label><input id="histDestination" data-places autocomplete="off" placeholder="BKK"></div><div><label for="histCabin">Cabin</label><select id="histCabin"><option value="">All</option><option value="economy">Economy</option><option value="premium">Premium</option><option value="business">Business</option><option value="first">First</option></select></div></div></div><div class="card tablecard"><div class="tableScroll"><table><thead><tr><th>Observed</th><th>Program</th><th>Scope</th><th>Cabin</th><th>Points</th><th>Type</th><th>Source</th></tr></thead><tbody id="historyTable"></tbody></table></div></div><div class="note" id="historySources"></div></div></section>
 
@@ -253,4 +272,4 @@
 <div class="card sys"><h3>Local data</h3><b>Private on this PC</b><p id="sysDataDir">—</p></div>
 <div class="card sys update-card"><h3>Software updates</h3><b id="updateVersion">—</b><p id="updateMessage">PointPilot downloads updates from GitHub Releases automatically.</p><div class="btnrow"><button class="btn small" id="checkUpdates">Check now</button><button class="btn small primary" id="installUpdate" hidden>Restart &amp; install</button></div></div>
 </div></div></section>
-</main></div><div id="toast" class="toast" role="status"></div><script src="/helpers.js"></script><script src="/place-suggest.js"></script><script src="/feature-kit.js"></script><script src="/itinerary-ui.js"></script><script src="/readiness-ui.js"></script><script src="/backup-ui.js"></script><script src="/diagnostics-ui.js"></script><script src="/app.js"></script><script src="/llm-ui.js"></script></body></html>
+</main></div><div id="toast" class="toast" role="status"></div><script src="/helpers.js"></script><script src="/place-suggest.js"></script><script src="/feature-kit.js"></script><script src="/itinerary-ui.js"></script><script src="/readiness-ui.js"></script><script src="/backup-ui.js"></script><script src="/diagnostics-ui.js"></script><script src="/app.js"></script><script src="/finder-ui.js"></script><script src="/llm-ui.js"></script></body></html>

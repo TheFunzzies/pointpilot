@@ -10,6 +10,7 @@ import { loadHistory, recordAwards, routeHistoryStats, getSources } from './lib/
 import { saveAwards, normalizeFlightAward, normalizeHotelAward } from './lib/awards.mjs';
 import { searchTrip, searchHotels, evaluateSelection, expandAwards } from './lib/search.mjs';
 import { searchDestinations } from './lib/destinations.mjs';
+import { findTrip } from './lib/finder.mjs';
 import { quotePointPurchases } from './lib/buy-points.mjs';
 import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, setNotifier, withMonitorPaused } from './lib/monitor.mjs';
 import { loadUser, saveUser, exampleUser, publicSettings, updateSettings, getSettings, apiUsage } from './lib/settings.mjs';
@@ -252,6 +253,7 @@ function makeHandler(getPort, gate = createRecoveryGate()) {
       if (m === 'POST' && p === '/api/transfer-partners/refresh') { const r = await refreshReference(); return send(res, 200, { ...r, status: referenceStatus() }); }
 
       if (m === 'POST' && p === '/api/search/trip') return send(res, 200, await searchTrip(await body(req)));
+      if (m === 'POST' && p === '/api/finder/search') return send(res, 200, await findTrip(await body(req, FEATURE_MAX_BODY)));
       if (m === 'POST' && p === '/api/search/destinations') return send(res, 200, await searchDestinations(await body(req)));
       if (m === 'POST' && p === '/api/search/hotels') return send(res, 200, await searchHotels(await body(req)));
       if (m === 'GET' && p === '/api/stay-plan') return send(res, 200, await getPlan());

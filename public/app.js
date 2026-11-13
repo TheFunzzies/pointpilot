@@ -535,7 +535,7 @@ function renderFlightResults(r) {
   if (!r.outbound?.length || (r.query.back && !r.return?.length)) {
     $('kpiScore').textContent = '—'; $('kpiHint').textContent = 'no fundable option';
     const why = {
-      'no-inventory': 'No award space was found for these dates.',
+      'no-inventory': (r.outbound?.length || r.return?.length) ? 'Award space was found in one direction only. Use Find a Trip to combine points one way with cash the other.' : 'No award space was found for these dates.',
       'no-valid-pairs': 'Outbound and return space exist, but no return is on or after an outbound date.',
       unaffordable: 'Award space exists, but your current balances and transfer partners can\'t cover it.'
     }[r.mode] || 'Nothing matched.';
@@ -1552,6 +1552,7 @@ function renderAlerts() {
     // A failed check is not a "no match": show it distinctly and keep the last good result for context.
     const last = check.kind === 'error' ? `Check failed ${when(check.at)}: ${check.error}${a.lastResult ? ` · last successful: ${okText}` : ''}` : okText;
     const desc = {
+      plan: () => `<span class="tag brand">TRIP WATCH</span> ${esc(q.origins)} → ${esc(q.destination)} · ${dateFmt(q.earliest)} – ${dateFmt(q.latest)} · ${q.tripType === 'one-way' ? 'one way' : `~${esc(q.nights)} nights`} · ${esc(q.cabin)} · ${esc(q.travelers)} pax · checked daily${a.targetCashUsd ? ` · cash target ${money(a.targetCashUsd)}/person` : ''}`,
       hotel: () => `<span class="tag brand">HOTEL</span> ${esc(q.destination)} · ${esc(q.roomType)} room · ${dateFmt(q.checkIn)}${q.checkOut ? ` – ${dateFmt(q.checkOut)}` : ''} ± ${esc(q.flexDays)}d${q.maxPointsPerNight ? ` · ≤ ${fmt(q.maxPointsPerNight)} pts/night` : ''}`,
       cash: () => `<span class="tag brand">CASH FARE</span> ${esc(q.origins)} → ${esc(q.destination)} · ${dateFmt(q.departDate)}${q.returnDate ? ` – ${dateFmt(q.returnDate)}` : ' (one-way)'} ± ${esc(q.flexDays)}d${a.targetPrice ? ` · target ${money(a.targetPrice)}` : ''}${a.dealPct ? ` · or ${esc(a.dealPct)}% below usual` : ''}${a.lastNotifiedPrice ? ` · last alert ${money(a.lastNotifiedPrice)}` : ''}`,
       deals: () => `<span class="tag brand">DEAL WATCH</span> from ${esc(q.airports)}${q.destination ? ` to ${esc(q.destination)}` : ' to anywhere'} · ${esc(a.minDropPct)}%+ below usual${q.maxPrice ? ` · under ${money(q.maxPrice)}` : ''}`,

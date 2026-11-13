@@ -229,20 +229,26 @@ function createMainWindow() {
   // Links leave the app in the user's browser; the app window can't be navigated elsewhere.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => { openExternal(url); return { action: 'deny' }; });
   mainWindow.webContents.on('will-navigate', (e, url) => { if (!isAppUrl(url)) { e.preventDefault(); openExternal(url); } });
-  mainWindow.on('close', e => {
+  mainWindow.on('close', () => {
     if (isQuitting) return;
     if (!closeToTray) { isQuitting = true; app.quit(); return; }
-    e.preventDefault();
-    mainWindow.hide();
+    // Closing to the tray lets the window (and its renderer process) go; only the small
+    // background service keeps running. Opening PointPilot again builds a fresh window.
     if (!trayHintShown) { trayHintShown = true; notify('PointPilot is still running', 'Alerts keep checking in the background. Right-click the tray icon to quit.'); }
   });
-  mainWindow.once('ready-to-show', () => { if (!startHidden) mainWindow.show(); });
-  mainWindow.webContents.on('did-finish-load', () => { if (lastUpdateStatus) mainWindow.webContents.send('update-status', lastUpdateStatus); });
+  mainWindow.on('closed', () => { mainWindow = null; });
+  mainWindow.once('ready-to-show', () => mainWindow?.show());
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (!mainWindow) return;
+    if (lastUpdateStatus) mainWindow.webContents.send('update-status', lastUpdateStatus);
+    if (pendingView) { mainWindow.webContents.send('navigate', pendingView); pendingView = null; }
+  });
   mainWindow.loadURL(`http://127.0.0.1:${serverPort}`);
 }
 
+let pendingView = null;
 function showMainWindow(view) {
-  if (!mainWindow || mainWindow.isDestroyed()) createMainWindow();
+  if (!mainWindow || mainWindow.isDestroyed()) { pendingView = view || null; createMainWindow(); return; }
   if (mainWindow.isMinimized()) mainWindow.restore();
   mainWindow.show();
   mainWindow.focus();
@@ -395,7 +401,7 @@ app.whenReady().then(async () => {
   await new Promise(resolve => { server = serverModule.startServer({ port: 0, onReady: p => { serverPort = p; resolve(); } }); });
   buildMenu();
   buildTray();
-  createMainWindow();
+  if (!startHidden) createMainWindow(); // started with Windows: stay in the tray until opened
   await applySettings();
   configureAutoUpdater();
   if (app.isPackaged && autoUpdater) {

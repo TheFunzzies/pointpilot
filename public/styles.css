@@ -578,3 +578,34 @@ tbody tr:hover td { background: var(--surface-2); }
 .place-suggest li strong { font-size: 14px; }
 .place-suggest li span { font-size: 12px; color: var(--muted); }
 .place-suggest li.active, .place-suggest li:hover { background: var(--surface-2); }
+
+/* ---------- Find a Trip ---------- */
+.top.slim { justify-content: flex-end; margin-bottom: 10px; }
+.fd-title { margin: 0 0 4px; font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
+.fd-form > p { margin: 0; font-size: 13.5px; }
+.fd-verdict { padding: 20px 22px; margin-top: 16px; border-left: 4px solid var(--brand); }
+.fd-verdict h2 { margin: 6px 0 4px; font-size: 21px; font-weight: 700; }
+.fd-verdict p { margin: 0; color: var(--ink-2); }
+.fd-watch { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; margin-top: 14px; padding: 11px 13px; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--line); font-size: 13px; }
+.fd-watch.on { background: var(--green-soft); border-color: transparent; }
+.fd-watch-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fd-watch-form input { width: 96px; }
+.fd-watch-form label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.fd-options { display: grid; gap: 14px; margin-top: 14px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); align-items: start; }
+.fd-opt { padding: 18px; }
+.fd-opt.best { border-color: var(--brand); }
+.fd-opt-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fd-opt-head h3 { margin: 0; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.fd-big { font-size: 26px; font-weight: 700; margin-top: 6px; letter-spacing: -.01em; }
+.fd-big small { font-size: 16px; font-weight: 600; color: var(--ink-2); }
+.fd-sub { font-size: 12.5px; margin-bottom: 12px; }
+.fd-leg { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.fd-leg .muted { font-size: 12px; margin-top: 2px; }
+.fd-plan { padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; }
+.fd-plan ol { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.fd-warn { margin-top: 10px; font-size: 12px; color: var(--amber); display: grid; gap: 3px; }
+.fd-know { padding: 18px 20px; margin-top: 14px; }
+.fd-know h3 { margin: 0 0 8px; font-size: 15px; }
+.fd-know ul { margin: 0 0 8px; padding-left: 18px; display: grid; gap: 6px; font-size: 13px; color: var(--ink-2); }
+.fd-know p { margin: 8px 0 0; font-size: 12px; }
+.fd-meta { font-size: 12px; margin-top: 12px; }

@@ -2,6 +2,10 @@
 
 A Windows desktop app that finds award flights and works out the cheapest way to pay for them from your own mix of airline miles, hotel points and transferable bank points.
 
+- **Find a Trip** (the home screen): enter where you want to go, a month or date range, and a rough trip length. One search checks award space for the whole window (one seats.aero query per direction), cached cash fares, and at most two live Google Flights prices, then compares three ways to pay: all points, points one way plus cash the other, or all cash. Options are ranked by effective cost (points at your own values, plus fees and cash), and the result says plainly which to use and how to fund it.
+- **Trip watch**: when nothing good is available, PointPilot starts a daily watch for that trip and notifies you when a points option, a points + cash option, or a fare under your cash target appears. A watch uses at most one live Google Flights check per day.
+- **Built-in playbook**: each result includes the strategies that apply to that route and cabin and that your points can actually reach (which program to book through, surcharges to avoid, active transfer bonuses, when space opens). The strategies in `reference/playbook.json` are distilled from guidance published by The Points Guy, One Mile at a Time, Frequent Miler, Doctor of Credit and Upgraded Points; they are curated by hand, not scraped live.
+- **Light in the background**: closing to the tray releases the window, so only the small alert service stays in memory. Starting with Windows opens no window at all.
 - **Live award search** for flights through the [seats.aero](https://seats.aero) Partner API, and for hotels (Hilton, Hyatt, IHG, Marriott, Choice, Wyndham, I Prefer) through its sister service [rooms.aero](https://rooms.aero). Both are optional and use the same seats.aero Pro key, each with its own daily quota. Manual entry covers anything else.
 - **Portfolio-aware optimizer** that funds the *whole trip* for *all travelers*. It uses miles you already hold first, then picks bank transfers by your own ¢/point values. It respects transfer minimums and increments, time-limited bonuses, the Marriott 60k→25k bonus, slow transfers and a max-transfers limit.
 - **Explore destinations** compares up to eight destinations from your chosen departure cities for the same dates, cabin and travelers. Each result uses your current wallet as an independent alternative, shows its funding path and data status, and can open the flight search or create an alert. Searches can use up to three seats.aero calls per destination for each direction; cached queries may use fewer. Results are the best found within the provider and optimizer limits, and availability can change.
@@ -67,6 +71,8 @@ For testing, set `POINTPILOT_USER_DATA_DIR` to point the desktop app at a separa
 server.mjs            HTTP API + static UI (loopback only, rejects cross-site requests)
 lib/optimizer.mjs     trip funding & ranking
 lib/transfers.mjs     ratio / bonus / increment math
+lib/finder.mjs        Find a Trip: points vs. points + cash vs. cash over a date window
+lib/playbook.mjs      strategy tips matched to a search (reference/playbook.json)
 lib/search.mjs        gather awards, pair legs, rank trips
 lib/seatsaero.mjs     seats.aero Partner API adapter
 lib/monitor.mjs       alerts
