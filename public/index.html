@@ -48,19 +48,24 @@
 
 <section id="view-finder" class="view active">
 <div class="card searchbox fd-form">
-<h1 class="fd-title">Where do you want to go?</h1>
-<p class="muted">Tell PointPilot the place and a rough time. It checks award space, your transfer options and cash fares, then tells you the best way to pay.</p>
+<div class="cardhead"><div><h1 class="fd-title" id="fdTitle">Where do you want to go?</h1><p class="muted" id="fdIntro">Tell PointPilot the place and a rough time. It checks award space, your transfer options and cash fares, then tells you the best way to pay.</p></div>
+<div class="seg" role="group" aria-label="What to find"><button class="seg active" data-fdmode="flights" aria-pressed="true">Flights</button><button class="seg" data-fdmode="hotels" aria-pressed="false">Hotels</button><button class="seg" data-fdmode="explore" aria-pressed="false">Explore</button></div></div>
 <div class="formgrid">
-<div class="span-2"><label for="fdDestination">To</label><input id="fdDestination" data-places autocomplete="off" placeholder="Tokyo, Italy, LIS…"></div>
-<div class="span-2"><label for="fdOrigins">From</label><input id="fdOrigins" data-places autocomplete="off" placeholder="BOS, JFK or New York"></div>
-<div><label for="fdWhen">When</label><select id="fdWhen"></select></div>
-<div><label for="fdLength">Trip length</label><select id="fdLength"><option value="3:1">Long weekend (2–4 nights)</option><option value="7:2" selected>About a week (5–9 nights)</option><option value="10:2">About 10 days (8–12 nights)</option><option value="14:3">About two weeks (11–17 nights)</option><option value="0:0">One way</option></select></div>
-<div><label for="fdCabin">Cabin</label><select id="fdCabin"><option value="economy" selected>Economy</option><option value="premium">Premium economy</option><option value="business">Business</option><option value="first">First</option></select></div>
-<div><label for="fdTravelers">Travelers</label><select id="fdTravelers"><option selected>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+<div class="span-2" data-fdfor="flights hotels"><label for="fdDestination" id="fdDestinationLabel">To</label><input id="fdDestination" data-places autocomplete="off" placeholder="Tokyo, Italy, LIS…"></div>
+<div class="span-2" data-fdfor="flights explore"><label for="fdOrigins">From</label><input id="fdOrigins" data-places autocomplete="off" placeholder="BOS, JFK or New York"></div>
+<div data-fdfor="explore" hidden><label for="fdRegion">Where to</label><select id="fdRegion"><option value="anywhere">Anywhere</option><option value="europe">Europe</option><option value="asia">Asia</option><option value="caribbean">Caribbean &amp; Mexico</option><option value="southamerica">South America</option><option value="pacific">Hawaii &amp; South Pacific</option><option value="mideastafrica">Middle East &amp; Africa</option><option value="northamerica">US &amp; Canada</option></select></div>
+<div data-fdfor="flights explore"><label for="fdWhen">When</label><select id="fdWhen"></select></div>
+<div data-fdfor="flights explore"><label for="fdLength">Trip length</label><select id="fdLength"><option value="3:1">Long weekend (2–4 nights)</option><option value="7:2" selected>About a week (5–9 nights)</option><option value="10:2">About 10 days (8–12 nights)</option><option value="14:3">About two weeks (11–17 nights)</option><option value="0:0">One way</option></select></div>
+<div data-fdfor="flights explore"><label for="fdCabin">Cabin</label><select id="fdCabin"><option value="economy" selected>Economy</option><option value="premium">Premium economy</option><option value="business">Business</option><option value="first">First</option></select></div>
+<div data-fdfor="flights explore"><label for="fdTravelers">Travelers</label><select id="fdTravelers"><option selected>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+<div data-fdfor="hotels" hidden><label for="fdCheckIn">Check-in</label><input id="fdCheckIn" type="date"></div>
+<div data-fdfor="hotels" hidden><label for="fdNights">Nights</label><select id="fdNights"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>10</option><option>14</option></select></div>
+<div data-fdfor="hotels" hidden><label for="fdHotelFlex">Date flexibility</label><select id="fdHotelFlex"><option value="0" selected>Exact dates</option><option value="1">± 1 day</option><option value="3">± 3 days</option></select></div>
 </div>
 <div class="formgrid" id="fdCustom" hidden><div><label for="fdEarliest">Earliest departure</label><input id="fdEarliest" type="date"></div><div><label for="fdLatest">Latest return</label><input id="fdLatest" type="date"></div></div>
-<div class="searchfoot"><div class="chips" style="margin:0"><label class="check"><input id="fdAutoWatch" type="checkbox" checked> If nothing good turns up, watch daily and notify me</label><label class="check"><input id="fdNonstop" type="checkbox"> Nonstop only</label></div><div class="btnrow" style="margin:0"><span id="fdMessage" class="muted" role="status" aria-live="polite"></span><button class="btn primary" id="fdSearch"><svg class="icon"><use href="#i-search"/></svg>Find the best way to go</button></div></div>
+<div class="searchfoot"><div class="chips" style="margin:0"><label class="check" data-fdfor="flights"><input id="fdAutoWatch" type="checkbox" checked> If nothing good turns up, watch daily and notify me</label><label class="check" data-fdfor="flights explore"><input id="fdNonstop" type="checkbox"> Nonstop only</label></div><div class="btnrow" style="margin:0"><span id="fdMessage" class="muted" role="status" aria-live="polite"></span><button class="btn primary" id="fdSearch"><svg class="icon"><use href="#i-search"/></svg><span id="fdSearchLabel">Find the best way to go</span></button></div></div>
 </div>
+<div id="fdOpps"></div>
 <div id="fdResults" aria-live="polite"></div>
 </section>
 

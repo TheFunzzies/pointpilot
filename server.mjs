@@ -11,8 +11,11 @@ import { saveAwards, normalizeFlightAward, normalizeHotelAward } from './lib/awa
 import { searchTrip, searchHotels, evaluateSelection, expandAwards } from './lib/search.mjs';
 import { searchDestinations } from './lib/destinations.mjs';
 import { findTrip } from './lib/finder.mjs';
+import { findHotels } from './lib/hotelfinder.mjs';
+import { exploreDestinations } from './lib/explore.mjs';
+import { currentOpportunities } from './lib/opportunities.mjs';
 import { quotePointPurchases } from './lib/buy-points.mjs';
-import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, setNotifier, withMonitorPaused } from './lib/monitor.mjs';
+import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, runOpportunityCheck, setNotifier, withMonitorPaused } from './lib/monitor.mjs';
 import { loadUser, saveUser, exampleUser, publicSettings, updateSettings, getSettings, apiUsage } from './lib/settings.mjs';
 import { transferData, loadCachedReference, refreshReference, referenceStatus } from './lib/reference.mjs';
 import { PlaceError, suggestPlaces } from './lib/places.mjs';
@@ -253,6 +256,9 @@ function makeHandler(getPort, gate = createRecoveryGate()) {
       if (m === 'POST' && p === '/api/transfer-partners/refresh') { const r = await refreshReference(); return send(res, 200, { ...r, status: referenceStatus() }); }
 
       if (m === 'POST' && p === '/api/search/trip') return send(res, 200, await searchTrip(await body(req)));
+      if (m === 'POST' && p === '/api/finder/hotels') return send(res, 200, await findHotels(await body(req, FEATURE_MAX_BODY)));
+      if (m === 'POST' && p === '/api/finder/explore') return send(res, 200, await exploreDestinations(await body(req, FEATURE_MAX_BODY)));
+      if (m === 'GET' && p === '/api/opportunities') return send(res, 200, await currentOpportunities());
       if (m === 'POST' && p === '/api/finder/search') return send(res, 200, await findTrip(await body(req, FEATURE_MAX_BODY)));
       if (m === 'POST' && p === '/api/search/destinations') return send(res, 200, await searchDestinations(await body(req)));
       if (m === 'POST' && p === '/api/search/hotels') return send(res, 200, await searchHotels(await body(req)));
@@ -351,6 +357,7 @@ async function scheduleMonitor() {
       const r = await runMonitor();
       if (r.results.some(x => x.isNew)) console.log('[monitor] new matches', r.results.filter(x => x.isNew).map(x => x.title));
     } catch (e) { console.error('[monitor]', e); }
+    await runOpportunityCheck().catch(e => console.error('[opportunities]', e.message));
     scheduleMonitor();
   }, monitorIntervalMinutes * 60000);
   monitorTimer.unref?.();
