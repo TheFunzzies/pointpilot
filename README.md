@@ -7,6 +7,10 @@ A Windows desktop app that finds award flights and works out the cheapest way to
 - **Explore** (Explore tab): pick a month and a region, or anywhere, and PointPilot lists the destinations your points cover, cheapest first. It uses one seats.aero query per direction per region. A flight result with nothing good links straight to it.
 - **Opportunities**: the home screen lists active transfer bonuses from currencies you hold, saved buy-points prices rated against what those points are worth (good at 20% below, great at 35% below), and points expiring soon. You get one notification for each new bonus or good buy price. When an award is out of reach but a saved buy-points offer covers the gap, the flight result prices that as its own option.
 - **Date strip**: flight results show the cheapest points price for each day in your window.
+- **Positioning**: when your home airport has no award, or for business and first class, PointPilot also searches 15 larger gateways (two extra seats.aero queries) and prices a cheap cash hop to the best one. It is shown only when the total clearly beats starting from home, with a separate-tickets warning.
+- **Surcharge dodge**: when another program books the same trip with at least $100 less in fees per traveler, it appears as "All points, lowest fees" beside the cheapest option.
+- **Booked-award price watch**: after you book, click "I booked this" on a result. PointPilot checks that flight day once a day and notifies you when the points price drops (or another program you can fund is clearly cheaper), and says whether your program redeposits miles for free.
+- **Stopover builder** (Stopover tab): adds a few nights in a second city on the way out. It builds the three flights from awards you can fund, compares the total with going direct, and flags when one program could price the outbound as a single award with a stopover.
 - **Trip watch**: when nothing good is available, PointPilot starts a daily watch for that trip and notifies you when a points option, a points + cash option, or a fare under your cash target appears. A watch uses at most one live Google Flights check per day.
 - **Built-in playbook**: each result includes the strategies that apply to that route and cabin and that your points can actually reach (which program to book through, surcharges to avoid, active transfer bonuses, when space opens). The strategies in `reference/playbook.json` are distilled from guidance published by The Points Guy, One Mile at a Time, Frequent Miler, Doctor of Credit and Upgraded Points; they are curated by hand, not scraped live.
 - **Light in the background**: closing to the tray releases the window, so only the small alert service stays in memory. Starting with Windows opens no window at all.
@@ -77,6 +81,7 @@ lib/optimizer.mjs     trip funding & ranking
 lib/transfers.mjs     ratio / bonus / increment math
 lib/finder.mjs        Find a Trip: points vs. points + cash vs. cash over a date window
 lib/hotelfinder.mjs   Find a stay: points vs. points + cash vs. cash
+lib/stopover.mjs      two-city trips from three one-way awards
 lib/explore.mjs       where the wallet can go in a date window
 lib/opportunities.mjs transfer bonuses, buy-points ratings, expiring points
 lib/playbook.mjs      strategy tips matched to a search (reference/playbook.json)

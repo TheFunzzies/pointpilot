@@ -13,6 +13,7 @@ import { searchDestinations } from './lib/destinations.mjs';
 import { findTrip } from './lib/finder.mjs';
 import { findHotels } from './lib/hotelfinder.mjs';
 import { exploreDestinations } from './lib/explore.mjs';
+import { findStopoverTrips } from './lib/stopover.mjs';
 import { currentOpportunities } from './lib/opportunities.mjs';
 import { quotePointPurchases } from './lib/buy-points.mjs';
 import { listAlerts, createAlert, deleteAlert, setAlertActive, runMonitor, runOpportunityCheck, setNotifier, withMonitorPaused } from './lib/monitor.mjs';
@@ -258,6 +259,7 @@ function makeHandler(getPort, gate = createRecoveryGate()) {
       if (m === 'POST' && p === '/api/search/trip') return send(res, 200, await searchTrip(await body(req)));
       if (m === 'POST' && p === '/api/finder/hotels') return send(res, 200, await findHotels(await body(req, FEATURE_MAX_BODY)));
       if (m === 'POST' && p === '/api/finder/explore') return send(res, 200, await exploreDestinations(await body(req, FEATURE_MAX_BODY)));
+      if (m === 'POST' && p === '/api/finder/stopover') return send(res, 200, await findStopoverTrips(await body(req, FEATURE_MAX_BODY)));
       if (m === 'GET' && p === '/api/opportunities') return send(res, 200, await currentOpportunities());
       if (m === 'POST' && p === '/api/finder/search') return send(res, 200, await findTrip(await body(req, FEATURE_MAX_BODY)));
       if (m === 'POST' && p === '/api/search/destinations') return send(res, 200, await searchDestinations(await body(req)));

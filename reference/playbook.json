@@ -2,39 +2,459 @@
   "schemaVersion": 1,
   "lastUpdated": "2026-11-13",
   "note": "Strategies distilled from guidance that the major points sites publish again and again (The Points Guy, One Mile at a Time, Frequent Miler, Doctor of Credit, Upgraded Points). They are written without fixed award prices on purpose: PointPilot's live search supplies the price, the playbook supplies the strategy. Verify details with the program before moving points.",
-  "sources": ["The Points Guy", "One Mile at a Time", "Frequent Miler", "Doctor of Credit", "Upgraded Points"],
+  "sources": [
+    "The Points Guy",
+    "One Mile at a Time",
+    "Frequent Miler",
+    "Doctor of Credit",
+    "Upgraded Points"
+  ],
   "rules": [
-    { "id": "confirm-before-transfer", "title": "Find the seat first, transfer second", "text": "Bank-point transfers cannot be reversed. Confirm the award is bookable on the program's own site, then transfer only what that booking needs." },
-    { "id": "one-ways", "title": "Price it as two one-ways", "text": "Most programs price each direction on its own, so the cheapest trip often uses a different program each way. PointPilot pairs them for you." },
-    { "id": "fees-count", "title": "Count the fees, not just the points", "text": "An award with fewer points and several hundred dollars of carrier surcharges is often the worse deal. PointPilot ranks by points value plus fees." },
-    { "id": "book-then-improve", "title": "Book a good option now, keep watching", "text": "Many programs refund award miles for free or a small fee. Lock in something acceptable, then let a watch tell you if a better seat opens." },
-    { "id": "timing", "title": "Space opens early and late", "text": "Partner award seats are most common when schedules open (about 11 to 12 months out) and again in the last two weeks before departure." }
+    {
+      "id": "confirm-before-transfer",
+      "title": "Find the seat first, transfer second",
+      "text": "Bank-point transfers cannot be reversed. Confirm the award is bookable on the program's own site, then transfer only what that booking needs."
+    },
+    {
+      "id": "one-ways",
+      "title": "Price it as two one-ways",
+      "text": "Most programs price each direction on its own, so the cheapest trip often uses a different program each way. PointPilot pairs them for you."
+    },
+    {
+      "id": "fees-count",
+      "title": "Count the fees, not just the points",
+      "text": "An award with fewer points and several hundred dollars of carrier surcharges is often the worse deal. PointPilot ranks by points value plus fees."
+    },
+    {
+      "id": "book-then-improve",
+      "title": "Book a good option now, keep watching",
+      "text": "Many programs refund award miles for free or a small fee. Lock in something acceptable, then let a watch tell you if a better seat opens."
+    },
+    {
+      "id": "timing",
+      "title": "Space opens early and late",
+      "text": "Partner award seats are most common when schedules open (about 11 to 12 months out) and again in the last two weeks before departure."
+    }
   ],
   "tips": [
-    { "id": "japan-virgin-ana", "regions": ["japan"], "cabins": ["business", "first"], "programs": ["virginatlantic"], "title": "ANA premium cabins through Virgin Atlantic", "text": "Virgin Atlantic Flying Club has long been one of the cheapest ways to book ANA business and first class to Japan. Space is scarce: look when the schedule opens and again close to departure." },
-    { "id": "japan-jal-partners", "regions": ["japan"], "cabins": ["business", "first"], "programs": ["american", "alaska"], "title": "Japan Airlines through American or Alaska", "text": "American AAdvantage and Alaska miles book Japan Airlines business and first at fixed partner rates with low fees. JAL tends to release seats near departure." },
-    { "id": "japan-ana-direct", "regions": ["japan"], "cabins": ["business", "first", "economy", "premium"], "programs": ["ana"], "title": "ANA's own program requires round trips", "text": "ANA Mileage Club prices round trips low and seasonally, but partner fuel surcharges apply and transfers from Amex can take a couple of days." },
-    { "id": "europe-flyingblue", "regions": ["europe"], "cabins": ["business", "economy", "premium"], "programs": ["flyingblue"], "title": "Flying Blue is the easy transatlantic program", "text": "Air France/KLM Flying Blue takes transfers from every major bank currency, shows more of its own seats than partners do, and discounts different routes each month with Promo Rewards." },
-    { "id": "europe-iberia", "regions": ["europe"], "cabins": ["business", "economy"], "programs": ["iberia", "ba", "qatar"], "title": "Iberia to Madrid on off-peak dates", "text": "Iberia's own flights to Madrid are among the cheapest transatlantic business awards on off-peak dates, with modest fees. Avios move freely between Iberia, British Airways, Qatar, Aer Lingus and Finnair." },
-    { "id": "europe-aerlingus", "regions": ["europe"], "cabins": ["economy", "business"], "programs": ["aerlingus", "ba"], "title": "Aer Lingus keeps Avios fees low", "text": "Aer Lingus flights to Dublin and Shannon price by distance with low surcharges, and Ireland's US preclearance saves time on the way home." },
-    { "id": "europe-avoid-ba-surcharges", "regions": ["europe"], "cabins": ["business", "first", "premium", "economy"], "programs": ["ba", "virginatlantic"], "title": "Watch surcharges on British Airways and Virgin Atlantic flights", "text": "Awards on British Airways or Virgin Atlantic aircraft, and anything departing London, usually carry heavy carrier surcharges and UK departure tax. Returning from another European city often saves hundreds of dollars." },
-    { "id": "star-aeroplan", "regions": ["europe", "asia", "japan", "southamerica", "africa", "middleeast", "oceania"], "cabins": ["business", "first", "economy", "premium"], "programs": ["aeroplan"], "title": "Aeroplan: wide partner reach, no fuel surcharges", "text": "Air Canada Aeroplan books a very large set of partner airlines without fuel surcharges and lets you add a stopover to a one-way award for a small number of extra points." },
-    { "id": "star-lifemiles", "regions": ["europe", "asia", "japan", "southamerica"], "cabins": ["business", "first"], "programs": ["lifemiles"], "title": "LifeMiles for Star Alliance without surcharges", "text": "Avianca LifeMiles never adds fuel surcharges on Star Alliance partners and often prices business class below other programs. Its site can hide space that partners show, so compare with Aeroplan and United." },
-    { "id": "star-united", "regions": ["europe", "asia", "japan", "southamerica", "oceania", "africa"], "cabins": ["business", "economy", "premium"], "programs": ["united"], "title": "United miles: no surcharges, free changes", "text": "United MileagePlus adds no fuel surcharges and has no change or redeposit fee, which makes it a safe place to book a placeholder while you keep looking." },
-    { "id": "middleeast-qsuite", "regions": ["middleeast", "southasia", "africa", "maldives"], "cabins": ["business"], "programs": ["qatar", "ba", "american", "alaska"], "title": "Qatar Qsuite via Avios or American", "text": "Qatar Airways business class books at reasonable fixed rates with Qatar Privilege Club or British Airways Avios, and with American AAdvantage or Alaska miles. Doha connects onward to India, Africa and the Maldives." },
-    { "id": "middleeast-emirates", "regions": ["middleeast", "southasia", "africa", "maldives"], "cabins": ["first", "business"], "programs": ["emirates"], "title": "Emirates awards carry real cash costs", "text": "Emirates Skywards takes transfers from every major bank, but premium awards include large surcharges. Compare the total against Qatar before you transfer." },
-    { "id": "asia-cathay", "regions": ["asia"], "cabins": ["business", "first", "premium", "economy"], "programs": ["cathay", "american", "alaska"], "title": "Cathay Pacific through Asia Miles, American or Alaska", "text": "Cathay Pacific shows the most seats to its own Asia Miles members; American and Alaska miles book the remaining partner space at low fixed rates." },
-    { "id": "asia-singapore", "regions": ["asia", "oceania"], "cabins": ["business", "first"], "programs": ["singapore"], "title": "Singapore's best cabins need KrisFlyer miles", "text": "Singapore Airlines keeps almost all long-haul business and first class awards for its own KrisFlyer members. Every major bank transfers to it, and you can waitlist." },
-    { "id": "asia-eva", "regions": ["asia"], "cabins": ["business"], "programs": ["aeroplan", "lifemiles", "united", "eva"], "title": "EVA Air business via Star Alliance programs", "text": "EVA Air business class to Taipei and beyond is a strong option through Aeroplan, LifeMiles or United, with no fuel surcharges on any of the three." },
-    { "id": "oceania-hard", "regions": ["oceania"], "cabins": ["business", "first", "premium", "economy"], "programs": [], "title": "Australia and New Zealand reward flexibility", "text": "Premium seats to the South Pacific are the hardest awards to find. Widen the date range, consider flying via Asia, Fiji or Hawaii, and treat any nonstop business seat as worth booking immediately." },
-    { "id": "southamerica", "regions": ["southamerica"], "cabins": ["business", "economy", "premium"], "programs": ["lifemiles", "aeroplan", "united", "flyingblue", "american"], "title": "South America: Star Alliance and American", "text": "Copa and Avianca flights book well with LifeMiles, Aeroplan and United; American's own flights price well with AAdvantage. Overnight flights make business class worth the points here." },
-    { "id": "hawaii-avios", "regions": ["hawaii"], "cabins": ["economy", "business", "first"], "programs": ["ba", "qatar", "iberia", "alaska", "american"], "title": "Hawaii from the West Coast with Avios", "text": "Distance-based Avios awards on American and Alaska nonstops from the West Coast to Hawaii usually beat the airlines' own prices. From the East Coast, compare cash fares first." },
-    { "id": "nearby-cash-first", "regions": ["domestic", "caribbean", "mexico", "canada", "centralamerica"], "cabins": ["economy"], "programs": [], "title": "Short trips: check the cash fare first", "text": "Cheap economy fares rarely justify transferring bank points. If the points are worth more than the ticket at your own valuation, pay cash (or use your card's travel portal) and keep the points for long-haul premium cabins." },
-    { "id": "nearby-avios-jetblue", "regions": ["domestic", "caribbean", "mexico", "canada", "centralamerica"], "cabins": ["economy", "business", "first"], "programs": ["ba", "qatar", "jetblue", "southwest", "american"], "title": "Short nonstops: Avios, JetBlue and Southwest", "text": "Avios price short American and Alaska nonstops by distance, while JetBlue and Southwest points track the cash fare, so sale fares are also cheap in points and can be rebooked when the price drops." },
-    { "id": "delta-flash", "regions": ["domestic", "europe", "caribbean", "mexico", "asia", "japan", "southamerica", "oceania", "hawaii"], "cabins": ["economy", "premium", "business"], "programs": ["delta", "virginatlantic", "flyingblue"], "title": "Delta flights are often cheaper through partners", "text": "Delta prices its own awards dynamically. The same Delta seat is frequently cheaper with Virgin Atlantic Flying Club or Flying Blue miles when partner space is released." }
+    {
+      "id": "japan-virgin-ana",
+      "regions": [
+        "japan"
+      ],
+      "cabins": [
+        "business",
+        "first"
+      ],
+      "programs": [
+        "virginatlantic"
+      ],
+      "title": "ANA premium cabins through Virgin Atlantic",
+      "text": "Virgin Atlantic Flying Club has long been one of the cheapest ways to book ANA business and first class to Japan. Space is scarce: look when the schedule opens and again close to departure."
+    },
+    {
+      "id": "japan-jal-partners",
+      "regions": [
+        "japan"
+      ],
+      "cabins": [
+        "business",
+        "first"
+      ],
+      "programs": [
+        "american",
+        "alaska"
+      ],
+      "title": "Japan Airlines through American or Alaska",
+      "text": "American AAdvantage and Alaska miles book Japan Airlines business and first at fixed partner rates with low fees. JAL tends to release seats near departure."
+    },
+    {
+      "id": "japan-ana-direct",
+      "regions": [
+        "japan"
+      ],
+      "cabins": [
+        "business",
+        "first",
+        "economy",
+        "premium"
+      ],
+      "programs": [
+        "ana"
+      ],
+      "title": "ANA's own program requires round trips",
+      "text": "ANA Mileage Club prices round trips low and seasonally, but partner fuel surcharges apply and transfers from Amex can take a couple of days."
+    },
+    {
+      "id": "europe-flyingblue",
+      "regions": [
+        "europe"
+      ],
+      "cabins": [
+        "business",
+        "economy",
+        "premium"
+      ],
+      "programs": [
+        "flyingblue"
+      ],
+      "title": "Flying Blue is the easy transatlantic program",
+      "text": "Air France/KLM Flying Blue takes transfers from every major bank currency, shows more of its own seats than partners do, and discounts different routes each month with Promo Rewards."
+    },
+    {
+      "id": "europe-iberia",
+      "regions": [
+        "europe"
+      ],
+      "cabins": [
+        "business",
+        "economy"
+      ],
+      "programs": [
+        "iberia",
+        "ba",
+        "qatar"
+      ],
+      "title": "Iberia to Madrid on off-peak dates",
+      "text": "Iberia's own flights to Madrid are among the cheapest transatlantic business awards on off-peak dates, with modest fees. Avios move freely between Iberia, British Airways, Qatar, Aer Lingus and Finnair."
+    },
+    {
+      "id": "europe-aerlingus",
+      "regions": [
+        "europe"
+      ],
+      "cabins": [
+        "economy",
+        "business"
+      ],
+      "programs": [
+        "aerlingus",
+        "ba"
+      ],
+      "title": "Aer Lingus keeps Avios fees low",
+      "text": "Aer Lingus flights to Dublin and Shannon price by distance with low surcharges, and Ireland's US preclearance saves time on the way home."
+    },
+    {
+      "id": "europe-avoid-ba-surcharges",
+      "regions": [
+        "europe"
+      ],
+      "cabins": [
+        "business",
+        "first",
+        "premium",
+        "economy"
+      ],
+      "programs": [
+        "ba",
+        "virginatlantic"
+      ],
+      "title": "Watch surcharges on British Airways and Virgin Atlantic flights",
+      "text": "Awards on British Airways or Virgin Atlantic aircraft, and anything departing London, usually carry heavy carrier surcharges and UK departure tax. Returning from another European city often saves hundreds of dollars."
+    },
+    {
+      "id": "star-aeroplan",
+      "regions": [
+        "europe",
+        "asia",
+        "japan",
+        "southamerica",
+        "africa",
+        "middleeast",
+        "oceania"
+      ],
+      "cabins": [
+        "business",
+        "first",
+        "economy",
+        "premium"
+      ],
+      "programs": [
+        "aeroplan"
+      ],
+      "title": "Aeroplan: wide partner reach, no fuel surcharges",
+      "text": "Air Canada Aeroplan books a very large set of partner airlines without fuel surcharges and lets you add a stopover to a one-way award for a small number of extra points."
+    },
+    {
+      "id": "star-lifemiles",
+      "regions": [
+        "europe",
+        "asia",
+        "japan",
+        "southamerica"
+      ],
+      "cabins": [
+        "business",
+        "first"
+      ],
+      "programs": [
+        "lifemiles"
+      ],
+      "title": "LifeMiles for Star Alliance without surcharges",
+      "text": "Avianca LifeMiles never adds fuel surcharges on Star Alliance partners and often prices business class below other programs. Its site can hide space that partners show, so compare with Aeroplan and United."
+    },
+    {
+      "id": "star-united",
+      "regions": [
+        "europe",
+        "asia",
+        "japan",
+        "southamerica",
+        "oceania",
+        "africa"
+      ],
+      "cabins": [
+        "business",
+        "economy",
+        "premium"
+      ],
+      "programs": [
+        "united"
+      ],
+      "title": "United miles: no surcharges, free changes",
+      "text": "United MileagePlus adds no fuel surcharges and has no change or redeposit fee, which makes it a safe place to book a placeholder while you keep looking."
+    },
+    {
+      "id": "middleeast-qsuite",
+      "regions": [
+        "middleeast",
+        "southasia",
+        "africa",
+        "maldives"
+      ],
+      "cabins": [
+        "business"
+      ],
+      "programs": [
+        "qatar",
+        "ba",
+        "american",
+        "alaska"
+      ],
+      "title": "Qatar Qsuite via Avios or American",
+      "text": "Qatar Airways business class books at reasonable fixed rates with Qatar Privilege Club or British Airways Avios, and with American AAdvantage or Alaska miles. Doha connects onward to India, Africa and the Maldives."
+    },
+    {
+      "id": "middleeast-emirates",
+      "regions": [
+        "middleeast",
+        "southasia",
+        "africa",
+        "maldives"
+      ],
+      "cabins": [
+        "first",
+        "business"
+      ],
+      "programs": [
+        "emirates"
+      ],
+      "title": "Emirates awards carry real cash costs",
+      "text": "Emirates Skywards takes transfers from every major bank, but premium awards include large surcharges. Compare the total against Qatar before you transfer."
+    },
+    {
+      "id": "asia-cathay",
+      "regions": [
+        "asia"
+      ],
+      "cabins": [
+        "business",
+        "first",
+        "premium",
+        "economy"
+      ],
+      "programs": [
+        "cathay",
+        "american",
+        "alaska"
+      ],
+      "title": "Cathay Pacific through Asia Miles, American or Alaska",
+      "text": "Cathay Pacific shows the most seats to its own Asia Miles members; American and Alaska miles book the remaining partner space at low fixed rates."
+    },
+    {
+      "id": "asia-singapore",
+      "regions": [
+        "asia",
+        "oceania"
+      ],
+      "cabins": [
+        "business",
+        "first"
+      ],
+      "programs": [
+        "singapore"
+      ],
+      "title": "Singapore's best cabins need KrisFlyer miles",
+      "text": "Singapore Airlines keeps almost all long-haul business and first class awards for its own KrisFlyer members. Every major bank transfers to it, and you can waitlist."
+    },
+    {
+      "id": "asia-eva",
+      "regions": [
+        "asia"
+      ],
+      "cabins": [
+        "business"
+      ],
+      "programs": [
+        "aeroplan",
+        "lifemiles",
+        "united",
+        "eva"
+      ],
+      "title": "EVA Air business via Star Alliance programs",
+      "text": "EVA Air business class to Taipei and beyond is a strong option through Aeroplan, LifeMiles or United, with no fuel surcharges on any of the three."
+    },
+    {
+      "id": "oceania-hard",
+      "regions": [
+        "oceania"
+      ],
+      "cabins": [
+        "business",
+        "first",
+        "premium",
+        "economy"
+      ],
+      "programs": [],
+      "title": "Australia and New Zealand reward flexibility",
+      "text": "Premium seats to the South Pacific are the hardest awards to find. Widen the date range, consider flying via Asia, Fiji or Hawaii, and treat any nonstop business seat as worth booking immediately."
+    },
+    {
+      "id": "southamerica",
+      "regions": [
+        "southamerica"
+      ],
+      "cabins": [
+        "business",
+        "economy",
+        "premium"
+      ],
+      "programs": [
+        "lifemiles",
+        "aeroplan",
+        "united",
+        "flyingblue",
+        "american"
+      ],
+      "title": "South America: Star Alliance and American",
+      "text": "Copa and Avianca flights book well with LifeMiles, Aeroplan and United; American's own flights price well with AAdvantage. Overnight flights make business class worth the points here."
+    },
+    {
+      "id": "hawaii-avios",
+      "regions": [
+        "hawaii"
+      ],
+      "cabins": [
+        "economy",
+        "business",
+        "first"
+      ],
+      "programs": [
+        "ba",
+        "qatar",
+        "iberia",
+        "alaska",
+        "american"
+      ],
+      "title": "Hawaii from the West Coast with Avios",
+      "text": "Distance-based Avios awards on American and Alaska nonstops from the West Coast to Hawaii usually beat the airlines' own prices. From the East Coast, compare cash fares first."
+    },
+    {
+      "id": "nearby-cash-first",
+      "regions": [
+        "domestic",
+        "caribbean",
+        "mexico",
+        "canada",
+        "centralamerica"
+      ],
+      "cabins": [
+        "economy"
+      ],
+      "programs": [],
+      "title": "Short trips: check the cash fare first",
+      "text": "Cheap economy fares rarely justify transferring bank points. If the points are worth more than the ticket at your own valuation, pay cash (or use your card's travel portal) and keep the points for long-haul premium cabins."
+    },
+    {
+      "id": "nearby-avios-jetblue",
+      "regions": [
+        "domestic",
+        "caribbean",
+        "mexico",
+        "canada",
+        "centralamerica"
+      ],
+      "cabins": [
+        "economy",
+        "business",
+        "first"
+      ],
+      "programs": [
+        "ba",
+        "qatar",
+        "jetblue",
+        "southwest",
+        "american"
+      ],
+      "title": "Short nonstops: Avios, JetBlue and Southwest",
+      "text": "Avios price short American and Alaska nonstops by distance, while JetBlue and Southwest points track the cash fare, so sale fares are also cheap in points and can be rebooked when the price drops."
+    },
+    {
+      "id": "delta-flash",
+      "regions": [
+        "domestic",
+        "europe",
+        "caribbean",
+        "mexico",
+        "asia",
+        "japan",
+        "southamerica",
+        "oceania",
+        "hawaii"
+      ],
+      "cabins": [
+        "economy",
+        "premium",
+        "business"
+      ],
+      "programs": [
+        "delta",
+        "virginatlantic",
+        "flyingblue"
+      ],
+      "title": "Delta flights are often cheaper through partners",
+      "text": "Delta prices its own awards dynamically. The same Delta seat is frequently cheaper with Virgin Atlantic Flying Club or Flying Blue miles when partner space is released."
+    }
   ],
   "hotelTips": [
-    { "id": "hyatt-transfer", "programs": ["hyatt"], "title": "Hyatt is the standout hotel transfer", "text": "World of Hyatt points are worth far more than other hotel points and transfer 1:1 from Chase and Bilt. It is usually the only hotel transfer worth making from bank points." },
-    { "id": "fifth-night", "programs": ["hilton", "marriott"], "title": "Stay five nights on Hilton or Marriott points", "text": "Hilton (for any elite member) and Marriott give the fifth night free on award stays, a 20% saving. IHG gives cardholders the fourth night free." }
-  ]
+    {
+      "id": "hyatt-transfer",
+      "programs": [
+        "hyatt"
+      ],
+      "title": "Hyatt is the standout hotel transfer",
+      "text": "World of Hyatt points are worth far more than other hotel points and transfer 1:1 from Chase and Bilt. It is usually the only hotel transfer worth making from bank points."
+    },
+    {
+      "id": "fifth-night",
+      "programs": [
+        "hilton",
+        "marriott"
+      ],
+      "title": "Stay five nights on Hilton or Marriott points",
+      "text": "Hilton (for any elite member) and Marriott give the fifth night free on award stays, a 20% saving. IHG gives cardholders the fourth night free."
+    }
+  ],
+  "freeRedeposit": [
+    "united",
+    "american",
+    "delta",
+    "alaska",
+    "southwest",
+    "jetblue"
+  ],
+  "stopoverPrograms": {
+    "aeroplan": "lets you add a stopover to a one-way award for a small number of extra points.",
+    "flyingblue": "allows a free stopover on award tickets."
+  }
 }

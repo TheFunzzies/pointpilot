@@ -10,10 +10,11 @@
   let lastBody = null;  // request that produced it
   let lastHotels = null;
 
-  const TITLES = { points: 'All points', mixed: 'Points + cash', buy: 'Buy miles + award', cash: 'Cash' };
+  const TITLES = { points: 'All points', positioned: 'Points from a bigger airport', mixed: 'Points + cash', buy: 'Buy miles + award', cash: 'Cash' };
   const MODES = {
     flights: { title: 'Where do you want to go?', intro: 'Tell PointPilot the place and a rough time. It checks award space, your transfer options and cash fares, then tells you the best way to pay.', button: 'Find the best way to go', dest: 'To', placeholder: 'Tokyo, Italy, LIS…' },
     hotels: { title: 'Where are you staying?', intro: 'PointPilot compares award rooms you can fund, points for some nights plus cash, and the cheapest well-rated cash rates.', button: 'Find the best stay', dest: 'City', placeholder: 'Tokyo, Paris, Maui…' },
+    stopover: { title: 'Two places for the price of one', intro: 'Add a few nights in a second city on the way out. PointPilot builds the three flights from awards you can fund and shows what the extra city costs.', button: 'Build stopover trips', dest: 'To (main destination)', placeholder: 'Rome, Tokyo, Cape Town…' },
     explore: { title: 'Where can your points take you?', intro: 'Pick a time and PointPilot finds the destinations your points cover best, cheapest first.', button: 'Show me where I can go', dest: 'To', placeholder: '' }
   };
   const iso = d => d.toISOString().slice(0, 10);
@@ -29,6 +30,8 @@
     const m = MODES[mode];
     el('fdTitle').textContent = m.title; el('fdIntro').textContent = m.intro; el('fdSearchLabel').textContent = m.button;
     el('fdDestinationLabel').textContent = m.dest; el('fdDestination').placeholder = m.placeholder;
+    el('fdOneWayOption').disabled = mode === 'stopover';
+    if (mode === 'stopover' && el('fdLength').value === '0:0') el('fdLength').value = '7:2';
     el('fdMessage').textContent = '';
   }
 
@@ -63,7 +66,7 @@
       const fees = l.taxesPerTraveler == null ? 'fees unknown' : `${l.taxesEstimated ? '≈' : ''}${money(l.taxesPerTraveler)} fees`;
       return `<div class="fd-leg"><span class="tag brand">POINTS</span><div><b>${esc(l.dir)} · ${route}</b> · ${esc(dayFmt(l.date))}${stops}<div class="muted">${esc(l.programName)} · ${fmt(l.pointsPerTraveler)} pts + ${fees}${travelers > 1 ? ' per person' : ''}${l.airlines ? ` · ${esc(l.airlines)}` : ''}${l.seats != null ? ` · ${esc(l.seats)} seat${l.seats === 1 ? '' : 's'} left` : ''}</div></div></div>`;
     }
-    return `<div class="fd-leg"><span class="tag muted">CASH</span><div><b>${esc(l.dir)} · ${route}</b> · ${esc(dayFmt(l.date))}${l.returnDate ? ` – ${esc(dayFmt(l.returnDate))}` : ''}${stops}<div class="muted">${money(l.pricePerTraveler)}${travelers > 1 ? ' per person' : ''}${l.airlines ? ` · ${esc(l.airlines)}` : ''} · ${l.live ? 'live Google Flights price' : 'recently seen fare'}</div></div></div>`;
+    return `<div class="fd-leg"><span class="tag muted">CASH</span><div><b>${esc(l.dir)} · ${route}</b> · ${esc(dayFmt(l.date))}${l.returnDate ? ` – ${esc(dayFmt(l.returnDate))}` : ''}${stops}<div class="muted">${money(l.pricePerTraveler)}${travelers > 1 ? ' per person' : ''}${l.airlines ? ` · ${esc(l.airlines)}` : ''} · ${l.live ? 'live Google Flights price' : l.assumed ? 'assumed, no recent fare found' : l.estimate ? 'cheapest recently seen that month' : 'recently seen fare'}</div></div></div>`;
   }
 
   function planHtml(plan) {
@@ -79,11 +82,11 @@
     const seen = new Set();
     const links = o.legs.map(l => { if (!l.bookUrl || seen.has(l.bookUrl)) return ''; seen.add(l.bookUrl); return link(l.bookUrl, l.pay === 'points' ? `Book with ${l.programName}` : 'See on Google Flights'); }).join('');
     const sub = o.type === 'cash' ? (q.travelers > 1 ? `for ${q.travelers} travelers (estimate)` : 'total') : o.type === 'buy' ? `buying ${fmt(o.pointsBought)} miles, fees included` : `worth about ${money(o.effectiveCostUsd)} all-in at your point values${o.cpp != null ? ` · ${o.cpp.toFixed(1)}¢/pt` : ''}`;
-    return `<article class="card fd-opt${i === 0 ? ' best' : ''}"><div class="fd-opt-head"><h3>${esc(TITLES[o.type])}</h3>${i === 0 ? '<span class="tag">BEST VALUE</span>' : ''}</div>
+    return `<article class="card fd-opt${i === 0 ? ' best' : ''}"><div class="fd-opt-head"><h3>${esc(o.variant === 'lowfee' ? 'All points, lowest fees' : TITLES[o.type])}</h3>${i === 0 ? '<span class="tag">BEST VALUE</span>' : ''}</div>
       <div class="fd-big">${big}</div><div class="muted fd-sub">${esc(sub)}</div>
       ${o.legs.map(l => legRow(l, q.travelers)).join('')}${planHtml(o.plan)}
       ${o.warnings.length ? `<div class="fd-warn">${o.warnings.map(w => `<div>⚠ ${esc(w)}</div>`).join('')}</div>` : ''}
-      <div class="btnrow">${links}</div></article>`;
+      <div class="btnrow">${links}${o.legs.some(l => l.pay === 'points') && o.type !== 'buy' ? `<button class="btn small ghost" data-fd="booked" data-opt="${i}" title="After you book, PointPilot checks daily and tells you if the points price drops">I booked this — watch for a lower price</button>` : ''}</div></article>`;
   }
 
   const watchExists = q => state.alerts.find(a => a.kind === 'plan' && a.query?.destination === q.destinationText && a.query?.earliest === q.earliest && a.query?.latest === q.latest && a.query?.cabin === q.cabin);
@@ -167,6 +170,34 @@
     if (guard.isCurrent(token)) renderExplore(r);
   }
 
+  // ---------- stopover ----------
+  function renderStopover(r) {
+    const q = r.query;
+    const d = r.direct;
+    const diff = x => (x.extraPoints == null ? '' : x.extraPoints <= 0 ? `<span class="tag">NO EXTRA POINTS</span>` : `<span class="tag muted">+${fmt(x.extraPoints)} pts vs. direct</span>`);
+    const head = `<div class="card fd-verdict"><div class="muted">${esc(q.originsText)} → stopover → ${esc(q.destinationLabel)} · ${esc(dayFmt(q.earliest))} – ${esc(dayFmt(q.latest))} · ${esc(q.cabin)} · ${esc(q.travelers)} traveler${q.travelers > 1 ? 's' : ''}</div>
+      <h2>${r.results.length ? `${r.results.length} stopover trip${r.results.length > 1 ? 's' : ''} your points can cover.` : 'No stopover trip is bookable with your points in this window.'}</h2>
+      <p>${d ? `Going straight there and back costs ${fmt(d.points)} points + ${money(d.feesUsd)}. ` : 'No direct round trip on points was found to compare against. '}${r.results.length ? 'Each card adds a second city on the way out.' : 'Try another month, a named stopover city, or a different cabin.'}</p></div>`;
+    const notes = [...(r.walletEmpty ? ['Add your point balances under <em>My Points</em> first.'] : []), ...(r.dataStatus.api === 'not-configured' ? ['Add a seats.aero key under <em>Settings</em> to search live award space.'] : []), ...r.dataStatus.warnings.map(esc)];
+    el('fdResults').innerHTML = `${head}${notes.length ? `<div class="note">${notes.join('<br>')}</div>` : ''}
+      <div class="fd-options">${r.results.map((x, i) => `<article class="card fd-opt${i === 0 ? ' best' : ''}"><div class="fd-opt-head"><h3>${esc(x.stopNights)} nights in ${esc(x.city)}, then ${esc(x.stayNights)} in ${esc(q.destinationLabel.split(',')[0])}</h3>${diff(x)}</div>
+        <div class="fd-big">${fmt(x.points)} pts <small>+ ${money(x.feesUsd)}</small></div><div class="muted fd-sub">worth about ${money(x.effectiveCostUsd)} all-in at your point values${x.extraCostUsd != null ? ` · ${x.extraCostUsd <= 0 ? `${money(-x.extraCostUsd)} less` : `${money(x.extraCostUsd)} more`} than direct` : ''}</div>
+        ${x.legs.map(l => legRow(l, q.travelers)).join('')}${planHtml(x.plan)}
+        ${x.singleAward ? `<div class="note">${esc(x.singleAward)}</div>` : ''}
+        ${x.warnings.length ? `<div class="fd-warn">${x.warnings.map(w => `<div>⚠ ${esc(w)}</div>`).join('')}</div>` : ''}
+        <div class="btnrow">${[...new Map(x.legs.filter(l => l.bookUrl).map(l => [l.bookUrl, l])).values()].map(l => link(l.bookUrl, `Book with ${l.programName}`)).join('')}</div></article>`).join('')}</div>
+      <p class="muted fd-meta">Checked ${fmt(r.searched)} stopover cit${r.searched === 1 ? 'y' : 'ies'} in ${(r.tookMs / 1000).toFixed(1)}s${r.unfunded ? ` · ${r.unfunded} more have seats your points cannot cover` : ''}. Each flight is a separate award: book the hardest-to-find seat first.</p>`;
+  }
+
+  async function runStopover(token) {
+    const body = { ...tripBody(), destination: el('fdDestination').value.trim(), stopover: el('fdStopCity').value.trim() || undefined, stopNights: Number(el('fdStopNights').value) };
+    delete body.tripType;
+    if (!body.destination) { el('fdMessage').textContent = 'Enter your main destination.'; el('fdDestination').focus(); return; }
+    el('fdMessage').textContent = 'Building stopover trips…';
+    const r = await api('/api/finder/stopover', { method: 'POST', body, signal: token.signal });
+    if (guard.isCurrent(token)) renderStopover(r);
+  }
+
   // ---------- hotels ----------
   function hotelRow(h) {
     const stars = [h.stars ? `${h.stars}★` : '', h.rating ? `${h.rating.toFixed(1)} rating` : '', h.michelinKeys ? `${h.michelinKeys} MICHELIN Key${h.michelinKeys > 1 ? 's' : ''}` : ''].filter(Boolean).join(' · ');
@@ -225,7 +256,7 @@
     const token = guard.next();
     busy(el('fdSearch'), true, 'Searching…');
     try {
-      await { flights: runFlights, hotels: runHotels, explore: runExplore }[mode](token);
+      await { flights: runFlights, hotels: runHotels, explore: runExplore, stopover: runStopover }[mode](token);
       if (guard.isCurrent(token) && !/^Enter/.test(el('fdMessage').textContent)) el('fdMessage').textContent = '';
     } catch (e) {
       if (e?.name === 'AbortError' || !guard.isCurrent(token)) return;
@@ -245,6 +276,16 @@
         el('destination').value = lastBody.destination; el('origins').value = last.query.originsText; el('cabin').value = last.query.cabin; el('travelers').value = String(last.query.travelers);
         el('dateFrom').value = last.best?.depart || last.query.earliest; el('dateTo').value = last.best?.return || '';
         return showView('search');
+      }
+      if (action === 'booked' && last) {
+        const o = last.options[Number(e.target.closest('[data-opt]').dataset.opt)];
+        const legs = o.legs.filter(l => l.pay === 'points');
+        for (const l of legs) {
+          if (state.alerts.some(a => a.kind === 'rebook' && a.query?.origins === l.origin && a.query?.destination === l.destination && a.query?.departDate === l.date && a.program === l.program)) continue;
+          state.alerts.unshift(await api('/api/alerts', { method: 'POST', body: { kind: 'rebook', program: l.program, origin: l.origin, destination: l.destination, date: l.date, cabin: last.query.cabin, travelers: last.query.travelers, paidPoints: l.pointsPerTraveler, paidTaxes: l.taxesPerTraveler || 0, title: `Booked ${l.origin}→${l.destination} ${shortDay(l.date)} · ${l.programName}` } }));
+        }
+        renderAlerts(); renderKPIs();
+        return toast(`Watching ${legs.length} booked flight${legs.length > 1 ? 's' : ''}. You will be notified if the points price drops.`);
       }
       if (action === 'watch' && last) { await createWatch(last, Number(el('fdTarget').value) || null, false); renderFlights(last); }
       if (action === 'watch-hotel' && lastHotels) {
