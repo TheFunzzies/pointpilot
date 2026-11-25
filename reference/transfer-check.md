@@ -1,4 +1,4 @@
-# Transfer partner check — 2026-11-24
+# Transfer partner check — 2026-11-25
 
 Sources: Roame (224 routes), Upgraded Points (147 routes), The Points Guy (106 routes)
 
@@ -15,9 +15,8 @@ Sources: Roame (224 routes), Upgraded Points (147 routes), The Points Guy (106 r
 - Confirmed bonus American Express Membership Rewards → Marriott Bonvoy: +35% (roame)
 - Confirmed bonus Chase Ultimate Rewards → Wyndham Rewards: +30% (roame)
 
-## Disagreements to review (6)
+## Disagreements to review (5)
 - Only roame lists Marriott Bonvoy → Finnair Plus 3:1; not added
-- Capital One Miles → Virgin Atlantic Flying Club: ours 1:1; roame 1:1, upgradedpoints 1:1.3; not listed by tpg
 - Only roame lists Capital One Miles → Copa ConnectMiles 2:1.5; not added
 - Marriott Bonvoy → EVA Air Infinity MileageLands: ours 3:1; roame 3:1; not listed by upgradedpoints
 - Citi ThankYou → Aeromexico Rewards: ours 1:1; upgradedpoints 1:1; not listed by roame, tpg

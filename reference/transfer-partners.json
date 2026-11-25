@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "source": "Roame Transfer Partners Cheat Sheet",
   "sourceUrl": "https://roame.travel/transfer-partners-cheat-sheet",
-  "lastUpdated": "2026-11-24",
+  "lastUpdated": "2026-11-25",
   "note": "Partner-specific chunk bonuses apply only where eligible. Rolling offers require same-day source confirmation; bonusEnds is reserved for authoritative expiry dates. Always verify before moving points — transfers are irreversible.",
   "banks": {
     "amex": {
@@ -243,7 +243,7 @@
             "tpg"
           ],
           "bonusPct": 0.3,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -341,7 +341,8 @@
           "days": 3,
           "verifiedBy": [
             "roame",
-            "tpg"
+            "tpg",
+            "upgradedpoints"
           ]
         },
         "bilt": {
@@ -507,7 +508,7 @@
             "tpg"
           ],
           "bonusPct": 0.2,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -743,7 +744,7 @@
             "tpg"
           ],
           "bonusPct": 0.1,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -1026,7 +1027,7 @@
             "tpg"
           ],
           "bonusPct": 0.15,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -1354,7 +1355,7 @@
             "tpg"
           ],
           "bonusPct": 0.4,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -1641,7 +1642,7 @@
             "tpg"
           ],
           "bonusPct": 0.4,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -2156,7 +2157,7 @@
             "tpg"
           ],
           "bonusPct": 0.3,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -2261,7 +2262,7 @@
             "tpg"
           ],
           "bonusPct": 0.3,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -2590,7 +2591,7 @@
             "tpg"
           ],
           "bonusPct": 0.8,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -2614,7 +2615,7 @@
             "tpg"
           ],
           "bonusPct": 0.35,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -2741,7 +2742,7 @@
             "tpg"
           ],
           "bonusPct": 0.3,
-          "bonusLastConfirmedAt": "2026-11-24T21:20:33.631Z",
+          "bonusLastConfirmedAt": "2026-11-25T20:29:42.743Z",
           "bonusConfirmedBy": [
             "roame"
           ],
@@ -3047,14 +3048,14 @@
     }
   },
   "verification": {
-    "checkedAt": "2026-11-24T21:20:33.631Z",
+    "checkedAt": "2026-11-25T20:29:42.743Z",
     "sources": {
       "roame": 224,
       "upgradedpoints": 147,
       "tpg": 106
     }
   },
-  "updatedAt": "2026-11-24T21:20:33.631Z",
-  "revision": 36,
-  "contentHash": "6be6900d8a42403a1db3542e189e9d73a757846f1e6e765bf25e041e7d510153"
+  "updatedAt": "2026-11-25T20:29:42.743Z",
+  "revision": 37,
+  "contentHash": "f6eb4ec244b31138bd08048917fc05829bc4fe5969d128e56376f52d2a2e354e"
 }
