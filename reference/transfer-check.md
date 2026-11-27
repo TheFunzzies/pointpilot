@@ -1,12 +1,13 @@
-# Transfer partner check — 2026-11-26
+# Transfer partner check — 2026-11-27
 
 Sources: Roame (224 routes), Upgraded Points (147 routes), The Points Guy (106 routes)
 
-## Changes applied (11)
+## Changes applied (12)
 - Confirmed bonus Chase Ultimate Rewards → British Airways Executive Club: +30% (roame)
 - Confirmed bonus Chase Ultimate Rewards → Iberia Plus: +30% (roame)
 - Confirmed bonus Capital One Miles → Qatar Airways Privilege Club: +15% (roame)
 - Confirmed bonus Capital One Miles → Air France/KLM Flying Blue: +20% (roame)
+- Confirmed bonus American Express Membership Rewards → Virgin Atlantic Flying Club: +30% (roame)
 - Confirmed bonus Chase Ultimate Rewards → Virgin Atlantic Flying Club: +40% (roame)
 - Confirmed bonus American Express Membership Rewards → Avianca LifeMiles: +10% (roame)
 - Confirmed bonus Citi ThankYou → Turkish Airlines Miles&Smiles: +40% (roame)
